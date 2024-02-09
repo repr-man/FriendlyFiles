@@ -25,3 +25,8 @@ replay_pid*
 
 # Binary directory
 bin
+
+# John's build scripts
+build
+run
+buildrun
