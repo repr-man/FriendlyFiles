@@ -1,1 +1,2 @@
-# FXtive
+# FriendlyFiles
+

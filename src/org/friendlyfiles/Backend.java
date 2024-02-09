@@ -1,4 +1,4 @@
-package org.fxive;
+package org.friendlyfiles;
 
 // TODO:
 // Figure out how we want to store metadata about the files.
