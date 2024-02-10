@@ -11,7 +11,6 @@
 .mtj.tmp/
 
 # Package Files #
-*.jar
 *.war
 *.nar
 *.ear
@@ -23,10 +22,12 @@
 hs_err_pid*
 replay_pid*
 
-# Binary directory
-bin
+# Junk in the "bin" directory
+bin/*.db
+bin/*.class
 
 # John's build scripts
 build
 run
 buildrun
+test
