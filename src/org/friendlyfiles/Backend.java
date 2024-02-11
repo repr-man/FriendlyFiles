@@ -106,11 +106,12 @@ class SQLiteBackend implements Backend, AutoCloseable {
         try {
             Path topPath = top.toRealPath(LinkOption.NOFOLLOW_LINKS);
             
-            PreparedStatement addDirStmt = conn.prepareStatement("INSERT INTO directories(path) VALUES(?)");
-            addDirStmt.setString(1, topPath.toString());
-            addDirStmt.addBatch();
+            Statement stmt = conn.createStatement();
+            StringBuilder addDirStmt = new StringBuilder("INSERT INTO directories(path) VALUES");
+            addDirStmt.append("('").append(topPath.toString()).append("')");
+            addDirStmt.append(';');
             addDirectoriesToStatement(addDirStmt, Files.newDirectoryStream(topPath));
-            addDirStmt.executeBatch();
+            stmt.execute(addDirStmt.toString());
         } catch (Exception e) {
             throw new Error(e);
         }
@@ -119,7 +120,7 @@ class SQLiteBackend implements Backend, AutoCloseable {
     /**
      * Calls `addDirectoriesToStatement` with the default number of layers.
      */
-    private static void addDirectoriesToStatement(PreparedStatement stmt, DirectoryStream<Path> iter) {
+    private static void addDirectoriesToStatement(StringBuilder stmt, DirectoryStream<Path> iter) {
         addDirectoriesToStatement(stmt, iter, 2);
     }
     
@@ -131,13 +132,12 @@ class SQLiteBackend implements Backend, AutoCloseable {
      * @param iter the directories to walk
      * @param layers the maximum traversal depth
      */
-    private static void addDirectoriesToStatement(PreparedStatement stmt, DirectoryStream<Path> iter, int layers) {
+    private static void addDirectoriesToStatement(StringBuilder stmt, DirectoryStream<Path> iter, int layers) {
         try {
             boolean shouldRecurse = layers > 0;
             for (Path item : iter) {
                 if (Files.isDirectory(item)) {
-                    stmt.setString(1, item.toRealPath(LinkOption.NOFOLLOW_LINKS).toString());
-                    stmt.addBatch();
+                    stmt.append(",('").append(item.toRealPath(LinkOption.NOFOLLOW_LINKS).toString()).append("')");
                     if(!Files.isSymbolicLink(item) && shouldRecurse) {
                         addDirectoriesToStatement(stmt, Files.newDirectoryStream(item), layers - 1);
                     }
