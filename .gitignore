@@ -24,6 +24,7 @@ replay_pid*
 
 # Junk in the "bin" directory
 bin/*.db
+bin/*.db-journal
 bin/*.class
 
 # John's build scripts

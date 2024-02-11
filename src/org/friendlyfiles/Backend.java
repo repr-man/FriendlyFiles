@@ -51,7 +51,7 @@ class SQLiteBackend implements Backend, AutoCloseable {
     public SQLiteBackend(Path location) {
         try {
             conn = DriverManager.getConnection("jdbc:sqlite:" + location.toAbsolutePath().toString());
-            conn.createStatement().execute("PRAGMA journal_mode = WAL; PRAGMA synchronous = normal; PRAGMA temp_store = memory;");
+            conn.createStatement().execute("PRAGMA synchronous = normal; PRAGMA temp_store = memory;");
         } catch (Exception e) {
             throw new Error("Unable to open the SQLite database at \"" + location.toAbsolutePath() + "\".", e);
         }
@@ -85,7 +85,6 @@ class SQLiteBackend implements Backend, AutoCloseable {
     @Override
     public void close() throws SQLException {
         conn.createStatement().execute("PRAGMA optimize;");
-        conn.rollback();
         conn.close();
     }
 
@@ -109,8 +108,8 @@ class SQLiteBackend implements Backend, AutoCloseable {
             Statement stmt = conn.createStatement();
             StringBuilder addDirStmt = new StringBuilder("INSERT INTO directories(path) VALUES");
             addDirStmt.append("('").append(topPath.toString()).append("')");
-            addDirStmt.append(';');
             addDirectoriesToStatement(addDirStmt, Files.newDirectoryStream(topPath));
+            addDirStmt.append(';');
             stmt.execute(addDirStmt.toString());
         } catch (Exception e) {
             throw new Error(e);
