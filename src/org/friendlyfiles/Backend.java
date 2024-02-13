@@ -1,15 +1,12 @@
 package org.friendlyfiles;
 
+import java.io.*;
 import java.nio.file.*;
 import java.sql.*;
 import java.util.*;
 
-import java.io.IOException;
-
 // TODO:
 // Figure out how we want to store metadata about the files.
-// We might want to have an interface to specify this to make
-// it easier to test things.
 
 /**
  * The functions we need to interact with one of our backends.
@@ -36,131 +33,196 @@ public interface Backend {
     public void generateAtDir(Path top);
 }
 
-class SQLiteBackend implements Backend, AutoCloseable {
-    private Connection conn;
+/**
+ * This backend is completely Java-based.  It exists so that we can test and iterate
+ * on ideas more quickly, without having to worry about writing SQL or debugging
+ * database problems.  
+ *
+ * It's not very pretty right now, but we could probably use it as our primary
+ * backend if we needed.
+ *
+ * Right now, this seems to be slightly faster than the SQLite backend.  We'll
+ * have to see if this continues as the application grows...
+ */
+class BasicBackend implements Backend, Serializable, AutoCloseable {
+    private transient String location;
+    private HashMap<String, Integer> directories = new HashMap<>();
+    private ArrayList<FileBucket> files = new ArrayList<>();
 
+    public BasicBackend() {}
+    
     /**
-     * Connects to a SQLite database to be used for storing file metadata.
-     * The database should be located in the standard location for application
-     * data appropriate to the operating system.  Since this location is known
-     * ahead of time, this method terminates the program if the db is not found.
-     * 
-     * @param dbLocation the location of the database
-     * @throws Error
-     */
-    public SQLiteBackend(Path location) {
-        try {
-            conn = DriverManager.getConnection("jdbc:sqlite:" + location.toAbsolutePath().toString());
-            conn.createStatement().execute("PRAGMA synchronous = normal; PRAGMA temp_store = memory;");
-        } catch (Exception e) {
-            throw new Error("Unable to open the SQLite database at \"" + location.toAbsolutePath() + "\".", e);
-        }
-    }
-
-    /**
-     * Creates the backend database file and creates the needed tables within the file.
+     * Opens the given file and deserializes it into a `BasicBackend`.
      *
-     * @param location the location to create the new database
-     * @throws FileAlreadyExistsException if the caller has not deleted the old database at `location`
-     * @throws IOException if `location` doesn't exist or it can't create the file
+     * @param location the location of the serialized blob file
      */
-    public static void createDatabase(Path location) throws IOException, FileAlreadyExistsException {
-        try {
-            Files.createFile(location.toAbsolutePath());
-            Connection conn = DriverManager.getConnection("jdbc:sqlite:" + location.toAbsolutePath().toString());
-            Statement createStmt = conn.createStatement();
-            createStmt.addBatch("CREATE TABLE directories(path STRING);");
-            createStmt.addBatch("CREATE TABLE tags(tag STRING);");
-            createStmt.executeBatch();
-            conn.close();
-        } catch (SQLException e) {
-            // The connection should be able to be created, and all the SQL statements should be correct.
-            throw new Error("Unreachable", e);
+    public BasicBackend(Path location) throws FileNotFoundException, IOException {
+        this.location = location.toRealPath(LinkOption.NOFOLLOW_LINKS).toString();
+        try(ObjectInputStream is = new ObjectInputStream(new FileInputStream(this.location))) {
+            BasicBackend tmp = (BasicBackend) is.readObject();
+            directories = tmp.directories;
+            files = tmp.files;
+        } catch (ClassNotFoundException e) {
+            throw new Error(e);
         }
     }
 
     /**
-     * Implementation of the `AutoClosable` interface so it can be used in a try-with-resources statement.
+     * Creates an empty `BasicBackend`.
+     *
+     * TODO:
+     * This should probably be added to the `Backend` interface so there is a generic way to create all
+     * the backends.
+     *
+     * @param location the location of the serialized blob file
+     * @return a new empty `BasicBackend`
+     */
+    public static BasicBackend create(Path location) throws IOException {
+        BasicBackend tmp = new BasicBackend();
+        tmp.location = location.toRealPath(LinkOption.NOFOLLOW_LINKS).toString();
+        return tmp;
+    }
+    
+    /**
+     * Implements the `AutoCloseable` interface so this can be used in a try-with-resources.
+     * It serializes and writes the file to the location from which it was constructed.
      */
     @Override
-    public void close() throws SQLException {
-        conn.createStatement().execute("PRAGMA optimize;");
-        conn.close();
+    public void close() throws FileNotFoundException, IOException {
+        try(ObjectOutputStream os = new ObjectOutputStream(new FileOutputStream(location))) {
+            os.writeObject(this);
+        }
     }
 
     /**
-     * Adds a large number of files and directories from the filesystem into the database.
+     * Right now, this just provided basic debugging info about the object.
+     */
+    @Override
+    public String toString() {
+        //// This is kind of broken...
+        //StringBuilder sb = new StringBuilder()
+        //    .append("BasicBackend[").append(location).append("]");
+        //for (Map.Entry<String, Integer> entry : directories.entrySet()) {
+        //    sb.append("\n    ").append(entry.getKey());
+        //    for(FileBucket b : files) {
+        //        sb.append(b);
+        //    }
+        //}
+        //return sb.toString();
+        return String.format("Number of buckets: %d", files.size());
+    }
+
+    /**
+     * Adds a large number of files and directories from the filesystem into the backend.
      *
-     * This only gets the contents from three layers of the file tree.  I initially tried
-     * getting all the files beneath `top`.  However, experiments on my desktop directory
-     * showed that it took about a minute to fully index all the files.  Given that this
-     * is only a fraction of the files on my machine, we cannot use this strategy.
-     * Instead, we will only index the files that the user is most likely to look at.
-     * The database will grow over time as they explore more of the fliesystem.
+     * This only gets the contents from three layers of the file tree.  We will only index
+     * files that the user is most likely to look at.The backend data structures will grow
+     * over time as the user explores more of the filesystem.
      *
      * @param top the root node of the file tree from which to start indexing
      */
     @Override
     public void generateAtDir(Path top) {
         try {
-            Path topPath = top.toRealPath(LinkOption.NOFOLLOW_LINKS);
-            
-            Statement stmt = conn.createStatement();
-            StringBuilder addDirStmt = new StringBuilder("INSERT INTO directories(path) VALUES");
-            addDirStmt.append("('").append(topPath.toString()).append("')");
-            addDirectoriesToStatement(addDirStmt, Files.newDirectoryStream(topPath));
-            addDirStmt.append(';');
-            stmt.execute(addDirStmt.toString());
+        generateAtDir(top, 3);
         } catch (Exception e) {
             throw new Error(e);
         }
-    }
-
-    /**
-     * Calls `addDirectoriesToStatement` with the default number of layers.
-     */
-    private static void addDirectoriesToStatement(StringBuilder stmt, DirectoryStream<Path> iter) {
-        addDirectoriesToStatement(stmt, iter, 2);
     }
     
     /**
-     * Recursively walks all the directories provided by `iter`, with a depth limit of `layers`, and
-     * adds each path to the SQL statement given by `stmt`.
-     *
-     * @param stmt the statement to insert file paths into
-     * @param iter the directories to walk
-     * @param layers the maximum traversal depth
+     * Recursive helper function overload for `generateAtDir(Path)`.
      */
-    private static void addDirectoriesToStatement(StringBuilder stmt, DirectoryStream<Path> iter, int layers) {
-        try {
-            boolean shouldRecurse = layers > 0;
-            for (Path item : iter) {
-                if (Files.isDirectory(item)) {
-                    stmt.append(",('").append(item.toRealPath(LinkOption.NOFOLLOW_LINKS).toString()).append("')");
-                    if(!Files.isSymbolicLink(item) && shouldRecurse) {
-                        addDirectoriesToStatement(stmt, Files.newDirectoryStream(item), layers - 1);
-                    }
+    private void generateAtDir(Path top_, int levels) throws IOException {
+        if(levels <= 0) return;
+        
+        Path top = top_.toRealPath(LinkOption.NOFOLLOW_LINKS);
+        FileBucket topBucket = addDirectory(top.toString());
+        
+        try(DirectoryStream<Path> paths = Files.newDirectoryStream(top)) {
+            for(Path path : paths) {
+                if (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
+                    addDirectory(path.toString());
+                    generateAtDir(path, levels - 1);
                 } else {
-
+                    topBucket.add(path);
                 }
             }
-        } catch (Exception e) {
-            throw new Error("Unreachable", e);
         }
     }
 
     /**
-     * Clears any existing entries in the database.  Use with caution!
+     * Adds a new file path to the `directories` table and a new bucket to the
+     * `files` array if the given path has not yet been registered, or returns
+     * the existing one if it has been registered.
+     *
+     * @param path the path to add to the directory
      */
-    void clear() {
-        try {
-            // Takes advantage of SQLite's "truncate" optimization.
-            Statement deleteStmt = conn.createStatement();
-            deleteStmt.addBatch("DELETE FROM directories");
-            deleteStmt.addBatch("DELETE FROM tags");
-            deleteStmt.executeBatch();
-        } catch (Exception e) {
-            throw new Error(e);
+    private FileBucket addDirectory(String path) {
+        Integer idx = directories.get(path);
+        if(idx == null) {
+            directories.put(path, files.size());
+            files.add(new FileBucket());
+            return files.get(files.size() - 1);
         }
+        return files.get(idx);
+    }
+
+    /**
+     * A wrapper class for automating some common tasks and providing a fluent
+     * interface for the table.
+     */
+    static class FileBucket implements Serializable {
+        HashSet<String> items = new HashSet<>();
+
+        // Warning: produces a LOT of output!
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            for (String string : items) {
+                sb.append("\n        ").append(string);
+            }
+            return sb.toString();
+        }
+
+        /**
+         * Removes all the items from the bucket.
+         */
+        FileBucket reset() {
+            items.clear();
+            return this;
+        }
+
+        /**
+         * Adds a file to the bucket.
+         *
+         * @param name the name of the file to add
+         */
+        FileBucket add(String name) {
+            items.add(name);
+            return this;
+        }
+
+        /**
+         * Adds the file pointed to by a `Path` to the bucket.
+         * Be sure not to pass in a path to a directory.
+         *
+         * @param name the path to the file to add
+         */
+        FileBucket add(Path name) {
+            items.add(name.getFileName().toString());
+            return this;
+        }
+
+        /**
+         * Removes a file name from the bucket.
+         *
+         * @param name the name of the file to remove
+         */
+        FileBucket remove(String name) {
+            items.remove(name);
+            return this;
+        }
+
     }
 }
