@@ -14,23 +14,48 @@ import java.util.*;
 public interface Backend {
     
     /**
-     * Traverses all the directories in the file system beneath `top`
-     * and adds them the the storage/indexing system of the backend.
+     * Adds a large number of files and directories from the filesystem into the backend.
      *
-     * This method should be called on the first run of the program
-     * before any of the file system has been indexed, or from a user-
-     * triggered regeneration in the ui.
-     *
-     * This method assumes that it receives a valid path to a directory.
-     * The ui should be able to prevent the user from selecting a
-     * directory that doesn't exist or from selecting a file instead of
-     * a directory.  Hence, this method terminates the program if 
-     * either of these assumptions are untrue.
+     * This only gets the contents from three layers of the file tree.  We will only index
+     * files that the user is most likely to look at.The backend data structures will grow
+     * over time as the user explores more of the filesystem.
      *
      * @param top the top-level directory to scan
      * @throws Error
      */
     public void generateAtDir(Path top);
+
+    /**
+     * Changes the name of a file or directory in the backend.
+     *
+     * @param oldPath the path to the file or directory to be renamed
+     * @param newPath the path to change the old path to
+     * @return true if the path was valid and was successfully renamed.
+     */
+    // TODO: Hammer out the interface.  Do we expect given paths to be valid?
+    //       What if it is renamed to an existing path?
+    public boolean rename(Path oldPath, Path newPath);
+
+    /**
+     * Deletes a file at the given path.
+     *
+     * This method assumes that the files exists and that it is not a directory.
+     * These assumptions should be checked in the ui or controller code so that
+     * they can display an error message to the user.
+     *
+     * @param path the path of the file to remove
+     * @throws Error if the file does not exist or if it is a directory
+     */
+    public void remove(Path path);
+
+    /**
+     * Removes the entire tree of the file system beneath the given path.
+     * Permanently.
+     * 
+     * @param top the top of the tree to nuke
+     * @throws Error if the file does not exist
+     */
+    public void rmrf(Path top);
 }
 
 /**
@@ -48,8 +73,10 @@ class BasicBackend implements Backend, Serializable, AutoCloseable {
     private transient String location;
     private HashMap<String, Integer> directories = new HashMap<>();
     private ArrayList<FileBucket> files = new ArrayList<>();
+    private ArrayList<Integer> freeList = new ArrayList<>();
 
-    public BasicBackend() {}
+    public BasicBackend() {
+    }
     
     /**
      * Opens the given file and deserializes it into a `BasicBackend`.
@@ -82,7 +109,7 @@ class BasicBackend implements Backend, Serializable, AutoCloseable {
         tmp.location = location.toRealPath(LinkOption.NOFOLLOW_LINKS).toString();
         return tmp;
     }
-    
+
     /**
      * Implements the `AutoCloseable` interface so this can be used in a try-with-resources.
      * It serializes and writes the file to the location from which it was constructed.
@@ -109,7 +136,7 @@ class BasicBackend implements Backend, Serializable, AutoCloseable {
         //    }
         //}
         //return sb.toString();
-        return String.format("Number of buckets: %d", files.size());
+        return String.format("Number of buckets: %d\nSize of free list: %d", files.size(), freeList.size());
     }
 
     /**
@@ -129,7 +156,7 @@ class BasicBackend implements Backend, Serializable, AutoCloseable {
             throw new Error(e);
         }
     }
-    
+
     /**
      * Recursive helper function overload for `generateAtDir(Path)`.
      */
@@ -160,14 +187,88 @@ class BasicBackend implements Backend, Serializable, AutoCloseable {
      */
     private FileBucket addDirectory(String path) {
         Integer idx = directories.get(path);
-        if(idx == null) {
-            directories.put(path, files.size());
-            files.add(new FileBucket());
-            return files.get(files.size() - 1);
+        
+        // We have the directory already:
+        if(idx != null) {
+            return files.get(idx);
         }
-        return files.get(idx);
+
+        // We don't, and need to add it:
+        if(freeList.isEmpty()) {
+            files.add(new FileBucket());
+            directories.put(path, files.size() - 1);
+            return files.get(files.size() - 1);
+        } else {
+            int nextIdx = freeList.get(freeList.size() - 1);
+            freeList.remove(freeList.size() - 1);
+            files.add(nextIdx, new FileBucket());
+            directories.put(path, nextIdx);
+            return files.get(nextIdx);
+        }
     }
 
+
+    /**
+     * Changes the name of a file or directory.
+     *
+     * @param oldPath the path to the file or directory to be renamed
+     * @param newPath the path to change the old path to
+     * @return true if the path was valid and was successfully renamed.
+     */
+    @Override
+    public boolean rename(Path oldPath, Path newPath) {
+        throw new Error("Renaming not yet implemented.");
+    }
+
+    /**
+     * Deletes a file at the given path.
+     *
+     * This method assumes that the files exists and that it is not a directory.
+     * These assumptions should be checked in the ui or controller code so that
+     * they can display an error message to the user.
+     *
+     * @param path the path of the file to remove
+     * @throws Error if the file does not exist or if it is a directory
+     */
+    @Override
+    public void remove(Path path) {
+        if(Files.exists(path, LinkOption.NOFOLLOW_LINKS) && Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
+            throw new Error("Called `remove` on a directory.  Use `rmrf` instead.");
+        }
+        
+        int dir = directories.get(path.getParent().toString());
+        files.get(dir).remove(path.getFileName().toString());
+    }
+
+    /**
+     * Removes the entire tree of the file system beneath the given path.
+     *
+     * @param top the top of the tree to nuke
+     */
+    // TODO: Try to make this more efficient (not a linear traversal to find subdirectories).
+    @Override
+    public void rmrf(Path top) {
+        if(!Files.exists(top, LinkOption.NOFOLLOW_LINKS)) {
+            throw new Error("Given directory doesn't exist.");
+        }
+        if(!Files.isDirectory(top, LinkOption.NOFOLLOW_LINKS)) {
+            remove(top);
+            return;
+        }
+
+        String prefix = top.toString();
+        Iterator<Map.Entry<String, Integer>> entries = directories.entrySet().iterator();
+        while(entries.hasNext()) {
+            Map.Entry<String, Integer> dir = entries.next();
+            if(dir.getKey().startsWith(prefix)) {
+               System.out.println(dir.getKey());
+                files.set(dir.getValue(), null);
+                freeList.add(dir.getValue());
+                entries.remove();
+            }
+        }
+    }
+    
     /**
      * A wrapper class for automating some common tasks and providing a fluent
      * interface for the table.
@@ -175,7 +276,7 @@ class BasicBackend implements Backend, Serializable, AutoCloseable {
     static class FileBucket implements Serializable {
         HashSet<String> items = new HashSet<>();
 
-        // Warning: produces a LOT of output!
+        // Warning: can produce a LOT of output!
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();

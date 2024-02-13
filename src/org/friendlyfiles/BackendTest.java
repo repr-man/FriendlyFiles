@@ -28,6 +28,8 @@ class BackendTest {
         try (BasicBackend backend = BasicBackend.create(backendPath)) {
             backend.generateAtDir(Paths.get("/home/repr/Desktop").toRealPath());
             System.out.println(backend);
+            backend.rmrf(Paths.get("/home/repr/Desktop/Ko"));
+            System.out.println(backend);
         } catch (Exception e) {
             throw new Error(e);
         }

@@ -135,6 +135,28 @@ class SQLiteBackend implements Backend, AutoCloseable {
     }
 
     /**
+     * Changes the name of a file or directory.
+     *
+     * @param oldPath the path to the file or directory to be renamed
+     * @param newPath the path to change the old path to
+     * @return true if the path was valid and was successfully renamed.
+     */
+    @Override
+    public boolean rename(Path oldPath, Path newPath) {
+        throw new Error("Renaming not yet implemented.");
+    }
+
+    @Override
+    public void remove(Path path) {
+        throw new Error("Removing files not yet implemented.");
+    }
+    
+    @Override
+    public void rmrf(Path top) {
+        throw new Error("rmrf-ing not yet implemented.");
+    }
+
+    /**
      * Clears any existing entries in the database.  Use with caution!
      */
     void clear() {
