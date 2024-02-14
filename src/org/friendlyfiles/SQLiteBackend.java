@@ -135,14 +135,14 @@ class SQLiteBackend implements Backend, AutoCloseable {
     }
 
     /**
-     * Changes the name of a file or directory.
+     * Changes the name of a directory.
      *
      * @param oldPath the path to the file or directory to be renamed
-     * @param newPath the path to change the old path to
-     * @return true if the path was valid and was successfully renamed.
+     * @param newName the name to change the old name to
+     * @throws Error if the diectory is not registered or if the new path already exists
      */
     @Override
-    public boolean rename(Path oldPath, Path newPath) {
+    public void renameDir(Path oldPath, String newName) {
         throw new Error("Renaming not yet implemented.");
     }
 
@@ -155,6 +155,28 @@ class SQLiteBackend implements Backend, AutoCloseable {
     public void rmrf(Path top) {
         throw new Error("rmrf-ing not yet implemented.");
     }
+
+    @Override
+    public ArrayList<String> getFilesAtoZ(Path directory) {
+        throw new Error("Retrieving items not yet implemented.");
+    }
+
+    @Override
+    public ArrayList<String> getFilesZtoA(Path directory) {
+        throw new Error("Retrieving items not yet implemented.");
+    }
+
+    @Override
+    public ArrayList<String> getDirectoriesAtoZ(Path directory) {
+        throw new Error("Retrieving items not yet implemented.");
+    }
+
+    @Override
+    public ArrayList<String> getDirectoriesZtoA(Path directory) {
+        throw new Error("Retrieving items not yet implemented.");
+    }
+
+
 
     /**
      * Clears any existing entries in the database.  Use with caution!

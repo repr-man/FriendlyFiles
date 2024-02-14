@@ -17,6 +17,7 @@ public interface Backend {
      * Adds a large number of files and directories from the filesystem into the backend.
      *
      * This only gets the contents from three layers of the file tree.  We will only index
+     * 
      * files that the user is most likely to look at.The backend data structures will grow
      * over time as the user explores more of the filesystem.
      *
@@ -26,15 +27,13 @@ public interface Backend {
     public void generateAtDir(Path top);
 
     /**
-     * Changes the name of a file or directory in the backend.
+     * Changes the name of a directory.
      *
      * @param oldPath the path to the file or directory to be renamed
-     * @param newPath the path to change the old path to
-     * @return true if the path was valid and was successfully renamed.
+     * @param newName the name to change the old name to
+     * @throws Error if the diectory is not registered or if the new path already exists
      */
-    // TODO: Hammer out the interface.  Do we expect given paths to be valid?
-    //       What if it is renamed to an existing path?
-    public boolean rename(Path oldPath, Path newPath);
+    public void renameDir(Path oldPath, String newName);
 
     /**
      * Deletes a file at the given path.
@@ -51,11 +50,51 @@ public interface Backend {
     /**
      * Removes the entire tree of the file system beneath the given path.
      * Permanently.
+     *
+     * Use this only to delete directories.  It cannot delete files.  It also
+     * cannot tell if the path you pass in is a file or a directory.  It is
+     * the caller's responsibility to use this correctly.
      * 
      * @param top the top of the tree to nuke
      * @throws Error if the file does not exist
      */
     public void rmrf(Path top);
+
+    /**
+     * Retrieves the names of the files in a directory and orders them alphabetically.
+     *
+     * @param directory the directory to retrieve items from
+     * @return an alphabetically sorted list of items in the directory
+     * @throws Error if the directory is not registered
+     */
+    public ArrayList<String> getFilesAtoZ(Path directory);
+
+    /**
+     * Retrieves the names of the files in a directory and orders them in reverse alphabetic order.
+     *
+     * @param directory the directory to retrieve items from
+     * @return a reverse alphabetically sorted list of items in the directory
+     * @throws Error if the directory is not registered
+     */
+    public ArrayList<String> getFilesZtoA(Path directory);
+
+    /**
+     * Retrieves the names of the directories in a directory and orders them alphabetically.
+     *
+     * @param directory the directory to retrieve items from
+     * @return an alphabetically sorted list of items in the directory
+     * @throws Error if the directory is not registered
+     */
+    public ArrayList<String> getDirectoriesAtoZ(Path directory);
+
+    /**
+     * Retrieves the names of the directories in a directory and orders them in reverse alphabetic order.
+     *
+     * @param directory the directory to retrieve items from
+     * @return a reverse alphabetically sorted list of items in the directory
+     * @throws Error if the directory is not registered
+     */
+    public ArrayList<String> getDirectoriesZtoA(Path directory);
 }
 
 /**
@@ -89,6 +128,7 @@ class BasicBackend implements Backend, Serializable, AutoCloseable {
             BasicBackend tmp = (BasicBackend) is.readObject();
             directories = tmp.directories;
             files = tmp.files;
+            freeList = tmp.freeList;
         } catch (ClassNotFoundException e) {
             throw new Error(e);
         }
@@ -151,7 +191,7 @@ class BasicBackend implements Backend, Serializable, AutoCloseable {
     @Override
     public void generateAtDir(Path top) {
         try {
-        generateAtDir(top, 3);
+            generateAtDir(top, 3);
         } catch (Exception e) {
             throw new Error(e);
         }
@@ -209,15 +249,28 @@ class BasicBackend implements Backend, Serializable, AutoCloseable {
 
 
     /**
-     * Changes the name of a file or directory.
+     * Changes the name of a directory.
      *
      * @param oldPath the path to the file or directory to be renamed
-     * @param newPath the path to change the old path to
-     * @return true if the path was valid and was successfully renamed.
+     * @param newName the name to change the old name to
      */
     @Override
-    public boolean rename(Path oldPath, Path newPath) {
-        throw new Error("Renaming not yet implemented.");
+    public void renameDir(Path oldPath, String newName) {
+        Path old = oldPath.toAbsolutePath().normalize();
+        String oldStr = old.toString();
+        Integer oldDir = directories.get(oldStr);
+        if(oldDir == null) {
+            throw new Error("Tried to rename a directory that does not exist.");
+        }
+
+        Path newPath = Paths.get(old.getParent().toString(), newName);
+        String newStr = newPath.toString();
+        if(directories.containsKey(newStr)) {
+            throw new Error("Tried to give a directory a name that another directory has.");
+        }
+
+        directories.put(newStr, oldDir);
+        directories.remove(oldStr);
     }
 
     /**
@@ -232,43 +285,94 @@ class BasicBackend implements Backend, Serializable, AutoCloseable {
      */
     @Override
     public void remove(Path path) {
-        if(Files.exists(path, LinkOption.NOFOLLOW_LINKS) && Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
+        if(directories.containsKey(path.toAbsolutePath().normalize().toString())) {
             throw new Error("Called `remove` on a directory.  Use `rmrf` instead.");
         }
         
-        int dir = directories.get(path.getParent().toString());
+        Integer dir = directories.get(path.getParent().toString());
+        if(dir == null) {
+            throw new Error("Tried to remove a file from a directory that doesn't exist.");
+        }
         files.get(dir).remove(path.getFileName().toString());
     }
 
     /**
      * Removes the entire tree of the file system beneath the given path.
      *
+     * Use this only to delete directories.  It cannot delete files.  It also
+     * cannot tell if the path you pass in is a file or a directory.  It is
+     * the caller's responsibility to use this correctly.
+     * 
      * @param top the top of the tree to nuke
      */
     // TODO: Try to make this more efficient (not a linear traversal to find subdirectories).
     @Override
     public void rmrf(Path top) {
-        if(!Files.exists(top, LinkOption.NOFOLLOW_LINKS)) {
+        String prefix = top.toString();
+        if(!directories.containsKey(prefix)) {
             throw new Error("Given directory doesn't exist.");
         }
-        if(!Files.isDirectory(top, LinkOption.NOFOLLOW_LINKS)) {
-            remove(top);
-            return;
-        }
 
-        String prefix = top.toString();
         Iterator<Map.Entry<String, Integer>> entries = directories.entrySet().iterator();
         while(entries.hasNext()) {
             Map.Entry<String, Integer> dir = entries.next();
             if(dir.getKey().startsWith(prefix)) {
-               System.out.println(dir.getKey());
                 files.set(dir.getValue(), null);
                 freeList.add(dir.getValue());
                 entries.remove();
             }
         }
     }
-    
+
+    @Override
+    public ArrayList<String> getFilesAtoZ(Path directory) {
+        return getFiles(directory, (String s1, String s2) -> s1.compareTo(s2));
+    }
+
+    @Override
+    public ArrayList<String> getFilesZtoA(Path directory) {
+        return getFiles(directory, (String s1, String s2) -> -s1.compareTo(s2));
+    }
+
+    @Override
+    public ArrayList<String> getDirectoriesAtoZ(Path directory) {
+        return getDirectories(directory, (String s1, String s2) -> s1.compareTo(s2));
+    }
+
+    @Override
+    public ArrayList<String> getDirectoriesZtoA(Path directory) {
+        return getDirectories(directory, (String s1, String s2) -> -s1.compareTo(s2));
+    }
+
+    private ArrayList<String> getFiles(Path directory, Comparator<String> comp) {
+        String dirStr = directory.toAbsolutePath().normalize().toString();
+        Integer dir = directories.get(dirStr);
+        if(dir == null) {
+            throw new Error("Tried to retrieve files from a directory that doesn't exist.");
+        }
+        ArrayList<String> list = new ArrayList<>();
+        list.addAll(files.get(dir).items);
+        list.sort(comp);
+        return list;
+    }
+
+    private ArrayList<String> getDirectories(Path directory, Comparator<String> comp) {
+        String dirStr = directory.toAbsolutePath().normalize().toString();
+        Integer dir = directories.get(dirStr);
+        if(dir == null) {
+            throw new Error("Tried to retrieve directories from a directory that doesn't exist.");
+        }
+        ArrayList<String> list = new ArrayList<>();
+        dirStr += File.separator;
+        for(String item : directories.keySet()) {
+            if(item.startsWith(dirStr)) {
+                list.add(item);
+            }
+        }
+        list.sort(comp);
+        return list;
+    }
+
     /**
      * A wrapper class for automating some common tasks and providing a fluent
      * interface for the table.

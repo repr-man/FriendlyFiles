@@ -23,6 +23,7 @@ hs_err_pid*
 replay_pid*
 
 # Junk in the "bin" directory
+bin/*.blob
 bin/*.db
 bin/*.db-journal
 bin/*.class
@@ -32,3 +33,4 @@ build
 run
 buildrun
 test
+testrun
