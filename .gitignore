@@ -28,6 +28,8 @@ bin/*.db
 bin/*.db-journal
 bin/*.class
 
+*.blob
+
 # John's build scripts
 build
 run
