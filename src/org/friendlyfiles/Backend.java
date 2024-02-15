@@ -233,7 +233,7 @@ class BasicBackend implements Backend, Serializable, AutoCloseable {
         if(levels <= 0) return;
         
         Path top = top_.toRealPath(LinkOption.NOFOLLOW_LINKS);
-        FileBucket topBucket = addDirectory(top.toString());
+        FileBucket topBucket = addDir(top.toString());
         
         try(DirectoryStream<Path> paths = Files.newDirectoryStream(top)) {
             for(Path path : paths) {
@@ -298,7 +298,7 @@ class BasicBackend implements Backend, Serializable, AutoCloseable {
     @Override
     public void addFile(Path path) {
         Path fullPath = path.toAbsolutePath().normalize();
-        Bucket bucket = addDir(fullPath.getParent().toString());
+        FileBucket bucket = addDir(fullPath.getParent().toString());
         if(bucket.contains(fullPath)) {
             throw new Error("Tried to add a file that already exists.");
         }
