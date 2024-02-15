@@ -28,7 +28,7 @@ public interface Backend {
      * @param top the top-level directory to scan
      * @throws Error
      */
-    public void generateAtDir(Path top);
+    public void generateAtDirectory(Path top);
 
     /**
      * Changes the name of a directory.
@@ -37,7 +37,7 @@ public interface Backend {
      * @param newName the name to change the old name to
      * @throws Error if the directory is not registered or if the new path already exists
      */
-    public void renameDir(Path oldPath, String newName);
+    public void renameDirectory(Path oldPath, String newName);
 
     /**
      * Changes the name of a file.
@@ -74,7 +74,7 @@ public interface Backend {
      * @param path the path of the file to remove
      * @throws Error if the file does not exist or if it is a directory
      */
-    public void remove(Path path);
+    public void removeFile(Path path);
 
     /**
      * Removes the entire tree of the file system beneath the given path.
@@ -87,7 +87,7 @@ public interface Backend {
      * @param top the top of the tree to nuke
      * @throws Error if the file does not exist
      */
-    public void rmrf(Path top);
+    public void removeDirectory(Path top);
 
     /**
      * Retrieves the names of the files in a directory and orders them alphabetically.
@@ -218,18 +218,18 @@ class BasicBackend implements Backend, Serializable, AutoCloseable {
      * @param top the root node of the file tree from which to start indexing
      */
     @Override
-    public void generateAtDir(Path top) {
+    public void generateAtDirectory(Path top) {
         try {
-            generateAtDir(top, 3);
+            generateAtDirectory(top, 3);
         } catch (Exception e) {
             throw new Error(e);
         }
     }
 
     /**
-     * Recursive helper function overload for `generateAtDir(Path)`.
+     * Recursive helper function overload for `generateAtDirectory(Path)`.
      */
-    private void generateAtDir(Path top_, int levels) throws IOException {
+    private void generateAtDirectory(Path top_, int levels) throws IOException {
         if(levels <= 0) return;
         
         Path top = top_.toRealPath(LinkOption.NOFOLLOW_LINKS);
@@ -239,7 +239,7 @@ class BasicBackend implements Backend, Serializable, AutoCloseable {
             for(Path path : paths) {
                 if (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
                     addDir(path.toString());
-                    generateAtDir(path, levels - 1);
+                    generateAtDirectory(path, levels - 1);
                 } else {
                     topBucket.add(path);
                 }
@@ -313,7 +313,7 @@ class BasicBackend implements Backend, Serializable, AutoCloseable {
      * @param newName the name to change the old name to
      */
     @Override
-    public void renameDir(Path oldPath, String newName) {
+    public void renameDirectory(Path oldPath, String newName) {
         Path old = oldPath.toAbsolutePath().normalize();
         String oldStr = old.toString();
         Integer oldDir = directories.get(oldStr);
@@ -373,9 +373,9 @@ class BasicBackend implements Backend, Serializable, AutoCloseable {
      * @throws Error if the file does not exist or if it is a directory
      */
     @Override
-    public void remove(Path path) {
+    public void removeFile(Path path) {
         if(directories.containsKey(path.toAbsolutePath().normalize().toString())) {
-            throw new Error("Called `remove` on a directory.  Use `rmrf` instead.");
+            throw new Error("Called `removeFile` on a directory.  Use `removeDirectory` instead.");
         }
         
         Integer dir = directories.get(path.getParent().toString());
@@ -396,7 +396,7 @@ class BasicBackend implements Backend, Serializable, AutoCloseable {
      */
     // TODO: Try to make this more efficient (not a linear traversal to find subdirectories).
     @Override
-    public void rmrf(Path top) {
+    public void removeDirectory(Path top) {
         String prefix = top.toString();
         if(!directories.containsKey(prefix)) {
             throw new Error("Given directory doesn't exist.");

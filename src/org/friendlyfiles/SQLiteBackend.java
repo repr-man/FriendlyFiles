@@ -84,7 +84,7 @@ class SQLiteBackend implements Backend, AutoCloseable {
      * @param top the root node of the file tree from which to start indexing
      */
     @Override
-    public void generateAtDir(Path top) {
+    public void generateAtDirectory(Path top) {
         try {
             Path topPath = top.toRealPath(LinkOption.NOFOLLOW_LINKS);
             
@@ -142,7 +142,7 @@ class SQLiteBackend implements Backend, AutoCloseable {
      * @throws Error if the diectory is not registered or if the new path already exists
      */
     @Override
-    public void renameDir(Path oldPath, String newName) {
+    public void renameDirectory(Path oldPath, String newName) {
         throw new Error("Renaming not yet implemented.");
     }
 
@@ -174,13 +174,13 @@ class SQLiteBackend implements Backend, AutoCloseable {
     }
 
     @Override
-    public void remove(Path path) {
+    public void removeFile(Path path) {
         throw new Error("Removing files not yet implemented.");
     }
     
     @Override
-    public void rmrf(Path top) {
-        throw new Error("rmrf-ing not yet implemented.");
+    public void removeDirectory(Path top) {
+        throw new Error("Removing directories not yet implemented.");
     }
 
     @Override

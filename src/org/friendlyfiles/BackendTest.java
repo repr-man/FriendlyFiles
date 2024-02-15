@@ -15,8 +15,8 @@ class BackendTest {
         Files.deleteIfExists(dbpath);
         SQLiteBackend.createDatabase(dbpath);
         try(SQLiteBackend backend = new SQLiteBackend(dbpath)) {
-            backend.generateAtDir(Paths.get("/home/repr/Desktop").toRealPath());
-            boolean res = backend.addAtDir(Paths.get("/home/repr/Desktop/FriendlyFiles/src/org/friendlyfiles").toRealPath());
+            backend.generateAtDirectory(Paths.get("/home/repr/Desktop").toRealPath());
+            boolean res = backend.addDirectory(Paths.get("/home/repr/Desktop/FriendlyFiles/src/org/friendlyfiles").toRealPath());
             System.out.println(res);
         }
     }
@@ -26,11 +26,11 @@ class BackendTest {
         Files.deleteIfExists(backendPath);
         Files.createFile(backendPath);
         try (BasicBackend backend = BasicBackend.create(backendPath)) {
-            backend.generateAtDir(Paths.get("/home/repr/Desktop").toRealPath());
+            backend.generateAtDirectory(Paths.get("/home/repr/Desktop").toRealPath());
             //System.out.println(backend);
             backend.rmrf(Paths.get("/home/repr/Desktop/Rust").toRealPath());
             //System.out.println(backend);
-            backend.generateAtDir(Paths.get("/home/repr/Desktop/Ko").toRealPath());
+            backend.generateAtDirectory(Paths.get("/home/repr/Desktop/Ko").toRealPath());
             //System.out.println(backend);
             //backend.getFilesZtoA(Paths.get("/home/repr/Desktop/Ko/bootstrap")).forEach(item -> System.out.println(item));
             Path buf = Paths.get("/");
