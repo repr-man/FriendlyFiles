@@ -10,6 +10,10 @@ import java.util.*;
 
 /**
  * The functions we need to interact with one of our backends.
+ *
+ * Make sure that you call the corresponding `FileSource` method before you call the `Backend`
+ * method.  This ensures that the backend's state will still be correct if the file source's
+ * method throws an exception.
  */
 public interface Backend {
     
@@ -29,11 +33,36 @@ public interface Backend {
     /**
      * Changes the name of a directory.
      *
-     * @param oldPath the path to the file or directory to be renamed
+     * @param oldPath the path to the directory to be renamed
      * @param newName the name to change the old name to
-     * @throws Error if the diectory is not registered or if the new path already exists
+     * @throws Error if the directory is not registered or if the new path already exists
      */
     public void renameDir(Path oldPath, String newName);
+
+    /**
+     * Changes the name of a file.
+     *
+     * @param oldPath the path to the file to be renamed
+     * @param newName the name to change the old name to
+     * @throws Error if the directory is not registered or if the new path already exists
+     */
+    public void renameFile(Path oldPath, String newName);
+
+    /**
+     * Registers a new file at the given path.  It creates any directories
+     * in the path that don't exist in order to create the file.
+     *
+     * @param path the path at which to add the new file
+     */
+    public void addFile(Path path);
+
+    /**
+     * Registers a new directory at the given path.  It creates any directories
+     * in the path that don't exist in order to create the directory.
+     *
+     * @param path the path at which to add the new directory
+     */
+    public void addDirectory(Path path);
 
     /**
      * Deletes a file at the given path.
@@ -110,7 +139,7 @@ public interface Backend {
  */
 class BasicBackend implements Backend, Serializable, AutoCloseable {
     private transient String location;
-    private HashMap<String, Integer> directories = new HashMap<>();
+    private TreeMap<String, Integer> directories = new TreeMap<String, Integer>();
     private ArrayList<FileBucket> files = new ArrayList<>();
     private ArrayList<Integer> freeList = new ArrayList<>();
 
@@ -209,7 +238,7 @@ class BasicBackend implements Backend, Serializable, AutoCloseable {
         try(DirectoryStream<Path> paths = Files.newDirectoryStream(top)) {
             for(Path path : paths) {
                 if (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
-                    addDirectory(path.toString());
+                    addDir(path.toString());
                     generateAtDir(path, levels - 1);
                 } else {
                     topBucket.add(path);
@@ -225,7 +254,7 @@ class BasicBackend implements Backend, Serializable, AutoCloseable {
      *
      * @param path the path to add to the directory
      */
-    private FileBucket addDirectory(String path) {
+    private FileBucket addDir(String path) {
         Integer idx = directories.get(path);
         
         // We have the directory already:
@@ -247,11 +276,40 @@ class BasicBackend implements Backend, Serializable, AutoCloseable {
         }
     }
 
+    /**
+     * Registers a new directory at the given path.  It creates any directories
+     * in the path that don't exist in order to create the directory.
+     *
+     * @param path the path at which to add the new directory
+     */
+    @Override
+    public void addDirectory(Path path) {
+        Path dir = path.toAbsolutePath().normalize();
+        addDir(dir.getParent().toString());
+    }
+
+    /**
+     * Registers a new file at the given path.  It creates any directories
+     * in the path that don't exist in order to create the file.
+     *
+     * @param path the path at which to add the new file
+     * @throws Error if the path already exists
+     */
+    @Override
+    public void addFile(Path path) {
+        Path fullPath = path.toAbsolutePath().normalize();
+        Bucket bucket = addDir(fullPath.getParent().toString());
+        if(bucket.contains(fullPath)) {
+            throw new Error("Tried to add a file that already exists.");
+        }
+        bucket.add(fullPath);
+    }
+
 
     /**
      * Changes the name of a directory.
      *
-     * @param oldPath the path to the file or directory to be renamed
+     * @param oldPath the path to the directory to be renamed
      * @param newName the name to change the old name to
      */
     @Override
@@ -268,9 +326,40 @@ class BasicBackend implements Backend, Serializable, AutoCloseable {
         if(directories.containsKey(newStr)) {
             throw new Error("Tried to give a directory a name that another directory has.");
         }
+        if(files.get(oldDir).contains(newName)) {
+            throw new Error("Tried to give a directory a name that another file has.");
+        }
 
         directories.put(newStr, oldDir);
         directories.remove(oldStr);
+    }
+
+    /**
+     * Changes the name of a directory.
+     *
+     * @param oldPath the path to the file to be renamed
+     * @param newName the name to change the old name to
+     */
+    @Override
+    public void renameFile(Path oldPath, String newName) {
+        Path dir = oldPath.toAbsolutePath().normalize().getParent();
+        String dirStr = dir.toString();
+        Integer dirIdx = directories.get(dirStr);
+        if(dirIdx == null) {
+            throw new Error("Tried to rename a file in a directory that does not exist.");
+        }
+
+        Path newPath = Paths.get(dirStr, newName);
+        FileBucket bucket = files.get(dirIdx);
+        if(directories.containsKey(newPath.toString())) {
+            throw new Error("Tried to give a file a name that another directory has.");
+        }
+        if(bucket.contains(newName)) {
+            throw new Error("Tried to give a file a name that another file has.");
+        }
+
+        bucket.add(newName);
+        bucket.remove(dir.getFileName().toString());
     }
 
     /**
@@ -429,5 +518,22 @@ class BasicBackend implements Backend, Serializable, AutoCloseable {
             return this;
         }
 
+        /**
+         * Tests whether the bucket has a certain file name within.
+         * 
+         * @param name the name of the file to look for
+         */
+        boolean contains(String name) {
+            return items.contains(name);
+        }
+
+        /**
+         * Tests whether the bucket has a certain file name within.
+         * 
+         * @param path the path of the file to look for
+         */
+        boolean contains(Path path) {
+            return items.contains(path.getFileName().toString());
+        }
     }
 }

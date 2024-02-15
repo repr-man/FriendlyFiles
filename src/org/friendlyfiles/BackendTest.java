@@ -27,12 +27,17 @@ class BackendTest {
         Files.createFile(backendPath);
         try (BasicBackend backend = BasicBackend.create(backendPath)) {
             backend.generateAtDir(Paths.get("/home/repr/Desktop").toRealPath());
-            System.out.println(backend);
+            //System.out.println(backend);
             backend.rmrf(Paths.get("/home/repr/Desktop/Rust").toRealPath());
-            System.out.println(backend);
+            //System.out.println(backend);
             backend.generateAtDir(Paths.get("/home/repr/Desktop/Ko").toRealPath());
-            System.out.println(backend);
-            backend.getFilesZtoA(Paths.get("/home/repr/Desktop/Ko/bootstrap")).forEach(item -> System.out.println(item));
+            //System.out.println(backend);
+            //backend.getFilesZtoA(Paths.get("/home/repr/Desktop/Ko/bootstrap")).forEach(item -> System.out.println(item));
+            Path buf = Paths.get("/");
+            for(Path item : Paths.get("/home/repr/Desktop/Ko/bootstrap/src")) {
+                buf = buf.resolve(item);
+                System.out.println(buf);
+            }
         } catch (Exception e) {
             throw new Error(e);
         }

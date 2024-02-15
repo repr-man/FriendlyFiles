@@ -147,6 +147,33 @@ class SQLiteBackend implements Backend, AutoCloseable {
     }
 
     @Override
+    public void renameFile(Path oldPath, String newName) {
+        throw new Error("Renaming not yet implemented.");
+    }
+
+    /**
+     * Registers a new file at the given path.
+     *
+     * @param path the path at which to add the new file
+     * @throws Error if the path already exists
+     */
+    @Override
+    public void addFile(Path path) {
+        throw new Error("Adding files not yet implemented.");
+    }
+
+    /**
+     * Registers a new directory at the given path.
+     *
+     * @param path the path at which to add the new directory
+     * @throws Error if the path already exists
+     */
+    @Override
+    public void addDirectory(Path path) {
+        throw new Error("Adding directories not yet implemented.");
+    }
+
+    @Override
     public void remove(Path path) {
         throw new Error("Removing files not yet implemented.");
     }
