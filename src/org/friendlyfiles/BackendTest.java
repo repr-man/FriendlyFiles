@@ -10,16 +10,16 @@ class BackendTest {
         basicTest();
     }
 
-    public static void sqlTest() throws IOException, SQLException {
-        Path dbpath = Paths.get("./friendlyTest.db").toAbsolutePath();
-        Files.deleteIfExists(dbpath);
-        SQLiteBackend.createDatabase(dbpath);
-        try(SQLiteBackend backend = new SQLiteBackend(dbpath)) {
-            backend.generateAtDirectory(Paths.get("/home/repr/Desktop").toRealPath());
-            boolean res = backend.addDirectory(Paths.get("/home/repr/Desktop/FriendlyFiles/src/org/friendlyfiles").toRealPath());
-            System.out.println(res);
-        }
-    }
+//    public static void sqlTest() throws IOException, SQLException {
+//        Path dbpath = Paths.get("./friendlyTest.db").toAbsolutePath();
+//        Files.deleteIfExists(dbpath);
+//        SQLiteBackend.createDatabase(dbpath);
+//        try(SQLiteBackend backend = new SQLiteBackend(dbpath)) {
+//            backend.generateAtDirectory(Paths.get("/home/repr/Desktop").toRealPath());
+//            boolean res = backend.addDirectory(Paths.get("/home/repr/Desktop/FriendlyFiles/src/org/friendlyfiles").toRealPath());
+//            System.out.println(res);
+//        }
+//    }
 
     public static void basicTest() throws IOException, SQLException {
         Path backendPath = Paths.get("./friendlyTest.blob").toAbsolutePath();
@@ -28,7 +28,7 @@ class BackendTest {
         try (BasicBackend backend = BasicBackend.create(backendPath)) {
             backend.generateAtDirectory(Paths.get("/home/repr/Desktop").toRealPath());
             //System.out.println(backend);
-            backend.rmrf(Paths.get("/home/repr/Desktop/Rust").toRealPath());
+            backend.removeDirectory(Paths.get("/home/repr/Desktop/Rust").toRealPath());
             //System.out.println(backend);
             backend.generateAtDirectory(Paths.get("/home/repr/Desktop/Ko").toRealPath());
             //System.out.println(backend);
