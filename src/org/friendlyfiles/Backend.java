@@ -2,8 +2,12 @@ package org.friendlyfiles;
 
 import java.io.*;
 import java.nio.file.*;
+import java.nio.*;
 import java.sql.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 // TODO:
 // Figure out how we want to store metadata about the files.
@@ -15,7 +19,7 @@ import java.util.*;
  * method.  This ensures that the backend's state will still be correct if the file source's
  * method throws an exception.
  */
-public interface Backend {
+public interface Backend extends AutoCloseable {
     
     /**
      * Adds a large number of files and directories from the filesystem into the backend.
@@ -138,9 +142,11 @@ public interface Backend {
  * have to see if this continues as the application grows...
  */
 class BasicBackend implements Backend, Serializable, AutoCloseable {
+    private static final long serialVersionUID = 1;
     private transient String location;
-    private TreeMap<String, Integer> directories = new TreeMap<String, Integer>();
-    private ArrayList<FileBucket> files = new ArrayList<>();
+    private ConcurrentSkipListMap<String, Integer> directories = new ConcurrentSkipListMap<String, Integer>();
+    private ArrayList<FileBucket> files = new ArrayList<FileBucket>();
+
     private ArrayList<Integer> freeList = new ArrayList<>();
 
     public BasicBackend() {
@@ -195,17 +201,25 @@ class BasicBackend implements Backend, Serializable, AutoCloseable {
      */
     @Override
     public String toString() {
-        //// This is kind of broken...
-        //StringBuilder sb = new StringBuilder()
-        //    .append("BasicBackend[").append(location).append("]");
-        //for (Map.Entry<String, Integer> entry : directories.entrySet()) {
-        //    sb.append("\n    ").append(entry.getKey());
-        //    for(FileBucket b : files) {
-        //        sb.append(b);
-        //    }
-        //}
-        //return sb.toString();
-        return String.format("Number of buckets: %d\nSize of free list: %d", files.size(), freeList.size());
+        long size = 0;
+        for (FileBucket bucket : files) {
+           size += bucket.items.size();
+        }
+        
+        return String.format("Number of buckets: %d\nSize of free list: %d\nNumber of files: %d", files.size(), freeList.size(), size);
+    }
+
+    /**
+     * Returns the backing storage file as a `Path`.
+     * 
+     * @return the path to the backend storage file
+     */
+    public Path getLocation() {
+        try {
+            return Paths.get(location);
+        } catch (Exception e) {
+            throw new Error(e);
+        }
     }
 
     /**
@@ -467,6 +481,7 @@ class BasicBackend implements Backend, Serializable, AutoCloseable {
      * interface for the table.
      */
     static class FileBucket implements Serializable {
+        private static final long serialVersionUID = 2;
         HashSet<String> items = new HashSet<>();
 
         // Warning: can produce a LOT of output!
