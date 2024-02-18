@@ -10,28 +10,35 @@ import java.nio.file.attribute.BasicFileAttributes;
 
 class BackendTest {
     public static void main(String[] args) throws IOException, SQLException {
-        walkTest();
+        //walkTest();
+        
+        try (BasicBackend backend = BasicBackend.create("/home/repr/Desktop/FriendlyFiles/bin/stuff.blob")) {
+            
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
     }
 
     public static void walkTest() {
-        try(BasicBackend backend = BasicBackend.create(Paths.get("/home/repr/Desktop/FriendlyFiles/bin/stuff.blob"))) {
-            try (Stream<Path> dirs = Files.list(Paths.get("/home/repr/Desktop"))) {
-                dirs.forEach(path -> {
-                    try (Stream<Path> dirst = Files.walk(path)) {
-                        dirst
-                            .filter(item -> !Files.isDirectory(item))
-                            .forEach(item -> {
-                                    backend.addFile(item);
-                            });
-                    } catch (Exception e) {
-                        //throw new Error(e);
-                        // TODO: handle exception
-                    }
-                });
-            } catch (Exception e) {
-                //throw new Error(e);
-                // TODO: handle exception
-            }
+        try(BasicBackend backend = new BasicBackend(Paths.get("/home/repr/Desktop/FriendlyFiles/bin/stuff.blob"))) {
+            //try (Stream<Path> dirs = Files.list(Paths.get("/home/repr/Desktop"))) {
+            //    dirs.forEach(path -> {
+            //        try (Stream<Path> dirst = Files.walk(path, 3)) {
+            //            dirst
+            //                .filter(item -> !Files.isDirectory(item))
+            //                .forEach(item -> {
+            //                        backend.addFile(item);
+            //                });
+            //        } catch (Exception e) {
+            //            //throw new Error(e);
+            //            // TODO: handle exception
+            //        }
+            //    });
+            //} catch (Exception e) {
+            //    //throw new Error(e);
+            //    // TODO: handle exception
+            //}
+            System.out.println(backend);
         } catch (Exception e) {
             throw new Error(e);
         }

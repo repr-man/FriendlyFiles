@@ -226,7 +226,7 @@ class BasicBackend implements Backend, Serializable, AutoCloseable {
      * Adds a large number of files and directories from the filesystem into the backend.
      *
      * This only gets the contents from three layers of the file tree.  We will only index
-     * files that the user is most likely to look at.The backend data structures will grow
+     * files that the user is most likely to look at. The backend data structures will grow
      * over time as the user explores more of the filesystem.
      *
      * @param top the root node of the file tree from which to start indexing
@@ -241,23 +241,15 @@ class BasicBackend implements Backend, Serializable, AutoCloseable {
     }
 
     /**
-     * Recursive helper function overload for `generateAtDirectory(Path)`.
+     * Helper function overload for `generateAtDirectory(Path)`.
      */
-    private void generateAtDirectory(Path top_, int levels) throws IOException {
+    private void generateAtDirectory(Path top, int levels) throws IOException {
         if(levels <= 0) return;
-        
-        Path top = top_.toRealPath(LinkOption.NOFOLLOW_LINKS);
-        FileBucket topBucket = addDir(top.toString());
-        
-        try(DirectoryStream<Path> paths = Files.newDirectoryStream(top)) {
-            for(Path path : paths) {
-                if (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
-                    addDir(path.toString());
-                    generateAtDirectory(path, levels - 1);
-                } else {
-                    topBucket.add(path);
-                }
-            }
+
+        try (Stream<Path> paths = Files.walk(top.toRealPath(LinkOption.NOFOLLOW_LINKS), 3)) {
+            paths
+                .filter(item -> !Files.isDirectory(item))
+                .forEach(item -> backend.addFile(item));
         }
     }
 
