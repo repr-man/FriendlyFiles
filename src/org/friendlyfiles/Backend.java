@@ -8,6 +8,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.stream.Stream;
 
 // TODO:
 // Figure out how we want to store metadata about the files.
@@ -144,7 +145,7 @@ public interface Backend extends AutoCloseable {
 class BasicBackend implements Backend, Serializable, AutoCloseable {
     private static final long serialVersionUID = 1;
     private transient String location;
-    private ConcurrentSkipListMap<String, Integer> directories = new ConcurrentSkipListMap<String, Integer>();
+    private TreeMap<String, Integer> directories = new TreeMap<String, Integer>();
     private ArrayList<FileBucket> files = new ArrayList<FileBucket>();
 
     private ArrayList<Integer> freeList = new ArrayList<>();
@@ -249,7 +250,7 @@ class BasicBackend implements Backend, Serializable, AutoCloseable {
         try (Stream<Path> paths = Files.walk(top.toRealPath(LinkOption.NOFOLLOW_LINKS), 3)) {
             paths
                 .filter(item -> !Files.isDirectory(item))
-                .forEach(item -> backend.addFile(item));
+                .forEach(item -> addFile(item));
         }
     }
 

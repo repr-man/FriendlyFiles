@@ -12,8 +12,10 @@ class BackendTest {
     public static void main(String[] args) throws IOException, SQLException {
         //walkTest();
         
-        try (BasicBackend backend = BasicBackend.create("/home/repr/Desktop/FriendlyFiles/bin/stuff.blob")) {
-            
+        //try (BasicBackend backend = BasicBackend.create(Paths.get("/home/repr/Desktop/FriendlyFiles/bin/stuff.blob"))) {
+        //    backend.generateAtDirectory(Paths.get("/home/repr/Desktop"));
+        try (BasicBackend backend = new BasicBackend(Paths.get("/home/repr/Desktop/FriendlyFiles/bin/stuff.blob"))) {
+            System.out.println(backend);
         } catch (Exception e) {
             // TODO: handle exception
         }
