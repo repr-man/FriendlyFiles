@@ -29,6 +29,8 @@ bin/*.db-journal
 bin/*.class
 
 *.blob
+*.iml
+.idea/*
 
 # John's build scripts
 build
