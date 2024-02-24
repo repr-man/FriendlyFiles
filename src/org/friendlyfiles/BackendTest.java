@@ -10,15 +10,21 @@ import java.nio.file.attribute.BasicFileAttributes;
 
 class BackendTest {
     public static void main(String[] args) throws IOException, SQLException {
-        //walkTest();
-        
-        //try (BasicBackend backend = BasicBackend.create(Paths.get("/home/repr/Desktop/FriendlyFiles/bin/stuff.blob"))) {
-        //    backend.generateAtDirectory(Paths.get("/home/repr/Desktop"));
-        try (BasicBackend backend = new BasicBackend(Paths.get("/home/repr/Desktop/FriendlyFiles/bin/stuff.blob"))) {
-            System.out.println(backend);
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
+        FileTrie trie = new FileTrie();
+        RealPath.get("/home/repr/Desktop").list().forEach(path -> {
+            try {
+                trie.add(path);
+            } catch(Exception e) {
+                trie.log();
+                throw new Error(e);
+            }
+        });
+        RealPath.get("/home/repr/Desktop").list()
+            .filter(path -> path.isDirectory())
+            .forEach(path -> {
+                trie.remove(path);
+            });
+        trie.log();
     }
 
     public static void walkTest() {

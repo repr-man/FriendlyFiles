@@ -197,11 +197,30 @@ class FileTrie implements Serializable {
     }
 
     /**
+     * Moves a file or directory to another file or directory, 
+     */
+    public void move(RealPath oldPath, RealPath newPath) {
+        if(oldPath.isDirectory() && newPath.isDirectory()) {
+            Iterator<Path> oldIter = oldPath.iterator();
+            Iterator<Path> newIter = newPath.iterator();
+        } else if(!oldPath.isDirectory() && !newPath.isDirectory()) {
+            Iterator<Path> oldIter = oldPath.getParent().iterator();
+            Iterator<Path> newIter = newPath.getParent().iterator();
+            FileBucket oldBucket = add(oldIter);
+            FileBucket newBucket = add(newIter);
+            // TODO: Figure out how to retrieve the file metadata from the bucket.
+        } else {
+            throw new Error("Tried to move a directory to a file, or vice-versa.  Either way, this scenerio should have caused an error sooner.");
+        }
+    }
+
+    /**
      * Converts a string to a `RealPath` and adds it to the trie.
      *
      * @param str a string representation of the path to add
      * @throws IOException if `str` cannot be converted to a real path
      */
+    @Deprecated
     public void add(String str) throws IOException {
         add(RealPath.create(Paths.get(str)));
     }
