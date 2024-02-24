@@ -142,13 +142,14 @@ public interface Backend extends AutoCloseable {
  * Right now, this seems to be slightly faster than the SQLite backend.  We'll
  * have to see if this continues as the application grows...
  */
+@Deprecated
 class BasicBackend implements Backend, Serializable, AutoCloseable {
     private static final long serialVersionUID = 1;
     private transient String location;
     private TreeMap<String, Integer> directories = new TreeMap<String, Integer>();
     private ArrayList<FileBucket> files = new ArrayList<FileBucket>();
-
-    private ArrayList<Integer> freeList = new ArrayList<>();
+    private ArrayList<Integer> freeList = new ArrayList<Integer>();
+    private HashMap<String, ArrayList<Path>> tags = new HashMap<String, ArrayList<Path>>();
 
     public BasicBackend() {
     }
@@ -165,6 +166,7 @@ class BasicBackend implements Backend, Serializable, AutoCloseable {
             directories = tmp.directories;
             files = tmp.files;
             freeList = tmp.freeList;
+            tags = tmp.tags;
         } catch (ClassNotFoundException e) {
             throw new Error(e);
         }
@@ -469,6 +471,36 @@ class BasicBackend implements Backend, Serializable, AutoCloseable {
         return list;
     }
 
+    /**
+     * Creates a new tag if it does not yet exist.
+     *
+     * @param name the name of the new tag
+     * @return false if the tag already exists; true if the tag was successfully added
+     */
+    public boolean addTag(String name) {
+        if(tags.containsValue(name)) {
+            return false;
+        }
+        //tags.put(name, new ArrayList<String>());
+        return true;
+    }
+
+    /**
+     * Removes a tag if it exists.
+     *
+     * @param name the name of the tag to remove
+     */
+    public void removeTag(String name) {
+        tags.remove(name);
+    }
+    
+    public void tagFile(String tagName, Path fileName) {
+        if(!tags.containsKey(tagName)) {
+            throw new Error("Tried to add file '" + fileName.toString() + "' to tag '" + tagName + "', but the tag does not exist.");
+        }
+        // TODO
+    }
+    
     /**
      * A wrapper class for automating some common tasks and providing a fluent
      * interface for the table.
