@@ -2,6 +2,7 @@ package org.friendlyfiles.testing;
 
 import java.io.*;
 import java.sql.*;
+<<<<<<< HEAD:src/org/friendlyfiles/testing/BackendTest.java
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -9,8 +10,12 @@ import java.util.stream.Stream;
 import org.friendlyfiles.FileTrie;
 import org.friendlyfiles.utils.RealPath;
 
+=======
+import java.util.*;
+import java.util.stream.*;
+>>>>>>> f01777a (Simplified imports):src/org/friendlyfiles/BackendTest.java
 import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.*;
 
 class BackendTest {
     public static void main(String[] args) throws IOException, SQLException {

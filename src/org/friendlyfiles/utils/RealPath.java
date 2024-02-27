@@ -1,9 +1,7 @@
 package org.friendlyfiles.utils;
 
 import java.nio.file.*;
-import java.nio.file.FileSystem;
-import java.nio.file.WatchEvent.Kind;
-import java.nio.file.WatchEvent.Modifier;
+import java.nio.file.WatchEvent.*;
 import java.util.*;
 import java.util.stream.*;
 import java.io.*;
