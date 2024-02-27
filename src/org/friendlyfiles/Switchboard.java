@@ -54,3 +54,16 @@ class Switchboard extends Application {
 		primaryStage.show();
 	}
 }
+
+/**
+ * A model with all the information the UI needs to show a file item.
+ */
+public class FileModel {
+    public final String name;
+    public final long size;
+
+    public FileModel(String name, long size) {
+        this.name = name;
+        this.size = size;
+    }
+}
