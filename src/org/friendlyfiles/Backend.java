@@ -103,7 +103,7 @@ public interface Backend extends AutoCloseable {
 public class TrieBackend implements Backend, AutoCloseable, Serializable {
     private static final long serialVersionUID = 8;
     private transient String location;
-    private FileTrie directories = new FileTrie();
+    private final FileTrie directories = new FileTrie();
     
     public TrieBackend() {}
 
@@ -139,7 +139,7 @@ public class TrieBackend implements Backend, AutoCloseable, Serializable {
      * It serializes and writes the file to the location from which it was constructed.
      */
     @Override
-    public void close() throws FileNotFoundException, IOException {
+    public final void close() throws FileNotFoundException, IOException {
         try(ObjectOutputStream os = new ObjectOutputStream(new FileOutputStream(location))) {
             os.writeObject(this);
         }
@@ -150,7 +150,7 @@ public class TrieBackend implements Backend, AutoCloseable, Serializable {
      * 
      * @return the path to the backend storage file
      */
-    public Path getLocation() {
+    public final Path getLocation() {
         try {
             return Paths.get(location);
         } catch (Exception e) {
@@ -167,7 +167,7 @@ public class TrieBackend implements Backend, AutoCloseable, Serializable {
      * @param oldPath the path to be renamed
      * @param newPath the path to change the old path to
      */
-    public void rename(RealPath oldPath, RealPath newPath) {
+    public final void rename(RealPath oldPath, RealPath newPath) {
         directories.move(oldPath, newPath);
     }
 
@@ -177,7 +177,7 @@ public class TrieBackend implements Backend, AutoCloseable, Serializable {
      *
      * @param path the path at which to add the new item
      */
-    public void add(RealPath path) {
+    public final void add(RealPath path) {
         directories.add(path);
     }
 
@@ -189,7 +189,7 @@ public class TrieBackend implements Backend, AutoCloseable, Serializable {
      *
      * @param path the path of the file to remove
      */
-    public void remove(RealPath path) {
+    public final void remove(RealPath path) {
         directories.remove(path);
     }
 

@@ -22,12 +22,12 @@ class FileBucket implements Serializable {
     // When a file is removed, its information will be removed from all the arrays
     // below at the same index.  This means that we only need one free list for
     // all these arrays.  We use the `sizes` array because it contains integers.
-    private ArrayList<String> names = new ArrayList<>();
-    private ArrayList<Long> sizes = new ArrayList<>();
+    private final ArrayList<String> names = new ArrayList<>();
+    private final ArrayList<Long> sizes = new ArrayList<>();
     private int freeData = Integer.MIN_VALUE;
 
-    private ArrayList<Integer> namesIndex = new ArrayList<>();
-    private ArrayList<Integer> sizesIndex = new ArrayList<>();
+    private final ArrayList<Integer> namesIndex = new ArrayList<>();
+    private final ArrayList<Integer> sizesIndex = new ArrayList<>();
 
     /**
      * Logs debug info about the bucket.
@@ -35,7 +35,7 @@ class FileBucket implements Serializable {
      * @param prefix a string representation of the directory corresponding to the bucket
      * @return the string to log
      */
-    public String log(String prefix) {
+    public final String log(String prefix) {
         StringBuilder s = new StringBuilder();
         return log(s, prefix);
     }
@@ -47,7 +47,7 @@ class FileBucket implements Serializable {
      * @param prefix a string representation of the directory corresponding to the bucket
      * @return the string to log
      */
-    public String log(StringBuilder s, String prefix) {
+    public final String log(StringBuilder s, String prefix) {
         for(int i = 0; i < names.size(); ++i) {
             int idx = namesIndex.get(i);
 
@@ -68,7 +68,7 @@ class FileBucket implements Serializable {
      * @param s the builder into which the data is logged
      * @return the fully built string
      */
-    public String logIdxs(StringBuilder s) {
+    public final String logIdxs(StringBuilder s) {
         s.append('\n');
         for (int i : namesIndex) {
             s.append(String.format("%2d, ", i));
@@ -172,7 +172,7 @@ class FileBucket implements Serializable {
  */
 class FileTrie implements Serializable {
     private static final long serialVersionUID = 5;
-    public TreeMap<String, FileTrie> directories = new TreeMap<>();
+    public final TreeMap<String, FileTrie> directories = new TreeMap<>();
     FileBucket files = new FileBucket();
 
     FileTrie() {}
@@ -180,7 +180,7 @@ class FileTrie implements Serializable {
     /**
      * Logs debug info to stderr.
      */
-    public void log() {
+    public final void log() {
         StringBuilder s = new StringBuilder();
         log(s, "");
         System.err.println(s);
@@ -189,7 +189,7 @@ class FileTrie implements Serializable {
     /**
      * Helper for `log`.
      */
-    private void log(StringBuilder s, String prefix) {
+    private final void log(StringBuilder s, String prefix) {
         directories.forEach((name, trie) -> {
         	String fullName = prefix + '/' + name;
             s.append(fullName).append('\n');
@@ -202,7 +202,7 @@ class FileTrie implements Serializable {
     /**
      * Moves a file or directory to another file or directory, 
      */
-    public void move(RealPath oldPath, RealPath newPath) {
+    public final void move(RealPath oldPath, RealPath newPath) {
         if(oldPath.isDirectory() && newPath.isDirectory()) {
             Iterator<Path> oldIter = oldPath.iterator();
             Iterator<Path> newIter = newPath.iterator();
@@ -224,7 +224,7 @@ class FileTrie implements Serializable {
      * @throws IOException if `str` cannot be converted to a real path
      */
     @Deprecated
-    public void add(String str) throws IOException {
+    public final void add(String str) throws IOException {
         add(RealPath.create(Paths.get(str)));
     }
 
@@ -233,7 +233,7 @@ class FileTrie implements Serializable {
      *
      * @param path the path to add
      */
-    public void add(RealPath path) {
+    public final void add(RealPath path) {
         if(path.isDirectory()) {
             Iterator<Path> iter = path.iterator();
             add(iter);
@@ -249,7 +249,7 @@ class FileTrie implements Serializable {
      *
      * @param iter an iterator over the path segments to add
      */
-    private FileBucket add(Iterator<Path> iter) {
+    private final FileBucket add(Iterator<Path> iter) {
         if(!iter.hasNext())
             return files;
 
@@ -267,7 +267,7 @@ class FileTrie implements Serializable {
      *
      * @param path the path to remove
      */
-    public void remove(RealPath path) {
+    public final void remove(RealPath path) {
         if(path.isDirectory()) {
             Iterator<Path> iter = path.getParent().iterator();
             TreeMap<String, FileTrie> trie = directories;
