@@ -22,6 +22,10 @@
 hs_err_pid*
 replay_pid*
 
+# Phill's metadata
+.metadata
+.metadata/*
+
 # Junk in the "bin" directory
 bin/*.blob
 bin/*.db
