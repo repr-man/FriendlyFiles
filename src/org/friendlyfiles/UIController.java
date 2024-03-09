@@ -1,21 +1,25 @@
 package org.friendlyfiles;
 
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.security.cert.LDAPCertStoreParameters;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.PrimitiveIterator.OfDouble;
-import java.util.stream.Collectors;
+
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableSet;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.CheckBoxTreeCell;
 import javafx.scene.layout.*;
+import javafx.util.Callback;
 
 public class UIController {
-
+	
     @FXML
     private Accordion acc_leftPane;
 
@@ -80,7 +84,7 @@ public class UIController {
     private TitledPane tpn_filterStack;
 
     @FXML
-    private TreeView<Path> tvw_dirTree;
+    private TreeView<RealPath> tvw_dirTree;
 
     @FXML
     private VBox vbox_header;
@@ -99,90 +103,179 @@ public class UIController {
 
     @FXML
     public void btn_search_click(ActionEvent event) {
-
+    	
+    	// TODO: Make something happen here
     }
     
-    public void updateDirTree(/* collection of root directory paths */) {
+    // (Probably) temporary variable holding the paths of the root directories, for use in the updateTreeDirs() method
+    ArrayList<RealPath> paths;
+    
+    public void initialize() {
     	
+    	paths = new ArrayList<RealPath>();
     	
-    	// Create root node to hold one or many directory roots
-    	TreeItem<Path> base = new TreeItem<Path>(null);
-    	tvw_dirTree.setRoot(base);
-    	
-    	// TODO: For each root, walk through logical directory tree, add items to visual directory tree as logical directories are visited
-    	
-    	// Add all the children of the roots to the tree view
-//	 	for (Path root : /* collection of root directory paths */) {
-//	 		
-//	 		// Add the current root to the base of the treeview
-//	 		DirectoryTreeItem rootItem = new DirectoryTreeItem(root);
-//	 		base.getChildren().add(rootItem);
-//	 		
-//	 		// Walk through subdirectories and add them as children
-//	 		try {
-//				Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
-// 
-//					@Override
-//					public FileVisitResult preVisitDirectory(Path file, BasicFileAttributes attrs) throws IOException {
-//						
-//						// Create a new directory item within the visual tree according to its path relative to the root
-//						createDirItemFromPath(file, rootItem);
-//						
-//						return FileVisitResult.CONTINUE;
-//					}
-//				});
-//			} catch (IOException e) {
-//				
-//				e.printStackTrace();
-//			}
-//	 	}
-		 
+		// For future reference, much of the following cellfactory instantiation code was based off of the following resource:
+		// https://stackoverflow.com/a/39466520
+		
+		//Set the cell factory for the tree view in order to add checkbox functionality and allow for more control over the naming of the individual cells
+		tvw_dirTree.setCellFactory(new Callback<TreeView<RealPath>, TreeCell<RealPath>>() {
+            @Override
+            public CheckBoxTreeCell<RealPath> call(TreeView<RealPath> p) {
+                return new DirectoryTreeCell();
+            }
+        });
+		
+		updateDirTree(paths);
     }
     
     /**
-     * Loop through from the root to the target, allowing a new tree item to be created in the correct location within the treeview
+     * A private class defining how the checkbox tree cells should be named.<br>
+     * In this case we specify that it should using the lowermost directory name rather than the entire path to the file<br>
+     * Cell Factory implementation is further detailed on Oracle's tree view documentation:<br>
+     * <a>https://docs.oracle.com/javafx/2/ui_controls/tree-view.htm</a>
+     */
+    private final class DirectoryTreeCell extends CheckBoxTreeCell<RealPath> {
+    	
+    	// Do not edit this method to change cell naming, the majority of the code here is recommended by the JavaFX developers
+        @Override
+        public void updateItem(RealPath item, boolean empty) {
+            super.updateItem(item, empty);
+            
+            if (empty || item == null) {
+                setText(null);
+                setGraphic(null);
+            }
+            else {
+            	setText(getString());
+            }
+        }
+        
+        // Update this method to change how the tree cells are named
+        private String getString() {
+            return getItem() == null ? "" : "/" + getItem().getFileName().toString();
+        }
+    }
+    
+    // Set of all the selected directory items (TODO: Add checkbox listener to the view cells)
+    // Since each item stores the full path of the directory it refers to, implementing a directory inclusion/exclusion toggle shouldn't be the most difficult thing in the world
+    private ObservableSet<DirectoryTreeItem> checkedDirItems = FXCollections.observableSet();
+    
+    /**
+     * Updates the Directory treeview using the provided list of top-level directories.<br>
+     * Note: This method can cause issues if called while the UI is still setting up; at the earliest it should be called towards the end of the initialize() method.
+     * @param rootDirs the list of directories to treat as the "root" or top-level directories. These directories and their subdirectories will be loaded into the treeview.
+     */
+    public void updateDirTree(List<RealPath> rootDirs) {
+    	
+    	// Set the treeview's root directory to a new Directory item with no path
+    	DirectoryTreeItem treeRoot = new DirectoryTreeItem(null);
+    	treeRoot.setIndependent(true);
+    	tvw_dirTree.setRoot(treeRoot);
+    	
+    	// For each relative directory root, walk through its entire logical directory tree, and add items to the visual tree view as those logical directories are visited
+	 	for (RealPath dirRoot : rootDirs) {
+	 		
+	 		// Add the current root to the base of the treeview
+	 		DirectoryTreeItem dirRootItem = new DirectoryTreeItem(RealPath.create(dirRoot));
+	 		dirRootItem.setIndependent(true);
+	 		treeRoot.getChildren().add((TreeItem<RealPath>) dirRootItem);
+	 		
+	 		// Walk through subdirectories and add them as children
+	 		try {
+				Files.walkFileTree(dirRoot.toAbsolutePath(), new SimpleFileVisitor<Path>() {
+ 
+					@Override
+					public FileVisitResult preVisitDirectory(Path file, BasicFileAttributes attrs) throws IOException {
+						
+						RealPath realFile = RealPath.create(file);
+						
+						if (!realFile.toString().equals(dirRoot.toString())) {
+							
+							// Create a new directory item within the visual tree according to its path relative to the root
+							createDirItemFromPath(realFile, dirRootItem);
+						}
+						
+						
+						return FileVisitResult.CONTINUE;
+					}
+				});
+			} catch (IOException e) {
+				
+				e.printStackTrace();
+			}
+	 	}
+    }
+    
+    /**
+     * Method used by updateRootDirectories to attach subdirectories to the roots, no use for this to be called elsewhere.<br>
+     * Loops through from the "root"/top-level directory down to the target path, allowing a new tree item(s) to be created in the correct location within the treeview.
      * 
      * @param path the path of the target directory
-     * @param root the TreeItem holding the root folder of the target directory
+     * @param root the tree item holding the target directory's relative root directory
      */
-    private void createDirItemFromPath(Path path, DirectoryTreeItem root) {
+    private void createDirItemFromPath(RealPath path, DirectoryTreeItem root) {
     	
-    	// Create a relative path with its root directory set to the directory root, and extending down to the target directory
-    	Path relativePath = path.relativize(root.getValue());
+    	// Get offset/distance of the root directory (for this specific tree of directories) from the filesystem root
+    	int rootOffset = root.getValue().getNameCount();
     	
-    	// Get number of directories between the root and target, not including the root or target directory
-    	int depth = relativePath.getNameCount() - 1;
+    	// Get number of directories between this file tree's relative root and the inner target directory
+    	int targetDepth = path.getNameCount() - rootOffset;
     	
     	// Prime the "current item" to be the root of the TreeList
     	DirectoryTreeItem currItem = root;
     	
-    	// The path will have to be rebuilt as the [path].getName method returns a singular directory name, but we need an entire path for each loop
-    	StringBuilder pathBuilder = new StringBuilder("");
-    	
     	/*
-    	 * Loop/"Walk" down the relative path (from root towards target) in order to find the target's parent directory
-    	 * While this loop is running, it is also using the path names to walk down the existing tree items, eventually finding which tree item to append the target directory
     	 * 
 		 * Note: [path].getName(int index) returns the path name with i as the distance from the root
 		 * The root element can be thought to have index -1, the root's child is 0, and so on
 		 */
-    	for (int i = -1; i < depth; i++) {
-    		
-    		// Add the next portion of the path
-    		pathBuilder.append(relativePath.getName(i));
-    		
-    		// Create a stream to process the children of the current tree item, and filter to find the child whose pathname matches the pathBuilder's current path 
-    		currItem = (DirectoryTreeItem) currItem.getChildren().stream().filter(child -> 
-    			
-    			// For each child, apply the filter to see if the child's path value equals the pathBuilder's path value
-    			child.getValue().equals(Paths.get(pathBuilder.toString()))
-    			
-			// Get the first child matching the filter and return it to currItem
-    		).findFirst().get();
-    		
-    	}
-    	// At the end of this loop, currItem should be the lowermost tree item to which we can add the target item
     	
-    	currItem.getChildren().add(new DirectoryTreeItem(path));
+    	for (int i = 0; i < targetDepth; i++) {
+    		
+    		try {
+    			
+    			// Drill down into the file path, starting from the child of the relative root directory, down to the target
+    			// The loop will only happen once if the target is the child of the relative root directory
+    			RealPath subPath = RealPath.get(
+    					String.format("%s%s", path.getRoot(), path.subpath(0, rootOffset + i + 1)));
+    			
+        		// Use the subpath information to navigate through and create new children within the existing tree view items
+    			
+    			// Boolean to determine if the current item contains the requested child directory
+    			boolean containsChild = false;
+    			
+    			// Loop over the children of the current item
+    			for (TreeItem<RealPath> child : currItem.getChildren()) {
+    				
+    				// Grab a reference to the current child as a DirectoryTreeItem
+    				DirectoryTreeItem childDir = (DirectoryTreeItem) child;
+    				
+    				// If the child's path is equal to the path of the directory item we are requesting,
+    				// make that child the new current item
+    				if (Files.isSameFile(childDir.getValue().toAbsolutePath(), subPath.toAbsolutePath())) {
+    					
+    					containsChild = true;
+    					currItem = childDir;
+    					break;
+    				}
+    			}
+    			
+    			// If the child was not found in the current item, create/add it and make it the new current item
+    			if (!containsChild) {
+    				
+    				DirectoryTreeItem newChild = new DirectoryTreeItem(subPath);
+    				currItem.getChildren().add(newChild);
+    				currItem = newChild;
+    			}
+    			
+    			// Before moving to the next part of the tree, set the current item to be independent
+    			// Therefore, checking/unchecking the item will not cause other items in the treeview to become selected/unselected
+    			currItem.setIndependent(true);
+    		}
+    		catch (Exception e) {
+				
+    			System.out.printf("\nPath: %s\nroot offset: %d\nTarget Depth: %d\n", path, rootOffset, targetDepth);
+			}
+    	}
     }
 }

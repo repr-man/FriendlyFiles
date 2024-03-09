@@ -78,7 +78,7 @@
                           <panes>
                             <TitledPane fx:id="tpn_dirTree" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="200.0" text="Directory Tree">
                                  <content>
-                                    <TreeView fx:id="tvw_dirTree" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="200.0" />
+                                    <TreeView fx:id="tvw_dirTree" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="200.0" showRoot="false" />
                                  </content>
                             </TitledPane>
                               <TitledPane expanded="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="200.0" text="untitled 1" />
