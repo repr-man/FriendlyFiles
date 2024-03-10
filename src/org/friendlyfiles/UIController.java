@@ -9,6 +9,8 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
 import javafx.event.ActionEvent;
@@ -178,6 +180,7 @@ public class UIController {
 	 		// Add the current root to the base of the treeview
 	 		DirectoryTreeItem dirRootItem = new DirectoryTreeItem(RealPath.create(dirRoot));
 	 		dirRootItem.setIndependent(true);
+	 		addCheckListenerToItem(dirRootItem);
 	 		treeRoot.getChildren().add((TreeItem<RealPath>) dirRootItem);
 	 		
 	 		// Walk through subdirectories and add them as children
@@ -266,6 +269,9 @@ public class UIController {
     				DirectoryTreeItem newChild = new DirectoryTreeItem(subPath);
     				currItem.getChildren().add(newChild);
     				currItem = newChild;
+    				
+    				// Add check listener to the item
+        			addCheckListenerToItem(currItem);
     			}
     			
     			// Before moving to the next part of the tree, set the current item to be independent
@@ -277,5 +283,34 @@ public class UIController {
     			System.out.printf("\nPath: %s\nroot offset: %d\nTarget Depth: %d\n", path, rootOffset, targetDepth);
 			}
     	}
+    }
+    
+    /**
+     * Adds a listener to the given item which will fire whenever the item is checked/unchecked.
+     * @param i the tree item to add the listener to
+     */
+    private void addCheckListenerToItem(DirectoryTreeItem i) {
+    	
+    	i.selectedProperty().addListener(new ChangeListener<Boolean>() {
+    		
+			@Override
+			public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+				
+				// Prevents any issues with the listener being triggered without any change occuring (should never happen)
+				if (newValue != oldValue) {
+					
+					if (newValue) {
+						
+						// Add the directory item to the selected set
+						checkedDirItems.add(i);
+					}
+					else {
+						
+						// Remove the directory item from the selected set
+						checkedDirItems.remove(i);
+					}
+				}
+			}
+		});
     }
 }
