@@ -1,4 +1,4 @@
-package org.friendlyfiles;
+package org.friendlyfiles.ui;
 
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -9,14 +9,22 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.friendlyfiles.models.*;
+import org.friendlyfiles.testing.BackendDemo;
+import org.friendlyfiles.utils.*;
+
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.scene.CacheHint;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxTreeCell;
+import javafx.scene.image.Image;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.util.Callback;
 
@@ -106,15 +114,24 @@ public class UIController {
     @FXML
     public void btn_search_click(ActionEvent event) {
     	
-    	// TODO: Make something happen here
+    	FileSearchModel model = new FileSearchModel(tbx_search.getText(), cbx_searchExtension.isSelected());
+    	fileKeys = backend.searchFiles(model);
+    	updateFiles(fileKeys);
     }
     
+    private BackendDemo backend;
+    
     // (Probably) temporary variable holding the paths of the root directories, for use in the updateTreeDirs() method
-    ArrayList<RealPath> paths;
+    private ArrayList<RealPath> rootDirPaths;
+    
+    // Current ordered list of files
+    private ArrayList<RealPath> fileKeys;
     
     public void initialize() {
     	
-    	paths = new ArrayList<RealPath>();
+    	// Enable caching of the file display panel
+    	tpn_fileDisplay.setCache(true);
+    	tpn_fileDisplay.setCacheHint(CacheHint.SPEED);
     	
 		// For future reference, much of the following cellfactory instantiation code was based off of the following resource:
 		// https://stackoverflow.com/a/39466520
@@ -126,39 +143,58 @@ public class UIController {
                 return new DirectoryTreeCell();
             }
         });
-		
-		updateDirTree(paths);
+    }
+    
+    public void setBackend(BackendDemo backend) {
+    	
+    	this.backend = backend;
     }
     
     /**
-     * A private class defining how the checkbox tree cells should be named.<br>
-     * In this case we specify that it should using the lowermost directory name rather than the entire path to the file<br>
-     * Cell Factory implementation is further detailed on Oracle's tree view documentation:<br>
-     * <a>https://docs.oracle.com/javafx/2/ui_controls/tree-view.htm</a>
+     * Update the list of file keys stored by the UI. The order of the keys in this list corresponds to the order in which they will display to the user.<br>
+     * Additionally, this method will immediately display these files to the user.
+     * @param fileKeys the file keys to be stored by the UI
      */
-    private final class DirectoryTreeCell extends CheckBoxTreeCell<RealPath> {
+    public void updateFiles(ArrayList<RealPath> fileKeys) {
     	
-    	// Do not edit this method to change cell naming, the majority of the code here is recommended by the JavaFX developers
-        @Override
-        public void updateItem(RealPath item, boolean empty) {
-            super.updateItem(item, empty);
-            
-            if (empty || item == null) {
-                setText(null);
-                setGraphic(null);
-            }
-            else {
-            	setText(getString());
-            }
-        }
-        
-        // Update this method to change how the tree cells are named
-        private String getString() {
-            return getItem() == null ? "" : "/" + getItem().getFileName().toString();
-        }
+    	this.fileKeys = fileKeys;
+    	displayFiles(fileKeys);
     }
     
-    // Set of all the selected directory items (TODO: Add checkbox listener to the view cells)
+    /**
+     * Adds a listener to the given item which will fire whenever the item is checked/unchecked.
+     * @param i the tree item to add the listener to
+     */
+    private void addCheckListenerToItem(DirectoryTreeItem i) {
+    	
+    	// Check all boxes and add them to the set initially
+    	i.selectedProperty().set(true);
+    	checkedDirItems.add(i);
+    	
+    	i.selectedProperty().addListener(new ChangeListener<Boolean>() {
+    		
+			@Override
+			public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+				
+				// Prevents any issues with the listener being triggered without any change occuring (should never happen)
+				if (newValue != oldValue) {
+					
+					if (newValue) {
+						
+						// Add the directory item to the selected set
+						checkedDirItems.add(i);
+					}
+					else {
+						
+						// Remove the directory item from the selected set
+						checkedDirItems.remove(i);
+					}
+				}
+			}
+		});
+    }
+    
+    // Set of all the selected directory items
     // Since each item stores the full path of the directory it refers to, implementing a directory inclusion/exclusion toggle shouldn't be the most difficult thing in the world
     private ObservableSet<DirectoryTreeItem> checkedDirItems = FXCollections.observableSet();
     
@@ -286,31 +322,81 @@ public class UIController {
     }
     
     /**
-     * Adds a listener to the given item which will fire whenever the item is checked/unchecked.
-     * @param i the tree item to add the listener to
+     * Display the given list of files to the user, presented in the order they are stored within the list
+     * @param ArrayList<RealPath> fileKeys the files to display to the user
      */
-    private void addCheckListenerToItem(DirectoryTreeItem i) {
+    private void displayFiles(ArrayList<RealPath> fileKeys) {
     	
-    	i.selectedProperty().addListener(new ChangeListener<Boolean>() {
+    	// Clear previous file panes before filling in with new data
+    	tpn_fileDisplay.getChildren().clear();
+    	
+    	// Get possible file icon images
+    	Image otherIcon = new Image("/org/friendlyfiles/img/ico_other.png");
+    	//Image txtIcon = new Image("/img/ico_txt");
+    	//Image imgIcon = new Image("/img/ico_img");
+    	
+    	// Component size properties
+    	int height = 112;
+		int width = 80;
+		int border = 12;
+		
+		// Declare final array of all file pane objects
+		final FilePane filePanes[] = new FilePane[fileKeys.size()];
+		
+		// Fill the array with the given file data
+    	for (int i = 0; i < fileKeys.size(); i++) {
     		
-			@Override
-			public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
-				
-				// Prevents any issues with the listener being triggered without any change occuring (should never happen)
-				if (newValue != oldValue) {
+    		// Create the next FilePane to be added
+    		FilePane filePane = new FilePane(backend.getMasterFiles().get(fileKeys.get(i)), height, width, border, otherIcon);
+    		
+    		// Add a mouse click event to the file pane's visible area
+    		filePane.getSelectionArea().addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
+
+				@Override
+				public void handle(MouseEvent event) {
 					
-					if (newValue) {
-						
-						// Add the directory item to the selected set
-						checkedDirItems.add(i);
-					}
-					else {
-						
-						// Remove the directory item from the selected set
-						checkedDirItems.remove(i);
-					}
+					System.out.println(filePane.getFile().getName());
 				}
-			}
-		});
+    		});
+    		
+    		// Add the file pane to the array of all panes
+    		filePanes[i] = filePane;
+    	}
+    	
+    	// Add the file pane view objects from the array to the view
+    	for (FilePane pane : filePanes) {
+    		
+    		// Add the new file display object to the filePane
+    		tpn_fileDisplay.getChildren().add(pane);
+    	}
+    }
+    
+    
+    /**
+     * A private class defining how the checkbox tree cells should be named.<br>
+     * In this case we specify that it should using the lowermost directory name rather than the entire path to the file<br>
+     * Cell Factory implementation is further detailed on Oracle's tree view documentation:<br>
+     * <a>https://docs.oracle.com/javafx/2/ui_controls/tree-view.htm</a>
+     */
+    final class DirectoryTreeCell extends CheckBoxTreeCell<RealPath> {
+    	
+    	// Do not edit this method to change cell naming, the majority of the code here is recommended by the JavaFX developers
+        @Override
+        public void updateItem(RealPath item, boolean empty) {
+            super.updateItem(item, empty);
+            
+            if (empty || item == null) {
+                setText(null);
+                setGraphic(null);
+            }
+            else {
+            	setText(getString());
+            }
+        }
+        
+        // Update this method to change how the tree cells are named
+        private String getString() {
+            return getItem() == null ? "" : "/" + getItem().getFileName().toString();
+        }
     }
 }

@@ -1,10 +1,14 @@
-package org.friendlyfiles;
+package org.friendlyfiles.testing;
 
 import java.io.*;
 import java.sql.*;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.friendlyfiles.FileTrie;
+import org.friendlyfiles.utils.RealPath;
+
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 

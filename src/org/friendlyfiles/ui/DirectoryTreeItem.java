@@ -1,4 +1,6 @@
-package org.friendlyfiles;
+package org.friendlyfiles.ui;
+
+import org.friendlyfiles.utils.RealPath;
 
 import javafx.scene.control.CheckBoxTreeItem;
 

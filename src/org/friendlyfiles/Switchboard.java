@@ -1,5 +1,7 @@
 package org.friendlyfiles;
 
+import org.friendlyfiles.ui.UIController;
+
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;

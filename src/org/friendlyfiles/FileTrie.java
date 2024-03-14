@@ -3,6 +3,9 @@ package org.friendlyfiles;
 import java.nio.file.*;
 import java.util.*;
 import java.util.stream.*;
+
+import org.friendlyfiles.utils.RealPath;
+
 import java.io.*;
 import java.nio.*;
 import java.lang.*;

@@ -1,4 +1,4 @@
-package org.friendlyfiles;
+package org.friendlyfiles.utils;
 
 import java.nio.file.*;
 import java.nio.file.FileSystem;
@@ -26,7 +26,7 @@ import java.text.*;
  * However, since the generics get erased, `RealPath` would be extending nothing.
  * Hence, we must manually forward the methods.
  */
-final class RealPath implements Path {
+public final class RealPath implements Path {
     private final Path path;
 
     private RealPath(Path path) {

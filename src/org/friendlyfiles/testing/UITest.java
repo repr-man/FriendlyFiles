@@ -1,8 +1,6 @@
-package org.friendlyfiles;
+package org.friendlyfiles.testing;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
+import org.friendlyfiles.ui.UIController;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -27,7 +25,7 @@ public class UITest extends Application {
 		 * the .load([fxml file here]) method is static, so...
 		 * We can pass the fxml file into the object's constructor to "prime" it, and call the object's .load() method instead (not static) 
 		 */
-		FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("friendlyfilesui.fxml"));
+		FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/org/friendlyfiles/ui/friendlyfilesui.fxml"));
 		Parent root = fxmlLoader.load();
 		
 		// Get the UI controller from the fxmloader object
@@ -35,8 +33,20 @@ public class UITest extends Application {
 		
 		// Continue with the standard UI setup, primarily initializing/presenting the stage
 		primaryStage.setTitle("FriendlyFiles File Utility");
-		primaryStage.setScene(new Scene(root));
+		
+		// Store a reference to the scene for further customization
+		Scene scene = new Scene(root);
+		
+		// Add the "style.css" css stylesheet to the scene
+		scene.getStylesheets().add(this.getClass().getResource("/org/friendlyfiles/ui/style.css").toExternalForm());
+		
+		primaryStage.setScene(scene);
 		primaryStage.show();
+		
+		BackendDemo demo = new BackendDemo();
+		
+		controller.setBackend(demo);
+		demo.setController(controller);
 	}
 
 }
