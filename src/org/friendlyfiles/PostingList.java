@@ -1,12 +1,13 @@
-package org.friendlyfiles;
-
 import org.roaringbitmap.RoaringBitmap;
 
 import java.io.*;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * A posting list is a data structure that is the inverse of an array.
@@ -130,11 +131,12 @@ import java.util.stream.Stream;
  */
 public final class PostingList {
     private final List<RoaringBitmap> lists;
-    private final ArrayList<String> strings;
-    public long totalStringsSize = 0;
+    private ArrayList<String> strings;
+    private long totalStringsSize = 0;
+    private byte numHoles = 0;
 
     public PostingList() {
-        ArrayList<RoaringBitmap> tmpLists = new ArrayList<RoaringBitmap>(45760);
+        ArrayList<RoaringBitmap> tmpLists = new ArrayList<>(45760);
         for (int i = 0; i < 45760; i++) {
             tmpLists.add(new RoaringBitmap());
         }
@@ -160,6 +162,7 @@ public final class PostingList {
                     // totalStringsSize: Number of bytes needed to represent all the strings
                     // strings.size() * 4: Integers representing the size of the strings
                     // 4: Integer representing the number of strings
+                    // 1: Byte representing the number of holes
                     //
                     // 16: There is no good reason for this number to be here.
                     //     Due to the way memory mapping works, the OS doesn't always give us a file of the exact size
@@ -167,12 +170,13 @@ public final class PostingList {
                     //     slightly different size.  To prevent buffer overflows, we need to ask for a little more
                     //     memory than we actually need.  16 seems to be a good size that makes the function work
                     //     consistently.
-                    listsSerializedSize + (totalStringsSize + strings.size() * 4L) + 4 + 16
+                    listsSerializedSize + (totalStringsSize + strings.size() * 4L) + 4 + 1 + 16
             );
             lists.forEach(item -> {
                 item.serialize(mbb);
             });
             mbb.putInt(strings.size());
+            mbb.put(numHoles);
             strings.forEach(item -> {
                 mbb.putInt(item.getBytes().length);
                 mbb.put(item.getBytes());
@@ -201,12 +205,17 @@ public final class PostingList {
             }
             int numStrings = mbb.getInt();
             pl.strings.ensureCapacity(numStrings);
+            pl.numHoles = mbb.get();
             for (int i = 0; i < numStrings; ++i) {
                 int strSize = mbb.getInt();
-                pl.totalStringsSize += strSize;
-                byte[] bytes = new byte[strSize];
-                mbb.get(bytes, 0, strSize);
-                pl.strings.add(new String(bytes));
+                if (strSize > 0) {
+                    pl.totalStringsSize += strSize;
+                    byte[] bytes = new byte[strSize];
+                    mbb.get(bytes, 0, strSize);
+                    pl.strings.add(new String(bytes));
+                } else  {
+                    pl.strings.add("");
+                }
             }
         }
         return pl;
@@ -236,6 +245,55 @@ public final class PostingList {
             }
             //lists.get(mapTrigramToIndex(b, c, 60)).add(index);
         }
+    }
+
+    /**
+     * Removes a string from the posting list and haystack if they contain the string.
+     * @param str the string to remove
+     * @return true if str is not in the list; false if str was in the list and was removed
+     */
+    public boolean removeString(String str) {
+        if (str.isEmpty()) return true;
+
+        int index = strings.indexOf(str);
+        if (index == -1) return true;
+        strings.set(index, "");
+        totalStringsSize -= str.getBytes().length;
+        ++numHoles;
+
+        // If str.length() < 3, it is not in the posting list.
+        if (str.length() >= 3) {
+            int a, b = mapChar(str.charAt(0)), c = mapChar(str.charAt(1));
+            for (int i = 2; i < str.length(); ++i) {
+                a = b;
+                b = c;
+                c = mapChar(str.charAt(i));
+                lists.get(mapTrigramToIndex(a, b, c)).remove(index);
+            }
+        }
+
+        // Compact the haystack.
+        if (numHoles > 127) {
+            strings = (ArrayList<String>) strings.parallelStream()
+                    .filter(String::isEmpty)
+                    .collect(Collectors.toList());
+            lists.parallelStream().forEach(RoaringBitmap::clear);
+            IntStream.range(0, strings.size()).parallel().forEach(i -> {
+                if (strings.get(i).length() >= 3) {
+                    int a, b = mapChar(strings.get(i).charAt(0)), c = mapChar(strings.get(i).charAt(1));
+                    for (int j = 2; j < strings.get(i).length(); ++j) {
+                        a = b;
+                        b = c;
+                        c = mapChar(strings.get(i).charAt(i));
+                        lists.get(mapTrigramToIndex(a, b, c)).add(i);
+                    }
+                    //lists.get(mapTrigramToIndex(b, c, 60)).add(i);
+                }
+            });
+            numHoles = 0;
+        }
+
+        return false;
     }
 
     /**
