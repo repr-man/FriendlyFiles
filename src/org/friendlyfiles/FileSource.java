@@ -100,3 +100,59 @@ public class FileSource {
         }
     }
 }
+
+@FunctionalInterface
+interface ParallelFileTreeVisitor {
+    ExecutorService exec = Executors.newWorkStealingPool();
+
+    void op(String path);
+
+    default void walk(Path top) {
+        LinkedTransferQueue<String> result = new LinkedTransferQueue<>();
+        walkUpperTree(result, top);
+        try {
+            while (true) {
+                var res = result.poll(5, TimeUnit.MILLISECONDS);
+                if (res == null) break;
+                op(res);
+            }
+        } catch (Exception e) { throw new Error(e); }
+    }
+
+    private static void walkUpperTree(LinkedTransferQueue<String> result, Path path) {
+        try (var paths = Files.list(path)) {
+            paths.forEach(p -> {
+                if (Files.isDirectory(p)) {
+                    exec.submit(() -> walkLowerTree(result, p));
+                } else {
+                    result.add(p.toString());
+                }
+            });
+        } catch (Exception e) {
+            throw new Error(e);
+        }
+    }
+
+    private static void walkLowerTree(LinkedTransferQueue<String> result, Path path) {
+        if (Files.isDirectory(path)) {
+            try {
+                Files.walkFileTree(path, new SimpleFileVisitor<>(){
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                        result.add(file.toString());
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public FileVisitResult visitFileFailed(Path file, IOException exc) {
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
+            } catch (IOException e) {
+                throw new Error(e);
+            }
+        } else {
+            result.add(path.toString());
+        }
+    }
+}
