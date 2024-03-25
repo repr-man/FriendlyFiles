@@ -1,5 +1,7 @@
 package org.friendlyfiles;
 
+import java.util.stream.Stream;
+
 import org.friendlyfiles.ui.UIController;
 
 import javafx.application.Application;
@@ -7,8 +9,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-
-// TODO: Am I abstracting too early?  Do we really need this?
 
 // Handles all coordination between the ui, backend, and file system.
 class Switchboard extends Application {
@@ -53,6 +53,11 @@ class Switchboard extends Application {
 		primaryStage.setScene(new Scene(root));
 		primaryStage.show();
 	}
+
+    // This function is going to change a lot as we figure out the best way to build filters and their queries.
+    public Stream<FileModel> search(String query) {
+        return backend.get(query);
+    }
 }
 
 /**

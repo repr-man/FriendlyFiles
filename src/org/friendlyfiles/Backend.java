@@ -56,40 +56,11 @@ public interface Backend extends AutoCloseable {
      */
     public void remove(RealPath path);
 
-    // TODO: Figure out the type we need to return from these.  We want them to be maximally efficient for the UI.
-    // /**
-    //  * Retrieves the names of the files in a directory and orders them alphabetically.
-    //  *
-    //  * @param directory the directory to retrieve items from
-    //  * @return an alphabetically sorted list of items in the directory
-    //  * @throws Error if the directory is not registered
-    //  */
-    // public ArrayList<String> getFilesAtoZ(RealPath directory);
-
-    // /**
-    //  * Retrieves the names of the files in a directory and orders them in reverse alphabetic order.
-    //  *
-    //  * @param directory the directory to retrieve items from
-    //  * @return a reverse alphabetically sorted list of items in the directory
-    //  * @throws Error if the directory is not registered
-    //  */
-    // public ArrayList<String> getFilesZtoA(RealPath directory);
-
-    // /**
-    //  * Retrieves the names of the directories in a directory and orders them alphabetically.
-    //  *
-    //  * @param directory the directory to retrieve items from
-    //  * @return an alphabetically sorted list of items in the directory
-    //  * @throws Error if the directory is not registered
-    //  */
-    // public ArrayList<String> getDirectoriesAtoZ(RealPath directory);
-
-    // /**
-    //  * Retrieves the names of the directories in a directory and orders them in reverse alphabetic order.
-    //  *
-    //  * @param directory the directory to retrieve items from
-    //  * @return a reverse alphabetically sorted list of items in the directory
-    //  * @throws Error if the directory is not registered
-    //  */
-    // public ArrayList<String> getDirectoriesZtoA(RealPath directory);
+    /**
+     * Queries the backend for files.
+     *
+     * @param query the string with which to search the backend
+     * @return the result of the query
+     */
+    public Stream<FileModel> get(String query);
 }
