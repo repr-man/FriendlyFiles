@@ -65,10 +65,8 @@ class Switchboard extends Application {
  */
 public class FileModel {
     public final String name;
-    public final long size;
 
-    public FileModel(String name, long size) {
+    public FileModel(String name) {
         this.name = name;
-        this.size = size;
     }
 }
