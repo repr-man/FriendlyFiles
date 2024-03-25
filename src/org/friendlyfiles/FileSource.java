@@ -112,7 +112,7 @@ interface ParallelFileTreeVisitor {
         walkUpperTree(result, top);
         try {
             while (true) {
-                var res = result.poll(5, TimeUnit.MILLISECONDS);
+                String res = result.poll(5, TimeUnit.MILLISECONDS);
                 if (res == null) break;
                 op(res);
             }
@@ -120,7 +120,7 @@ interface ParallelFileTreeVisitor {
     }
 
     private static void walkUpperTree(LinkedTransferQueue<String> result, Path path) {
-        try (var paths = Files.list(path)) {
+        try (Stream<Path> paths = Files.list(path)) {
             paths.forEach(p -> {
                 if (Files.isDirectory(p)) {
                     exec.submit(() -> walkLowerTree(result, p));

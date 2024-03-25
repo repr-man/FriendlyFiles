@@ -1,3 +1,5 @@
+package org.friendlyfiles;
+
 import org.roaringbitmap.RoaringBitmap;
 
 import java.io.*;
@@ -132,7 +134,7 @@ public final class PostingList {
     public long totalStringsSize = 0;
 
     public PostingList() {
-        var tmpLists = new ArrayList<RoaringBitmap>(45760);
+        ArrayList<RoaringBitmap> tmpLists = new ArrayList<RoaringBitmap>(45760);
         for (int i = 0; i < 45760; i++) {
             tmpLists.add(new RoaringBitmap());
         }
@@ -146,12 +148,12 @@ public final class PostingList {
      * @throws IOException if there is an error writing to the file
      */
     public void serializeTo(String filename) throws IOException {
-        var listsSerializedSize = lists.parallelStream().mapToLong(item -> {
+        long listsSerializedSize = lists.parallelStream().mapToLong(item -> {
             item.runOptimize();
             return item.serializedSizeInBytes();
         }).sum();
-        try (var file = new RandomAccessFile(filename, "rw")) {
-            var mbb = file.getChannel().map(
+        try (RandomAccessFile file = new RandomAccessFile(filename, "rw")) {
+            MappedByteBuffer mbb = file.getChannel().map(
                     FileChannel.MapMode.READ_WRITE,
                     0,
                     // listsSerializedSize: Size of all the serialized lists
@@ -185,7 +187,7 @@ public final class PostingList {
      * @throws IOException if the file can't be read
      */
     public static PostingList deserializeFrom(String filename) throws IOException {
-        var pl = new PostingList();
+        PostingList pl = new PostingList();
         try (RandomAccessFile file = new RandomAccessFile(filename, "r")) {
             MappedByteBuffer mbb = file.getChannel().map(
                     FileChannel.MapMode.READ_ONLY,
@@ -197,7 +199,7 @@ public final class PostingList {
                 item.deserialize(mbb);
                 mbb.position(mbb.position() + item.serializedSizeInBytes());
             }
-            var numStrings = mbb.getInt();
+            int numStrings = mbb.getInt();
             pl.strings.ensureCapacity(numStrings);
             for (int i = 0; i < numStrings; ++i) {
                 int strSize = mbb.getInt();
@@ -218,7 +220,7 @@ public final class PostingList {
     public void addString(String str) {
         if (str.isEmpty()) return;
 
-        var index = strings.size();
+        int index = strings.size();
         strings.add(str);
         totalStringsSize += str.getBytes().length;
 
@@ -248,7 +250,7 @@ public final class PostingList {
             return strings.parallelStream().filter(item -> item.toLowerCase().contains(query.toLowerCase()));
         } else {
             int a = mapChar(query.charAt(0)), b = mapChar(query.charAt(1)), c = mapChar(query.charAt(2));
-            var bitset = lists.get(mapTrigramToIndex(a, b, c));
+            RoaringBitmap bitset = lists.get(mapTrigramToIndex(a, b, c));
             for (int i = 3; i < query.length(); ++i) {
                 a = b;
                 b = c;
