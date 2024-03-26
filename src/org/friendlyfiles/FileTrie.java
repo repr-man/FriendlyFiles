@@ -2,14 +2,11 @@ package org.friendlyfiles;
 
 import java.nio.file.*;
 import java.util.*;
-import java.util.stream.*;
 
 import org.friendlyfiles.utils.RealPath;
 
 import java.io.*;
-import java.nio.*;
 import java.lang.*;
-import java.text.*;
 
 /**
  * A container for organizing metadata about files in a single directory.  It keeps
@@ -378,14 +375,16 @@ public class TrieBackend implements Backend, AutoCloseable, Serializable {
 
     /**
      * Deletes a file or directory at the given path.
-     *
+     * <p>
      * This method assumes that the files exists.  These assumptions should be checked in
      * the ui or controller code so that they can display an error message to the user.
      *
      * @param path the path of the file to remove
+     * @return
      */
-    public final void remove(RealPath path) {
+    public final boolean remove(RealPath path) {
         directories.remove(path);
+        return false;
     }
 
 }

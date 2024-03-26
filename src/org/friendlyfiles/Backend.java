@@ -1,7 +1,7 @@
 package org.friendlyfiles;
 
 import org.friendlyfiles.utils.RealPath;
-import org.friendlyfiles.Switchboard.*;
+
 import java.util.stream.Stream;
 
 /**
@@ -12,17 +12,14 @@ import java.util.stream.Stream;
  * method throws an exception.
  */
 public interface Backend extends AutoCloseable {
-    // TODO: Replace `generateAtDirectory`.  We need a function that takes some kind of iterator
-    // over `RealPath`s and is generic over `FileSource`s.
-    
-    /**
-     * Changes the name of a directory.
-     *
-     * @param oldPath the path to the directory to be renamed
-     * @param newName the name to change the old name to
-     * @throws Error if the directory is not registered or if the new path already exists
-     */
-    void renameDirectory(RealPath oldPath, String newName);
+    ///**
+    // * Changes the name of a directory.
+    // *
+    // * @param oldPath the path to the directory to be renamed
+    // * @param newName the name to change the old name to
+    // * @throws Error if the directory is not registered or if the new path already exists
+    // */
+    //void renameDirectory(RealPath oldPath, String newName);
 
     /**
      * Changes the name of a file.
@@ -34,8 +31,7 @@ public interface Backend extends AutoCloseable {
     void renameFile(RealPath oldPath, String newName);
 
     /**
-     * Registers a new file or directory at the given path.  It creates any directories
-     * in the path that don't exist in order to create the new item.
+     * Registers a new file or directory at the given path.
      *
      * @param path the path at which to add the new item
      */
@@ -43,13 +39,14 @@ public interface Backend extends AutoCloseable {
 
     /**
      * Deletes a file or directory at the given path.
-     *
+     * <p>
      * This method assumes that the files exists.  These assumptions should be checked in
      * the ui or controller code so that they can display an error message to the user.
      *
      * @param path the path of the file to remove
+     * @return true if str is not in the list; false if str was in the list and was removed
      */
-    void remove(RealPath path);
+    boolean remove(RealPath path);
 
     /**
      * Queries the backend for files.

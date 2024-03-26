@@ -1,5 +1,6 @@
 package org.friendlyfiles;
 
+import org.friendlyfiles.utils.RealPath;
 import org.roaringbitmap.RoaringBitmap;
 
 import java.io.*;
@@ -130,19 +131,26 @@ import java.util.stream.Stream;
  *     </li>
  * </ul>
  */
-public final class PostingList {
+public final class PostingList implements Backend {
+    private final String fileLocation;
     private final List<RoaringBitmap> lists;
     private ArrayList<String> strings;
     private long totalStringsSize = 0;
     private byte numHoles = 0;
 
-    public PostingList() {
+    public PostingList(String fileLocation) {
+        this.fileLocation = fileLocation;
         ArrayList<RoaringBitmap> tmpLists = new ArrayList<>(45760);
         for (int i = 0; i < 45760; i++) {
             tmpLists.add(new RoaringBitmap());
         }
         lists = Collections.unmodifiableList(tmpLists);
         strings = new ArrayList<>();
+    }
+
+    @Override
+    public void close() throws Exception {
+        serializeTo(fileLocation);
     }
 
     /**
@@ -192,7 +200,7 @@ public final class PostingList {
      * @throws IOException if the file can't be read
      */
     public static PostingList deserializeFrom(String filename) throws IOException {
-        PostingList pl = new PostingList();
+        PostingList pl = new PostingList(filename);
         try (RandomAccessFile file = new RandomAccessFile(filename, "r")) {
             MappedByteBuffer mbb = file.getChannel().map(
                     FileChannel.MapMode.READ_ONLY,
@@ -223,11 +231,20 @@ public final class PostingList {
     }
 
     /**
+     * Registers a new file or directory at the given path.
+     * @param path the path at which to add the new item
+     */
+    @Override
+    public void add(RealPath path) {
+        addString(path.toString());
+    }
+
+    /**
      * Breaks a string into trigrams, adds the string to the list of potential strings, and adds the trigrams
      * to the posting list.
      * @param str the string to add to the posting list
      */
-    public void addString(String str) {
+    private void addString(String str) {
         if (str.isEmpty()) return;
 
         int index = strings.size();
@@ -249,11 +266,24 @@ public final class PostingList {
     }
 
     /**
+     * Deletes a file or directory at the given path.
+     * <p>
+     * This method assumes that the files exists.  These assumptions should be checked in
+     * the ui or controller code so that they can display an error message to the user.
+     * @param path the path of the file to remove
+     * @return true if str is not in the list; false if str was in the list and was removed
+     */
+    @Override
+    public boolean remove(RealPath path) {
+        return removeString(path.toString());
+    }
+
+    /**
      * Removes a string from the posting list and haystack if they contain the string.
      * @param str the string to remove
      * @return true if str is not in the list; false if str was in the list and was removed
      */
-    public boolean removeString(String str) {
+    private boolean removeString(String str) {
         if (str.isEmpty()) return true;
 
         int index = strings.indexOf(str);
@@ -298,18 +328,39 @@ public final class PostingList {
     }
 
     /**
-     * Retrieves all the strings corresponding to a query string.
-     * @param query the string to search for
-     * @return a stream of strings containing the result of the query
+     * Queries the backend for files.
+     * @param query the string with which to search the backend
+     * @return a stream of FileModels corresponding to the results of the query
      */
-    public Stream<FileModel> getStrings(String query) {
+    @Override
+    public Stream<FileModel> get(String query) {
         if (query.isEmpty()) return Stream.empty();
 
+        // Splits the query string.
+        RoaringBitmap bitset = Arrays.stream(query.split("\\w"))
+                .parallel()
+                .map(this::getStrings)
+                .reduce(new RoaringBitmap(), (acc, item) -> RoaringBitmap.and(acc, item));
+
+        return bitset.stream()
+                .parallel()
+                .filter(i -> strings.get(i).contains(query))
+                .mapToObj(i -> new FileModel(strings.get(i)));
+    }
+
+    /**
+     * Retrieves all the strings corresponding to a query string.
+     * @param query the string to search for
+     * @return a bitset of indexes of strings containing the result of the query
+     */
+    private RoaringBitmap getStrings(String query) {
         if (query.length() < 3) {
-            return IntStream.range(0, strings.size())
+            RoaringBitmap bitset = new RoaringBitmap();
+            IntStream.range(0, strings.size())
                     .parallel()
                     .filter(i -> strings.get(i).contains(query))
-                    .mapToObj(i -> new FileModel(strings.get(i)));
+                    .forEach(bitset::add);
+            return bitset;
         } else {
             int a = mapChar(query.charAt(0)), b = mapChar(query.charAt(1)), c = mapChar(query.charAt(2));
             RoaringBitmap bitset = lists.get(mapTrigramToIndex(a, b, c));
@@ -320,14 +371,22 @@ public final class PostingList {
                 bitset.and(lists.get(mapTrigramToIndex(a, b, c)));
             }
             //bitset.and(lists.get(mapTrigramToIndex(b, c, 60)));
-            return bitset.stream()
-                    .parallel()
-                    .filter(i -> strings.get(i).contains(query))
-                    .mapToObj(i -> new FileModel(strings.get(i)));
+            return bitset;
         }
     }
 
-
+    /**
+     * Changes the name of a file.
+     * @param oldPath the path to the file to be renamed
+     * @param newName the name to change the old name to
+     */
+    @Override
+    public void renameFile(RealPath oldPath, String newName) {
+        boolean err = removeString(oldPath.toString());
+        if(!err) {
+            addString(oldPath.resolveSibling(newName).toString());
+        }
+    }
 
     /**
      * Maps the three mapped characters of a trigram to a posting list index.
