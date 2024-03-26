@@ -1,3 +1,5 @@
+package org.friendlyfiles;
+
 import org.roaringbitmap.RoaringBitmap;
 
 import java.io.*;
@@ -7,7 +9,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 /**
  * A posting list is a data structure that is the inverse of an array.
@@ -129,26 +130,19 @@ import java.util.stream.StreamSupport;
  *     </li>
  * </ul>
  */
-public final class PostingList implements AutoCloseable {
-    private final String outfileName;
+public final class PostingList {
     private final List<RoaringBitmap> lists;
     private ArrayList<String> strings;
     private long totalStringsSize = 0;
     private byte numHoles = 0;
 
-    public PostingList(String outfileName) {
-        this.outfileName = outfileName;
+    public PostingList() {
         ArrayList<RoaringBitmap> tmpLists = new ArrayList<>(45760);
         for (int i = 0; i < 45760; i++) {
             tmpLists.add(new RoaringBitmap());
         }
         lists = Collections.unmodifiableList(tmpLists);
         strings = new ArrayList<>();
-    }
-
-    @Override
-    public void close() throws Exception {
-        serializeTo(outfileName);
     }
 
     /**
@@ -198,7 +192,7 @@ public final class PostingList implements AutoCloseable {
      * @throws IOException if the file can't be read
      */
     public static PostingList deserializeFrom(String filename) throws IOException {
-        PostingList pl = new PostingList(filename);
+        PostingList pl = new PostingList();
         try (RandomAccessFile file = new RandomAccessFile(filename, "r")) {
             MappedByteBuffer mbb = file.getChannel().map(
                     FileChannel.MapMode.READ_ONLY,
@@ -306,16 +300,16 @@ public final class PostingList implements AutoCloseable {
     /**
      * Retrieves all the strings corresponding to a query string.
      * @param query the string to search for
-     * @return a stream of file models containing the result of the query
+     * @return a stream of strings containing the result of the query
      */
     public Stream<FileModel> getStrings(String query) {
         if (query.isEmpty()) return Stream.empty();
 
         if (query.length() < 3) {
             return IntStream.range(0, strings.size())
-                .parallelStream()
-                .filter(i -> strings.get(i).toLowerCase().contains(query.toLowerCase()))
-                .map(i -> new FileModel(strings.get(i)));
+                    .parallel()
+                    .filter(i -> strings.get(i).contains(query))
+                    .mapToObj(i -> new FileModel(strings.get(i)));
         } else {
             int a = mapChar(query.charAt(0)), b = mapChar(query.charAt(1)), c = mapChar(query.charAt(2));
             RoaringBitmap bitset = lists.get(mapTrigramToIndex(a, b, c));
@@ -326,22 +320,12 @@ public final class PostingList implements AutoCloseable {
                 bitset.and(lists.get(mapTrigramToIndex(a, b, c)));
             }
             //bitset.and(lists.get(mapTrigramToIndex(b, c, 60)));
-            return bitset.stream().parallel().mapToObj(i -> new FileModel(strings.get(i)));
+            return bitset.stream()
+                    .parallel()
+                    .filter(i -> strings.get(i).contains(query))
+                    .mapToObj(i -> new FileModel(strings.get(i)));
         }
     }
-
-    /**
-     * Queries the backend for files.
-     *
-     * @param query the string with which to search the backend
-     * @return the result of the query
-     */
-    @Override
-    public Stream<FileModel> get(String query) {
-        // This function will do some preprocessing on the various query parameters in the future.
-        return getStrings(query);
-    }
-    
 
 
 

@@ -1,13 +1,8 @@
 package org.friendlyfiles;
 
-import java.io.*;
-import java.nio.file.*;
-import java.nio.*;
-import java.sql.*;
-import java.util.*;
-import java.util.stream.*;
-
 import org.friendlyfiles.utils.RealPath;
+import org.friendlyfiles.Switchboard.*;
+import java.util.stream.Stream;
 
 /**
  * The functions we need to interact with one of our backends.
@@ -27,7 +22,7 @@ public interface Backend extends AutoCloseable {
      * @param newName the name to change the old name to
      * @throws Error if the directory is not registered or if the new path already exists
      */
-    public void renameDirectory(RealPath oldPath, String newName);
+    void renameDirectory(RealPath oldPath, String newName);
 
     /**
      * Changes the name of a file.
@@ -36,7 +31,7 @@ public interface Backend extends AutoCloseable {
      * @param newName the name to change the old name to
      * @throws Error if the directory is not registered or if the new path already exists
      */
-    public void renameFile(RealPath oldPath, String newName);
+    void renameFile(RealPath oldPath, String newName);
 
     /**
      * Registers a new file or directory at the given path.  It creates any directories
@@ -44,7 +39,7 @@ public interface Backend extends AutoCloseable {
      *
      * @param path the path at which to add the new item
      */
-    public void add(RealPath path);
+    void add(RealPath path);
 
     /**
      * Deletes a file or directory at the given path.
@@ -54,7 +49,7 @@ public interface Backend extends AutoCloseable {
      *
      * @param path the path of the file to remove
      */
-    public void remove(RealPath path);
+    void remove(RealPath path);
 
     /**
      * Queries the backend for files.
@@ -62,5 +57,5 @@ public interface Backend extends AutoCloseable {
      * @param query the string with which to search the backend
      * @return the result of the query
      */
-    public Stream<FileModel> get(String query);
+    Stream<FileModel> get(String query);
 }

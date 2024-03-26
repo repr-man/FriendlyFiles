@@ -11,7 +11,7 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 // Handles all coordination between the ui, backend, and file system.
-class Switchboard extends Application {
+public class Switchboard extends Application {
 	
     private Backend backend;
     // TODO: Change this to an array so we can have multiple file sources at once?
@@ -60,13 +60,3 @@ class Switchboard extends Application {
     }
 }
 
-/**
- * A model with all the information the UI needs to show a file item.
- */
-public class FileModel {
-    public final String name;
-
-    public FileModel(String name) {
-        this.name = name;
-    }
-}
