@@ -138,7 +138,7 @@ public final class PostingList implements Backend {
     private long totalStringsSize = 0;
     private byte numHoles = 0;
 
-    public PostingList(String fileLocation) {
+    private PostingList(String fileLocation) {
         this.fileLocation = fileLocation;
         ArrayList<RoaringBitmap> tmpLists = new ArrayList<>(45760);
         for (int i = 0; i < 45760; i++) {
