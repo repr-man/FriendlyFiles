@@ -1,19 +1,15 @@
 package org.friendlyfiles;
 
-import java.io.*;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedTransferQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.*;
+import java.util.concurrent.*;
+import java.util.stream.Stream;
 
 /**
  * Describes all the operations that will be used when interacting with real filesystems,
  * such as the OS's filesystem, or a cloud storage API.
- *
+ * <p>
  * These operations actually touch files; deleting or moving things will actually delete
  * or move things on the user's computer (unlike in a `Backend`).  Be careful when
  * implementing and testing them!
@@ -24,85 +20,63 @@ public class FileSource {
      *
      * @param oldPath the path to the directory to be renamed
      * @param newName the name to change the old name to
-     * @throws FileAlreadyExistsException
-     * @throws IOException
+     * @throws FileAlreadyExistsException if the new file name already exists
+     * @throws IOException if an I/O error occurs
      */
 	//@Override
-    public void renameDir(Path oldPath, String newName) {
-        try {
-            Files.move(oldPath, oldPath.resolveSibling(newName));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public void renameDir(Path oldPath, String newName) throws FileAlreadyExistsException, IOException {
+        Files.move(oldPath, oldPath.resolveSibling(newName));
     }
     /**
      * Changes the name of a file.
      *
      * @param oldPath the path to the file to be renamed
      * @param newName the name to change the old name to
-     * @throws DirectoryNotEmptyException
-     * @throws FileAlreadyExistsException
-     * @throws IOException
+     * @throws DirectoryNotEmptyException if directory is not empty
+     * @throws FileAlreadyExistsException if the new file name already exists
+     * @throws IOException if an I/O error occurs
      */
     //@Override
-    public void renameFile(Path oldPath, String newName) {
-        try {
-            Path newPath = oldPath.resolveSibling(newName);
-            Files.move(oldPath, newPath);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public void renameFile(Path oldPath, String newName) throws DirectoryIteratorException, FileAlreadyExistsException, IOException {
+        Path newPath = oldPath.resolveSibling(newName);
+        Files.move(oldPath, newPath);
     }
     /**
      * Deletes a file at the given path.
-     *
+     * <p>
      * This method assumes that the file exists and that it is not a directory.
-     *
      * @param path the path of the file to remove
-     * @throws NoSuchFileException
-     * @throws IOException
+     * @throws NoSuchFileException if the given file does not exist
+     * @throws IOException if other I/O errors occur
      */
     //@Override
     public void remove(Path path) throws NoSuchFileException, IOException {
-        try {
-            Files.delete(path);
-        } catch (NoSuchFileException e) {
-            throw e;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        Files.delete(path);
     }
     /**
      * Removes the entire tree of the file system beneath the given path.
-     *
+     * <p>
      * This method deletes the directory passed in and all the files and
      * directories inside of it.
      * 
      * @param top the directory to remove
-     * @throws NoSuchFileException
-     * @throws IOException
+     * @throws IOException if an I/O error occurs
      */
    // @Override
-    public void rmrf(Path top) throws NoSuchFileException, IOException {
-        try {
-            Files.walkFileTree(top, new SimpleFileVisitor<Path>() {
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                    Files.delete(file);
-                    return FileVisitResult.CONTINUE;
-                }
+    public void rmrf(Path top) throws IOException {
+        Files.walkFileTree(top, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                Files.delete(file);
+                return FileVisitResult.CONTINUE;
+            }
 
-                @Override
-                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-                    Files.delete(dir);
-                    return FileVisitResult.CONTINUE;
-                }
-            });
-        } catch (NoSuchFileException e) {
-            throw e;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                Files.delete(dir);
+                return FileVisitResult.CONTINUE;
+            }
+        });
     }
 }
 
