@@ -4,6 +4,11 @@ import java.io.*;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedTransferQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.*;
 
 /**
  * Describes all the operations that will be used when interacting with real filesystems,
@@ -119,7 +124,7 @@ interface ParallelFileTreeVisitor {
         } catch (Exception e) { throw new Error(e); }
     }
 
-    private static void walkUpperTree(LinkedTransferQueue<String> result, Path path) {
+    static void walkUpperTree(LinkedTransferQueue<String> result, Path path) {
         try (Stream<Path> paths = Files.list(path)) {
             paths.forEach(p -> {
                 if (Files.isDirectory(p)) {
@@ -133,10 +138,10 @@ interface ParallelFileTreeVisitor {
         }
     }
 
-    private static void walkLowerTree(LinkedTransferQueue<String> result, Path path) {
+    static void walkLowerTree(LinkedTransferQueue<String> result, Path path) {
         if (Files.isDirectory(path)) {
             try {
-                Files.walkFileTree(path, new SimpleFileVisitor<>(){
+                Files.walkFileTree(path, new SimpleFileVisitor<Path>(){
                     @Override
                     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                         result.add(file.toString());

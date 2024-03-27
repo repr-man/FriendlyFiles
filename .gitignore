@@ -35,6 +35,7 @@ bin/*.class
 *.blob
 *.iml
 .idea/*
+out
 
 # John's build scripts
 build
