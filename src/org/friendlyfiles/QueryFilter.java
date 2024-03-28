@@ -2,7 +2,7 @@ package org.friendlyfiles;
 
 public final class QueryFilter {
     // TODO: Add more filters
-    long fileSizeLower, fileSizeUpper;
+    private long fileSizeLower, fileSizeUpper;
 
     public QueryFilter addFileSizeRange(long lower, long upper) {
         assert(lower <= upper);
@@ -13,5 +13,9 @@ public final class QueryFilter {
             fileSizeUpper = upper;
         }
         return this;
+    }
+
+    public boolean isInFileSizeRange(long fileSize) {
+        return fileSize >= fileSizeLower && fileSize <= fileSizeUpper;
     }
 }

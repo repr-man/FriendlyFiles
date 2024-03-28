@@ -7,6 +7,9 @@ import java.io.*;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -135,6 +138,7 @@ public final class PostingList implements Backend {
     private final String fileLocation;
     private final List<RoaringBitmap> lists;
     private ArrayList<String> strings;
+    private ArrayList<Long> sizes;
     private long totalStringsSize = 0;
     private byte numHoles = 0;
 
@@ -146,6 +150,7 @@ public final class PostingList implements Backend {
         }
         lists = Collections.unmodifiableList(tmpLists);
         strings = new ArrayList<>();
+        sizes = new ArrayList<>();
     }
 
     @Override
@@ -170,6 +175,7 @@ public final class PostingList implements Backend {
                     // listsSerializedSize: Size of all the serialized lists
                     // totalStringsSize: Number of bytes needed to represent all the strings
                     // strings.size() * 4: Integers representing the size of the strings
+                    // sizes.size() * 4: Size of the array of longs representing file sizes
                     // 4: Integer representing the number of strings
                     // 1: Byte representing the number of holes
                     //
@@ -179,7 +185,7 @@ public final class PostingList implements Backend {
                     //     slightly different size.  To prevent buffer overflows, we need to ask for a little more
                     //     memory than we actually need.  16 seems to be a good size that makes the function work
                     //     consistently.
-                    listsSerializedSize + (totalStringsSize + strings.size() * 4L) + 4 + 1 + 16
+                    listsSerializedSize + (totalStringsSize + strings.size() * 4L) + (sizes.size() * 8L) + 4 + 1 + 16
             );
             lists.forEach(item -> {
                 item.serialize(mbb);
@@ -190,6 +196,7 @@ public final class PostingList implements Backend {
                 mbb.putInt(item.getBytes().length);
                 mbb.put(item.getBytes());
             });
+            sizes.forEach(mbb::putLong);
         }
     }
 
@@ -214,6 +221,7 @@ public final class PostingList implements Backend {
             }
             int numStrings = mbb.getInt();
             pl.strings.ensureCapacity(numStrings);
+            pl.sizes.ensureCapacity(numStrings);
             pl.numHoles = mbb.get();
             for (int i = 0; i < numStrings; ++i) {
                 int strSize = mbb.getInt();
@@ -226,6 +234,9 @@ public final class PostingList implements Backend {
                     pl.strings.add("");
                 }
             }
+            for (int i = 0; i < numStrings; ++i) {
+                pl.sizes.add(mbb.getLong());
+            }
         }
         return pl;
     }
@@ -237,6 +248,12 @@ public final class PostingList implements Backend {
     @Override
     public void add(RealPath path) {
         addString(path.toString());
+        sizes.add(path.size());
+    }
+
+    public void add(String str, long size) {
+        addString(str);
+        sizes.add(size);
     }
 
     /**
@@ -275,38 +292,26 @@ public final class PostingList implements Backend {
      */
     @Override
     public boolean remove(RealPath path) {
-        return removeString(path.toString());
+        return remove(path.toString()) < 0;
     }
 
     /**
-     * Removes a string from the posting list and haystack if they contain the string.
-     * @param str the string to remove
-     * @return true if str is not in the list; false if str was in the list and was removed
+     * Ditto.
+     * This function is used internally in both `remove` and `rename`.
+     * @param path the path of the file to remove
+     * @return -1 if str is not in the list; otherwise, the index of the removed item
      */
-    private boolean removeString(String str) {
-        if (str.isEmpty()) return true;
-
-        int index = strings.indexOf(str);
-        if (index == -1) return true;
-        strings.set(index, "");
-        totalStringsSize -= str.getBytes().length;
-        ++numHoles;
-
-        // If str.length() < 3, it is not in the posting list.
-        if (str.length() >= 3) {
-            int a, b = mapChar(str.charAt(0)), c = mapChar(str.charAt(1));
-            for (int i = 2; i < str.length(); ++i) {
-                a = b;
-                b = c;
-                c = mapChar(str.charAt(i));
-                lists.get(mapTrigramToIndex(a, b, c)).remove(index);
-            }
-        }
-
+    private int remove(String path) {
+        int result = removeString(path);
+        if (result < 0) return result;
+        sizes.set(result, -1L);
         // Compact the haystack.
         if (numHoles > 127) {
             strings = (ArrayList<String>) strings.parallelStream()
                     .filter(String::isEmpty)
+                    .collect(Collectors.toList());
+            sizes = (ArrayList<Long>) sizes.parallelStream()
+                    .filter(size -> size >= 0)
                     .collect(Collectors.toList());
             lists.parallelStream().forEach(RoaringBitmap::clear);
             IntStream.range(0, strings.size()).parallel().forEach(i -> {
@@ -324,27 +329,91 @@ public final class PostingList implements Backend {
             numHoles = 0;
         }
 
-        return false;
+        return result;
+    }
+
+    /**
+     * Removes a string from the posting list and haystack if they contain the string.
+     * @param str the string to remove
+     * @return -1 if str is not in the list; otherwise, the index of the removed item
+     */
+    private int removeString(String str) {
+        if (str.isEmpty()) return -1;
+
+        int index = strings.indexOf(str);
+        if (index == -1) return index;
+        strings.set(index, "");
+        totalStringsSize -= str.getBytes().length;
+        ++numHoles;
+
+        // If str.length() < 3, it is not in the posting list.
+        if (str.length() >= 3) {
+            int a, b = mapChar(str.charAt(0)), c = mapChar(str.charAt(1));
+            for (int i = 2; i < str.length(); ++i) {
+                a = b;
+                b = c;
+                c = mapChar(str.charAt(i));
+                lists.get(mapTrigramToIndex(a, b, c)).remove(index);
+            }
+        }
+
+        return index;
     }
 
     /**
      * Queries the backend for files.
      * @param query the string with which to search the backend
+     * @param filter filters the query results
      * @return a stream of FileModels corresponding to the results of the query
      */
     @Override
-    public Stream<FileModel> get(String query) {
+    public Stream<FileModel> get(String query, QueryFilter filter) {
         if (query.isEmpty()) return Stream.empty();
 
-        // Splits the query string.
-        RoaringBitmap bitset = Arrays.stream(query.split("\\w"))
-                .parallel()
-                .map(this::getStrings)
-                .reduce(new RoaringBitmap(), (acc, item) -> RoaringBitmap.and(acc, item));
+        // This is awful, but it's simple.
+        RoaringBitmap bitset;
+        if (filter != null) {
+            ForkJoinTask<RoaringBitmap> filteredBitset = ForkJoinPool.commonPool().submit(() -> getFiltered(filter));
+            // Splits the query string.
+            bitset = Arrays.stream(query.split("\\w"))
+                    .parallel()
+                    .map(this::getStrings)
+                    .reduce(new RoaringBitmap(), (acc, item) -> RoaringBitmap.and(acc, item));
+
+            bitset.and(filteredBitset.join());
+        } else {
+            // Splits the query string.
+            bitset = Arrays.stream(query.split("\\w"))
+                    .parallel()
+                    .map(this::getStrings)
+                    .reduce(new RoaringBitmap(), (acc, item) -> RoaringBitmap.and(acc, item));
+        }
 
         return bitset.stream()
                 .parallel()
                 .filter(i -> strings.get(i).contains(query))
+                .mapToObj(i -> new FileModel(strings.get(i)));
+    }
+
+    /**
+     * Queries the backend for files without a filter.
+     * @param query the string with which to search the backend
+     * @return a stream of FileModels corresponding to the results of the query
+     */
+    @Override
+    public Stream<FileModel> get(String query) {
+        return get(query, null);
+    }
+
+    /**
+     * Queries the backend for files without a search string.
+     * @param filter filters the query results
+     * @return the result of the query
+     */
+    @Override
+    public Stream<FileModel> get(QueryFilter filter) {
+        return getFiltered(filter).stream()
+                .parallel()
                 .mapToObj(i -> new FileModel(strings.get(i)));
     }
 
@@ -375,6 +444,15 @@ public final class PostingList implements Backend {
         }
     }
 
+    private RoaringBitmap getFiltered(QueryFilter filter) {
+        RoaringBitmap bitset = new RoaringBitmap();
+        IntStream.range(0, sizes.size())
+                .parallel()
+                .filter(filter::isInFileSizeRange)
+                .forEach(bitset::add);
+        return bitset;
+    }
+
     /**
      * Changes the name of a file.
      * @param oldPath the path to the file to be renamed
@@ -382,9 +460,10 @@ public final class PostingList implements Backend {
      */
     @Override
     public void renameFile(RealPath oldPath, String newName) {
-        boolean err = removeString(oldPath.toString());
-        if(!err) {
-            addString(oldPath.resolveSibling(newName).toString());
+        int index = remove(oldPath.toString());
+        if(index >= 0) {
+            long fileSize = sizes.remove(index);
+            add(oldPath.resolveSibling(newName).toString(), fileSize);
         }
     }
 

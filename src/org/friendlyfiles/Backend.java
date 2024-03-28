@@ -6,7 +6,7 @@ import java.util.stream.Stream;
 
 /**
  * The functions we need to interact with one of our backends.
- *
+ * <p>
  * Make sure that you call the corresponding `FileSource` method before you call the `Backend`
  * method.  This ensures that the backend's state will still be correct if the file source's
  * method throws an exception.
@@ -50,9 +50,23 @@ public interface Backend extends AutoCloseable {
 
     /**
      * Queries the backend for files.
-     *
+     * @param query the string with which to search the backend
+     * @param filter filters the query results
+     * @return the result of the query
+     */
+    Stream<FileModel> get(String query, QueryFilter filter);
+
+    /**
+     * Queries the backend for files without a filter.
      * @param query the string with which to search the backend
      * @return the result of the query
      */
     Stream<FileModel> get(String query);
+
+    /**
+     * Queries the backend for files without a search string.
+     * @param filter filters the query results
+     * @return the result of the query
+     */
+    Stream<FileModel> get(QueryFilter filter);
 }
