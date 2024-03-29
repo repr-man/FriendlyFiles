@@ -370,7 +370,7 @@ public final class PostingList implements Backend {
     public Stream<FileModel> get(String query, QueryFilter filter) {
         if (query.isEmpty()) return Stream.empty();
 
-        // This is awful, but it's simple.
+        // This is awful, but it's simple.  We need to do it so we can join the `getFiltered` thread.
         RoaringBitmap bitset;
         if (filter != null) {
             ForkJoinTask<RoaringBitmap> filteredBitset = ForkJoinPool.commonPool().submit(() -> getFiltered(filter));
