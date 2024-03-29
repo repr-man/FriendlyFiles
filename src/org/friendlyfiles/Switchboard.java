@@ -58,5 +58,14 @@ public class Switchboard extends Application {
     public Stream<FileModel> search(String query) {
         return backend.get(query);
     }
+
+    public Stream<FileModel> search(String query, QueryFilter filter) {
+        return backend.get(query, filter);
+    }
+
+    // Rename this?
+    public Stream<FileModel> search(QueryFilter filter) {
+        return backend.get(filter);
+    }
 }
 
