@@ -6,8 +6,8 @@ import org.roaringbitmap.RoaringBitmap;
 import java.io.*;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.stream.Collectors;
@@ -142,8 +142,8 @@ public final class PostingList implements Backend {
     private long totalStringsSize = 0;
     private byte numHoles = 0;
 
-    private PostingList(String fileLocation) {
-        this.fileLocation = fileLocation;
+    public PostingList(Path fileLocation) {
+        this.fileLocation = fileLocation.toString();
         ArrayList<RoaringBitmap> tmpLists = new ArrayList<>(45760);
         for (int i = 0; i < 45760; i++) {
             tmpLists.add(new RoaringBitmap());
@@ -206,9 +206,9 @@ public final class PostingList implements Backend {
      * @return a new posting list
      * @throws IOException if the file can't be read
      */
-    public static PostingList deserializeFrom(String filename) throws IOException {
+    public static PostingList deserializeFrom(Path filename) throws IOException {
         PostingList pl = new PostingList(filename);
-        try (RandomAccessFile file = new RandomAccessFile(filename, "r")) {
+        try (RandomAccessFile file = new RandomAccessFile(filename.toString(), "r")) {
             MappedByteBuffer mbb = file.getChannel().map(
                     FileChannel.MapMode.READ_ONLY,
                     0,
@@ -239,6 +239,18 @@ public final class PostingList implements Backend {
             }
         }
         return pl;
+    }
+
+    /**
+     * Gets a list of files that the backend keeps track of.
+     * @return a stream of file models for the ui
+     */
+    @Override
+    public Stream<org.friendlyfiles.models.FileModel> getAllFiles() {
+        // TODO: Make this not need RealPaths or weird Models.
+        return strings.stream()
+                .filter(String::isEmpty)
+                .map(item -> new org.friendlyfiles.models.FileModel(RealPath.get(item)));
     }
 
     /**

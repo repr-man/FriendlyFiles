@@ -45,7 +45,6 @@ public class UITest extends Application {
 		
 		BackendDemo demo = new BackendDemo();
 		
-		controller.setBackend(demo);
 		demo.setController(controller);
 	}
 

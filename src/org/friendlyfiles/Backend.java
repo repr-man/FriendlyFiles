@@ -31,6 +31,12 @@ public interface Backend extends AutoCloseable {
     void renameFile(RealPath oldPath, String newName);
 
     /**
+     * Gets a list of files that the backend keeps track of.
+     * @return a stream of file models for the ui
+     */
+    public Stream<org.friendlyfiles.models.FileModel> getAllFiles();
+
+    /**
      * Registers a new file or directory at the given path.
      *
      * @param path the path at which to add the new item

@@ -1,14 +1,16 @@
 package org.friendlyfiles.ui;
 
 import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
+import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import org.friendlyfiles.Backend;
+import org.friendlyfiles.FileSource;
+import org.friendlyfiles.PostingList;
+import org.friendlyfiles.Switchboard;
 import org.friendlyfiles.models.*;
 import org.friendlyfiles.testing.BackendDemo;
 import org.friendlyfiles.utils.*;
@@ -113,14 +115,15 @@ public class UIController {
 
     @FXML
     public void btn_search_click(ActionEvent event) {
-    	
-    	FileSearchModel model = new FileSearchModel(tbx_search.getText(), cbx_searchExtension.isSelected());
-    	fileKeys = backend.searchFiles(model);
+        // TODO: Make this not use RealPaths or ArrayLists.
+        fileKeys = (ArrayList<RealPath>) switchboard.search(tbx_search.getText())
+                .map(item -> RealPath.get(item.name))
+                .collect(Collectors.toList());
     	updateFiles(fileKeys);
     }
-    
-    private BackendDemo backend;
-    
+
+    private Switchboard switchboard;
+
     // (Probably) temporary variable holding the paths of the root directories, for use in the updateTreeDirs() method
     private ArrayList<RealPath> rootDirPaths;
     
@@ -143,13 +146,20 @@ public class UIController {
                 return new DirectoryTreeCell();
             }
         });
+
+        Path dbPath = Paths.get("FriendlyFilesDatabase");
+        if (Files.exists(dbPath)) {
+            try (Backend backend = PostingList.deserializeFrom(dbPath)) {
+                switchboard = new Switchboard(backend, new FileSource());
+            } catch (Exception e) {
+                // TODO: Show the user an error message or something and exit program.
+                throw new Error(e);
+            }
+        } else {
+            switchboard = new Switchboard(new PostingList(dbPath), new FileSource());
+        }
     }
-    
-    public void setBackend(BackendDemo backend) {
-    	
-    	this.backend = backend;
-    }
-    
+
     /**
      * Update the list of file keys stored by the UI. The order of the keys in this list corresponds to the order in which they will display to the user.<br>
      * Additionally, this method will immediately display these files to the user.
@@ -323,7 +333,7 @@ public class UIController {
     
     /**
      * Display the given list of files to the user, presented in the order they are stored within the list
-     * @param ArrayList<RealPath> fileKeys the files to display to the user
+     * @param fileKeys the files to display to the user
      */
     private void displayFiles(ArrayList<RealPath> fileKeys) {
     	
@@ -339,36 +349,16 @@ public class UIController {
     	int height = 112;
 		int width = 80;
 		int border = 12;
-		
-		// Declare final array of all file pane objects
-		final FilePane filePanes[] = new FilePane[fileKeys.size()];
-		
-		// Fill the array with the given file data
-    	for (int i = 0; i < fileKeys.size(); i++) {
-    		
-    		// Create the next FilePane to be added
-    		FilePane filePane = new FilePane(backend.getMasterFiles().get(fileKeys.get(i)), height, width, border, otherIcon);
-    		
-    		// Add a mouse click event to the file pane's visible area
-    		filePane.getSelectionArea().addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
 
-				@Override
-				public void handle(MouseEvent event) {
-					
-					System.out.println(filePane.getFile().getName());
-				}
-    		});
-    		
-    		// Add the file pane to the array of all panes
-    		filePanes[i] = filePane;
-    	}
-    	
-    	// Add the file pane view objects from the array to the view
-    	for (FilePane pane : filePanes) {
-    		
-    		// Add the new file display object to the filePane
-    		tpn_fileDisplay.getChildren().add(pane);
-    	}
+        tpn_fileDisplay.getChildren().addAll(switchboard.getAllFiles()
+                .map(item -> {
+                    FilePane filePane = new FilePane(item, height, width, border, otherIcon);
+                    filePane.getSelectionArea().addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
+                        System.out.println(filePane.getFile().getName());
+                    });
+                    return filePane;
+                })
+                .collect(Collectors.toList()));
     }
     
     
