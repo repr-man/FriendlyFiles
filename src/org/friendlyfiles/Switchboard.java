@@ -5,18 +5,22 @@ import java.util.stream.Stream;
 // Handles all coordination between the ui, backend, and file system.
 public class Switchboard {
 	
-    private final Backend backend;
+    private Backend backend;
     // TODO: Change this to an array so we can have multiple file sources at once?
     private final FileSource fileSource;
     
     public Switchboard(Backend backend, FileSource fileSource) {
         this.backend = backend;
         this.fileSource = fileSource;
-        backend.generateFromFilesystem();
+        backend.generateFromFilesystem(this);
     }
 
-    public Stream<org.friendlyfiles.models.FileModel> getAllFiles() {
-        return backend.getAllFiles();
+    public void setBackend(Backend backend) {
+        this.backend = backend;
+    }
+
+    public Stream<String> getAllFileNames() {
+        return backend.getAllFileNames();
     }
 
     // This function is going to change a lot as we figure out the best way to build filters and their queries.

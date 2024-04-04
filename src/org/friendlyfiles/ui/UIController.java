@@ -11,16 +11,12 @@ import org.friendlyfiles.Backend;
 import org.friendlyfiles.FileSource;
 import org.friendlyfiles.PostingList;
 import org.friendlyfiles.Switchboard;
-import org.friendlyfiles.models.*;
-import org.friendlyfiles.testing.BackendDemo;
-import org.friendlyfiles.utils.*;
 
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.CacheHint;
 import javafx.scene.control.*;
@@ -96,7 +92,7 @@ public class UIController {
     private TitledPane tpn_filterStack;
 
     @FXML
-    private TreeView<RealPath> tvw_dirTree;
+    private TreeView<String> tvw_dirTree;
 
     @FXML
     private VBox vbox_header;
@@ -116,8 +112,8 @@ public class UIController {
     @FXML
     public void btn_search_click(ActionEvent event) {
         // TODO: Make this not use RealPaths or ArrayLists.
-        fileKeys = (ArrayList<RealPath>) switchboard.search(tbx_search.getText())
-                .map(item -> RealPath.get(item.name))
+        fileKeys = (ArrayList<String>) switchboard.search(tbx_search.getText())
+                .map(item -> item.name)
                 .collect(Collectors.toList());
     	updateFiles(fileKeys);
     }
@@ -125,10 +121,10 @@ public class UIController {
     private Switchboard switchboard;
 
     // (Probably) temporary variable holding the paths of the root directories, for use in the updateTreeDirs() method
-    private ArrayList<RealPath> rootDirPaths;
+    private ArrayList<String> rootDirPaths;
     
     // Current ordered list of files
-    private ArrayList<RealPath> fileKeys;
+    private ArrayList<String> fileKeys;
     
     public void initialize() {
     	
@@ -140,9 +136,9 @@ public class UIController {
 		// https://stackoverflow.com/a/39466520
 		
 		//Set the cell factory for the tree view in order to add checkbox functionality and allow for more control over the naming of the individual cells
-		tvw_dirTree.setCellFactory(new Callback<TreeView<RealPath>, TreeCell<RealPath>>() {
+		tvw_dirTree.setCellFactory(new Callback<TreeView<String>, TreeCell<String>>() {
             @Override
-            public CheckBoxTreeCell<RealPath> call(TreeView<RealPath> p) {
+            public CheckBoxTreeCell<String> call(TreeView<String> p) {
                 return new DirectoryTreeCell();
             }
         });
@@ -158,6 +154,7 @@ public class UIController {
         } else {
             switchboard = new Switchboard(new PostingList(dbPath), new FileSource());
         }
+        updateDirTree(switchboard.getAllFileNames().collect(Collectors.toList()));
     }
 
     /**
@@ -165,7 +162,7 @@ public class UIController {
      * Additionally, this method will immediately display these files to the user.
      * @param fileKeys the file keys to be stored by the UI
      */
-    public void updateFiles(ArrayList<RealPath> fileKeys) {
+    public void updateFiles(ArrayList<String> fileKeys) {
     	
     	this.fileKeys = fileKeys;
     	displayFiles(fileKeys);
@@ -213,7 +210,7 @@ public class UIController {
      * Note: This method can cause issues if called while the UI is still setting up; at the earliest it should be called towards the end of the initialize() method.
      * @param rootDirs the list of directories to treat as the "root" or top-level directories. These directories and their subdirectories will be loaded into the treeview.
      */
-    public void updateDirTree(List<RealPath> rootDirs) {
+    public void updateDirTree(List<String> rootDirs) {
     	
     	// Set the treeview's root directory to a new Directory item with no path
     	DirectoryTreeItem treeRoot = new DirectoryTreeItem(null);
@@ -221,27 +218,25 @@ public class UIController {
     	tvw_dirTree.setRoot(treeRoot);
     	
     	// For each relative directory root, walk through its entire logical directory tree, and add items to the visual tree view as those logical directories are visited
-	 	for (RealPath dirRoot : rootDirs) {
+	 	for (String dirRoot : rootDirs) {
 	 		
 	 		// Add the current root to the base of the treeview
-	 		DirectoryTreeItem dirRootItem = new DirectoryTreeItem(RealPath.create(dirRoot));
+	 		DirectoryTreeItem dirRootItem = new DirectoryTreeItem(dirRoot);
 	 		dirRootItem.setIndependent(true);
 	 		addCheckListenerToItem(dirRootItem);
-	 		treeRoot.getChildren().add((TreeItem<RealPath>) dirRootItem);
+	 		treeRoot.getChildren().add(dirRootItem);
 	 		
 	 		// Walk through subdirectories and add them as children
 	 		try {
-				Files.walkFileTree(dirRoot.toAbsolutePath(), new SimpleFileVisitor<Path>() {
+				Files.walkFileTree(Paths.get(dirRoot).toAbsolutePath(), new SimpleFileVisitor<Path>() {
  
 					@Override
 					public FileVisitResult preVisitDirectory(Path file, BasicFileAttributes attrs) throws IOException {
 						
-						RealPath realFile = RealPath.create(file);
-						
-						if (!realFile.toString().equals(dirRoot.toString())) {
+						if (!file.toString().equals(dirRoot)) {
 							
 							// Create a new directory item within the visual tree according to its path relative to the root
-							createDirItemFromPath(realFile, dirRootItem);
+							createDirItemFromPath(file.toString(), dirRootItem);
 						}
 						
 						
@@ -262,13 +257,13 @@ public class UIController {
      * @param path the path of the target directory
      * @param root the tree item holding the target directory's relative root directory
      */
-    private void createDirItemFromPath(RealPath path, DirectoryTreeItem root) {
+    private void createDirItemFromPath(String path, DirectoryTreeItem root) {
     	
     	// Get offset/distance of the root directory (for this specific tree of directories) from the filesystem root
-    	int rootOffset = root.getValue().getNameCount();
+    	int rootOffset = Paths.get(root.getValue()).getNameCount();
     	
     	// Get number of directories between this file tree's relative root and the inner target directory
-    	int targetDepth = path.getNameCount() - rootOffset;
+    	int targetDepth = Paths.get(path).getNameCount() - rootOffset;
     	
     	// Prime the "current item" to be the root of the TreeList
     	DirectoryTreeItem currItem = root;
@@ -285,8 +280,7 @@ public class UIController {
     			
     			// Drill down into the file path, starting from the child of the relative root directory, down to the target
     			// The loop will only happen once if the target is the child of the relative root directory
-    			RealPath subPath = RealPath.get(
-    					String.format("%s%s", path.getRoot(), path.subpath(0, rootOffset + i + 1)));
+    			String subPath = String.format("%s%s", Paths.get(path).getRoot(), Paths.get(path).subpath(0, rootOffset + i + 1));
     			
         		// Use the subpath information to navigate through and create new children within the existing tree view items
     			
@@ -294,14 +288,14 @@ public class UIController {
     			boolean containsChild = false;
     			
     			// Loop over the children of the current item
-    			for (TreeItem<RealPath> child : currItem.getChildren()) {
+    			for (TreeItem<String> child : currItem.getChildren()) {
     				
     				// Grab a reference to the current child as a DirectoryTreeItem
     				DirectoryTreeItem childDir = (DirectoryTreeItem) child;
     				
     				// If the child's path is equal to the path of the directory item we are requesting,
     				// make that child the new current item
-    				if (Files.isSameFile(childDir.getValue().toAbsolutePath(), subPath.toAbsolutePath())) {
+    				if (Files.isSameFile(Paths.get(childDir.getValue()).toAbsolutePath(), Paths.get(subPath).toAbsolutePath())) {
     					
     					containsChild = true;
     					currItem = childDir;
@@ -335,7 +329,7 @@ public class UIController {
      * Display the given list of files to the user, presented in the order they are stored within the list
      * @param fileKeys the files to display to the user
      */
-    private void displayFiles(ArrayList<RealPath> fileKeys) {
+    private void displayFiles(ArrayList<String> fileKeys) {
     	
     	// Clear previous file panes before filling in with new data
     	tpn_fileDisplay.getChildren().clear();
@@ -350,11 +344,11 @@ public class UIController {
 		int width = 80;
 		int border = 12;
 
-        tpn_fileDisplay.getChildren().addAll(switchboard.getAllFiles()
+        tpn_fileDisplay.getChildren().addAll(switchboard.getAllFileNames()
                 .map(item -> {
                     FilePane filePane = new FilePane(item, height, width, border, otherIcon);
                     filePane.getSelectionArea().addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
-                        System.out.println(filePane.getFile().getName());
+                        System.out.println(filePane.getFile());
                     });
                     return filePane;
                 })
@@ -368,11 +362,11 @@ public class UIController {
      * Cell Factory implementation is further detailed on Oracle's tree view documentation:<br>
      * <a href="https://docs.oracle.com/javafx/2/ui_controls/tree-view.htm">https://docs.oracle.com/javafx/2/ui_controls/tree-view.htm</a>
      */
-    static final class DirectoryTreeCell extends CheckBoxTreeCell<RealPath> {
+    static final class DirectoryTreeCell extends CheckBoxTreeCell<String> {
     	
     	// Do not edit this method to change cell naming, the majority of the code here is recommended by the JavaFX developers
         @Override
-        public void updateItem(RealPath item, boolean empty) {
+        public void updateItem(String item, boolean empty) {
             super.updateItem(item, empty);
             
             if (empty || item == null) {
@@ -386,7 +380,7 @@ public class UIController {
         
         // Update this method to change how the tree cells are named
         private String getString() {
-            return getItem() == null ? "" : "/" + getItem().getFileName().toString();
+            return getItem() == null ? "" : "/" + getItem();
         }
     }
 }

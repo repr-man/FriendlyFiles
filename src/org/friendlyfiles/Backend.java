@@ -1,6 +1,5 @@
 package org.friendlyfiles;
 
-import org.friendlyfiles.utils.RealPath;
 
 import java.util.stream.Stream;
 
@@ -28,26 +27,27 @@ public interface Backend extends AutoCloseable {
      * @param newName the name to change the old name to
      * @throws Error if the directory is not registered or if the new path already exists
      */
-    void renameFile(RealPath oldPath, String newName);
+    void renameFile(String oldPath, String newName);
 
     /**
      * Reads necessary information from the filesystem into the backend in a background process
      * and swaps out the old data with the new data when it is done.
      */
-    void generateFromFilesystem();
+    void generateFromFilesystem(Switchboard switchboard);
 
     /**
      * Gets a list of files that the backend keeps track of.
      * @return a stream of file models for the ui
      */
-    Stream<org.friendlyfiles.models.FileModel> getAllFiles();
+    Stream<String> getAllFileNames();
 
     /**
      * Registers a new file or directory at the given path.
      *
      * @param path the path at which to add the new item
+     * @param size the size of the item
      */
-    void add(RealPath path);
+    void add(String path, long size);
 
     /**
      * Deletes a file or directory at the given path.
@@ -58,7 +58,7 @@ public interface Backend extends AutoCloseable {
      * @param path the path of the file to remove
      * @return true if str is not in the list; false if str was in the list and was removed
      */
-    boolean remove(RealPath path);
+    boolean remove(String path);
 
     /**
      * Queries the backend for files.

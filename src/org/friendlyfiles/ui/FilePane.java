@@ -3,7 +3,6 @@ package org.friendlyfiles.ui;
 import java.io.File;
 
 import org.friendlyfiles.models.FileModel;
-import org.friendlyfiles.utils.RealPath;
 
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
@@ -23,7 +22,7 @@ public class FilePane extends Pane {
 	private Color selectedColor = new Color(3/255., 189/255., 245/255., 1);
 	
 	// Data components
-	private FileModel file;
+	private String file;
 	
 	private int height;
 	private int width;
@@ -39,7 +38,7 @@ public class FilePane extends Pane {
 	// Selected property
 	private boolean isSelected;
 	
-	public FilePane(FileModel file, int height, int width, int border, Image image) {
+	public FilePane(String file, int height, int width, int border, Image image) {
 		super();
 		
 		this.file = file;
@@ -82,7 +81,7 @@ public class FilePane extends Pane {
 		fileDisplay.setAlignment(Pos.CENTER);
 		
 		// Create a label for the file and set its properties
-		fileLabel = new Label(file.getPath().getFileName().toString().toString());
+		fileLabel = new Label(file);
 		
 		fileLabel.setMinWidth(width - border);
 		fileLabel.setPrefWidth(width - border);
@@ -141,7 +140,7 @@ public class FilePane extends Pane {
 	// Get the file stored within the filePane
 	// Instead of storing a file, this object could just store an index/key that points to a file in a "master collection"
 	// Something like a hashset could work as long as we have a separate array to hold the keys sorted as needed
-	public FileModel getFile() {
+	public String getFile() {
 	
 		return file;
 	}

@@ -43,9 +43,9 @@ public class UITest extends Application {
 		primaryStage.setScene(scene);
 		primaryStage.show();
 		
-		BackendDemo demo = new BackendDemo();
+		//BackendDemo demo = new BackendDemo();
 		
-		demo.setController(controller);
+		//demo.setController(controller);
 	}
 
 }

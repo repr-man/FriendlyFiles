@@ -1,13 +1,11 @@
 package org.friendlyfiles.ui;
 
-import org.friendlyfiles.utils.RealPath;
-
 import javafx.scene.control.CheckBoxTreeItem;
 
 // An extension of the CheckboxTreeItem, primarily to override the .equals() method
-public class DirectoryTreeItem extends CheckBoxTreeItem<RealPath> {
+public class DirectoryTreeItem extends CheckBoxTreeItem<String> {
 	
-	public DirectoryTreeItem(RealPath name) {
+	public DirectoryTreeItem(String name) {
 		
 		super(name);
 	}

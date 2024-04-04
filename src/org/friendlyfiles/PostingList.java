@@ -1,6 +1,5 @@
 package org.friendlyfiles;
 
-import org.friendlyfiles.utils.RealPath;
 import org.roaringbitmap.RoaringBitmap;
 
 import java.io.*;
@@ -245,13 +244,13 @@ public final class PostingList implements Backend {
      * and swaps out the old data with the new data when it is done.
      */
     @Override
-    public void generateFromFilesystem() {
+    public void generateFromFilesystem(Switchboard switchboard) {
         // TODO: Figure out how to do this in a background thread.  The problem right now is getting a future and swapping out fields.
         Executors.newSingleThreadExecutor().submit(() -> {
             PostingList pl = new PostingList(Paths.get(fileLocation));
             ParallelFileTreeVisitor walker = pl::addString;
             walker.walk(Paths.get(System.getProperty("user.dir")));//.getRoot());
-            updateAllFields(pl.lists, pl.strings, pl.sizes, pl.totalStringsSize, pl.numHoles);
+            switchboard.setBackend(pl);
         });
     }
 
@@ -268,25 +267,19 @@ public final class PostingList implements Backend {
      * @return a stream of file models for the ui
      */
     @Override
-    public Stream<org.friendlyfiles.models.FileModel> getAllFiles() {
-        // TODO: Make this not need RealPaths or weird Models.
+    public Stream<String> getAllFileNames() {
         return strings.stream()
-                .filter(String::isEmpty)
-                .map(item -> new org.friendlyfiles.models.FileModel(RealPath.get(item)));
+                .filter(String::isEmpty);
     }
 
     /**
      * Registers a new file or directory at the given path.
      * @param path the path at which to add the new item
+     * @param size the size of the item
      */
     @Override
-    public void add(RealPath path) {
-        addString(path.toString());
-        sizes.add(path.size());
-    }
-
-    public void add(String str, long size) {
-        addString(str);
+    public void add(String path, long size) {
+        addString(path);
         sizes.add(size);
     }
 
@@ -325,8 +318,8 @@ public final class PostingList implements Backend {
      * @return true if str is not in the list; false if str was in the list and was removed
      */
     @Override
-    public boolean remove(RealPath path) {
-        return remove(path.toString()) < 0;
+    public boolean remove(String path) {
+        return removeItem(path) < 0;
     }
 
     /**
@@ -335,7 +328,7 @@ public final class PostingList implements Backend {
      * @param path the path of the file to remove
      * @return -1 if str is not in the list; otherwise, the index of the removed item
      */
-    private int remove(String path) {
+    private int removeItem(String path) {
         int result = removeString(path);
         if (result < 0) return result;
         sizes.set(result, -1L);
@@ -493,11 +486,11 @@ public final class PostingList implements Backend {
      * @param newName the name to change the old name to
      */
     @Override
-    public void renameFile(RealPath oldPath, String newName) {
-        int index = remove(oldPath.toString());
+    public void renameFile(String oldPath, String newName) {
+        int index = removeItem(oldPath);
         if(index >= 0) {
             long fileSize = sizes.remove(index);
-            add(oldPath.resolveSibling(newName).toString(), fileSize);
+            add(Paths.get(oldPath).resolveSibling(newName).toString(), fileSize);
         }
     }
 
