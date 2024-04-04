@@ -31,10 +31,16 @@ public interface Backend extends AutoCloseable {
     void renameFile(RealPath oldPath, String newName);
 
     /**
+     * Reads necessary information from the filesystem into the backend in a background process
+     * and swaps out the old data with the new data when it is done.
+     */
+    void generateFromFilesystem();
+
+    /**
      * Gets a list of files that the backend keeps track of.
      * @return a stream of file models for the ui
      */
-    public Stream<org.friendlyfiles.models.FileModel> getAllFiles();
+    Stream<org.friendlyfiles.models.FileModel> getAllFiles();
 
     /**
      * Registers a new file or directory at the given path.

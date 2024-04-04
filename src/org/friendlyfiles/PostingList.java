@@ -6,10 +6,9 @@ import org.roaringbitmap.RoaringBitmap;
 import java.io.*;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.file.Path;
+import java.nio.file.*;
 import java.util.*;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ForkJoinTask;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -136,7 +135,7 @@ import java.util.stream.Stream;
  */
 public final class PostingList implements Backend {
     private final String fileLocation;
-    private final List<RoaringBitmap> lists;
+    private List<RoaringBitmap> lists;
     private ArrayList<String> strings;
     private ArrayList<Long> sizes;
     private long totalStringsSize = 0;
@@ -239,6 +238,29 @@ public final class PostingList implements Backend {
             }
         }
         return pl;
+    }
+
+    /**
+     * Reads necessary information from the filesystem into the backend in a background process
+     * and swaps out the old data with the new data when it is done.
+     */
+    @Override
+    public void generateFromFilesystem() {
+        // TODO: Figure out how to do this in a background thread.  The problem right now is getting a future and swapping out fields.
+        Executors.newSingleThreadExecutor().submit(() -> {
+            PostingList pl = new PostingList(Paths.get(fileLocation));
+            ParallelFileTreeVisitor walker = pl::addString;
+            walker.walk(Paths.get(System.getProperty("user.dir")));//.getRoot());
+            updateAllFields(pl.lists, pl.strings, pl.sizes, pl.totalStringsSize, pl.numHoles);
+        });
+    }
+
+    private void updateAllFields(List<RoaringBitmap> lists, ArrayList<String> strings, ArrayList<Long> sizes, long totalStringsSize, byte numHoles) {
+        this.lists = lists;
+        this.strings = strings;
+        this.sizes = sizes;
+        this.totalStringsSize = totalStringsSize;
+        this.numHoles = numHoles;
     }
 
     /**

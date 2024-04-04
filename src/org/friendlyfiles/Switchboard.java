@@ -12,6 +12,7 @@ public class Switchboard {
     public Switchboard(Backend backend, FileSource fileSource) {
         this.backend = backend;
         this.fileSource = fileSource;
+        backend.generateFromFilesystem();
     }
 
     public Stream<org.friendlyfiles.models.FileModel> getAllFiles() {

@@ -366,9 +366,9 @@ public class UIController {
      * A private class defining how the checkbox tree cells should be named.<br>
      * In this case we specify that it should using the lowermost directory name rather than the entire path to the file<br>
      * Cell Factory implementation is further detailed on Oracle's tree view documentation:<br>
-     * <a>https://docs.oracle.com/javafx/2/ui_controls/tree-view.htm</a>
+     * <a href="https://docs.oracle.com/javafx/2/ui_controls/tree-view.htm">https://docs.oracle.com/javafx/2/ui_controls/tree-view.htm</a>
      */
-    final class DirectoryTreeCell extends CheckBoxTreeCell<RealPath> {
+    static final class DirectoryTreeCell extends CheckBoxTreeCell<RealPath> {
     	
     	// Do not edit this method to change cell naming, the majority of the code here is recommended by the JavaFX developers
         @Override
