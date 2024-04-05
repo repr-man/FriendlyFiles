@@ -154,7 +154,8 @@ public class UIController {
         } else {
             switchboard = new Switchboard(new PostingList(dbPath), new FileSource());
         }
-        updateDirTree(switchboard.getAllFileNames().collect(Collectors.toList()));
+        ArrayList<String> items = (ArrayList<String>) switchboard.getAllFileNames().collect(Collectors.toList());
+        updateFiles(items);
     }
 
     /**
