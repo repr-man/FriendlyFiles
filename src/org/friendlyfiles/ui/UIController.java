@@ -115,7 +115,8 @@ public class UIController {
         fileKeys = (ArrayList<String>) switchboard.search(tbx_search.getText())
                 .map(item -> item.name)
                 .collect(Collectors.toList());
-    	updateFiles(fileKeys);
+        //TODO: Make this not require an argument.
+    	//updateFiles(fileKeys);
     }
 
     private Switchboard switchboard;
@@ -143,30 +144,27 @@ public class UIController {
             }
         });
 
+        // TODO: Make this write the database file when the application closes.
         Path dbPath = Paths.get("FriendlyFilesDatabase");
         if (Files.exists(dbPath)) {
             try (Backend backend = PostingList.deserializeFrom(dbPath)) {
-                switchboard = new Switchboard(backend, new FileSource());
+                switchboard = new Switchboard(this, backend, new FileSource());
             } catch (Exception e) {
                 // TODO: Show the user an error message or something and exit program.
                 throw new Error(e);
             }
         } else {
-            switchboard = new Switchboard(new PostingList(dbPath), new FileSource());
+            switchboard = new Switchboard(this, new PostingList(dbPath), new FileSource());
         }
-        ArrayList<String> items = (ArrayList<String>) switchboard.getAllFileNames().collect(Collectors.toList());
-        updateFiles(items);
+        updateFiles();
     }
 
     /**
      * Update the list of file keys stored by the UI. The order of the keys in this list corresponds to the order in which they will display to the user.<br>
      * Additionally, this method will immediately display these files to the user.
-     * @param fileKeys the file keys to be stored by the UI
      */
-    public void updateFiles(ArrayList<String> fileKeys) {
-    	
-    	this.fileKeys = fileKeys;
-    	displayFiles(fileKeys);
+    public void updateFiles() {
+    	displayFiles();
     }
     
     /**
@@ -325,12 +323,22 @@ public class UIController {
 			}
     	}
     }
+
+    /**
+     * Display the list of files to the user.
+     */
+    private void displayFiles() {
+        displayFiles(switchboard);
+    }
     
     /**
-     * Display the given list of files to the user, presented in the order they are stored within the list
-     * @param fileKeys the files to display to the user
+     * Display the list of files to the user.
+     * <p>
+     * This function is separated from the `displayFiles` instance method to allow for swapping out the backend
+     * after startup.
+     * @param switchboard the switchboard to get the items from
      */
-    private void displayFiles(ArrayList<String> fileKeys) {
+    public void displayFiles(Switchboard switchboard) {
     	
     	// Clear previous file panes before filling in with new data
     	tpn_fileDisplay.getChildren().clear();

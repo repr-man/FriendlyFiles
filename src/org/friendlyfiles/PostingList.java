@@ -245,13 +245,12 @@ public final class PostingList implements Backend {
      */
     @Override
     public void generateFromFilesystem(Switchboard switchboard) {
-        // TODO: Figure out how to do this in a background thread.  The problem right now is getting a future and swapping out fields.
-//        Executors.newSingleThreadExecutor().submit(() -> {
+        Executors.newSingleThreadExecutor().submit(() -> {
             PostingList pl = new PostingList(Paths.get(fileLocation));
             ParallelFileTreeVisitor walker = pl::add;
             walker.walk(Paths.get(System.getProperty("user.dir")));//.getRoot());
-            switchboard.setBackend(pl);
-//        });
+            switchboard.swapInBackend(pl);
+        });
     }
 
     private void updateAllFields(List<RoaringBitmap> lists, ArrayList<String> strings, ArrayList<Long> sizes, long totalStringsSize, byte numHoles) {
@@ -278,8 +277,7 @@ public final class PostingList implements Backend {
         try {
             sizes.add(Files.size(Paths.get(path)));
         } catch (IOException e) {
-            // TODO: Handle this better...
-            throw new Error(e);
+            sizes.add(Long.MIN_VALUE);
         }
     }
 
