@@ -1,11 +1,6 @@
 package org.friendlyfiles.ui;
 
-import java.io.File;
-
-import org.friendlyfiles.models.FileModel;
-
 import javafx.event.EventHandler;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
@@ -13,59 +8,46 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
 import javafx.scene.text.Font;
 
 public class FilePane extends Pane {
 	
 	// Color properties
-	private Color selectedColor = new Color(3/255., 189/255., 245/255., 1);
-	
+	private static final Color selectedColor = new Color(3/255., 189/255., 245/255., 1);
+	private static final Border hoverBorder = new Border(new BorderStroke(selectedColor, BorderStrokeStyle.SOLID, new CornerRadii(6), new BorderWidths(3)));
+	private static final Border normalBorder = new Border(new BorderStroke(new Color(0, 0, 0, 0), BorderStrokeStyle.SOLID, new CornerRadii(6), new BorderWidths(3)));
+
 	// Data components
-	private String file;
-	
-	private int height;
-	private int width;
-	private int border;
-	
-	private Image fileIco;
+	private static int height;
+	private static int width;
+	private static int border;
 	
 	// FX Components
-	private VBox fileDisplay;
-	private Label fileLabel;
-	private ImageView imageView;
-	
-	// Selected property
+
+    // Selected property
 	private boolean isSelected;
 	
-	public FilePane(String file, int height, int width, int border, Image image) {
+	public FilePane(String file, Image image) {
 		super();
-		
-		this.file = file;
-		
-		this.height = height;
-		this.width = width;
-		this.border = border;
-		
-		this.fileIco = image;
-		
-		setup();
-	}
-	
-	public void setup() {
 		
 		// Set size properties
 		this.setMinHeight(height);
 		this.setPrefHeight(height);
 		this.setMaxHeight(height);
-		
+
 		this.setMinWidth(width);
 		this.setPrefWidth(width);
 		this.setMaxWidth(width);
+
+
+		setup(file, image);
+	}
+	
+	public void setup(String file, Image image) {
 		
 		// Create file display area and set its properties
-		fileDisplay = new VBox();
-		
+		VBox fileDisplay = new VBox();
+
 		fileDisplay.setMinHeight(height - border);
 		fileDisplay.setPrefHeight(height - border);
 		fileDisplay.setMaxHeight(height - border);
@@ -81,7 +63,7 @@ public class FilePane extends Pane {
 		fileDisplay.setAlignment(Pos.CENTER);
 		
 		// Create a label for the file and set its properties
-		fileLabel = new Label(file);
+        Label fileLabel = new Label(file);
 		
 		fileLabel.setMinWidth(width - border);
 		fileLabel.setPrefWidth(width - border);
@@ -92,8 +74,8 @@ public class FilePane extends Pane {
 		fileLabel.setStyle("-fx-alignment: center");
 		
 		// Create an image view for the file and set up display properties
-		imageView = new ImageView();
-		imageView.setImage(fileIco);
+        ImageView imageView = new ImageView();
+		imageView.setImage(image);
 		imageView.setFitHeight(height - border - 32);
 		
 		imageView.setPreserveRatio(true);
@@ -105,7 +87,7 @@ public class FilePane extends Pane {
 		fileDisplay.getChildren().add(fileLabel);
 		
 		// Set default border of the file display area
-		fileDisplay.setBorder(new Border(new BorderStroke(new Color(0, 0, 0, 0), BorderStrokeStyle.SOLID, new CornerRadii(6), new BorderWidths(3))));
+		fileDisplay.setBorder(normalBorder);
 		
 		// Add all content to this file pane
 		this.getChildren().add(fileDisplay);
@@ -119,7 +101,7 @@ public class FilePane extends Pane {
 			@Override
 			public void handle(MouseEvent event) {
 				
-				fileDisplay.setBorder(new Border(new BorderStroke(selectedColor, BorderStrokeStyle.SOLID, new CornerRadii(6), new BorderWidths(3))));
+				fileDisplay.setBorder(hoverBorder);
 			}
 		});
 		
@@ -129,25 +111,37 @@ public class FilePane extends Pane {
 			@Override
 			public void handle(MouseEvent event) {
 				
-				fileDisplay.setBorder(new Border(new BorderStroke(new Color(0, 0, 0, 0), BorderStrokeStyle.SOLID, new CornerRadii(6), new BorderWidths(3))));
+				fileDisplay.setBorder(normalBorder);
 			}
 		});
 		
 		// Temporary colored background
 		//fileDisplay.setBackground(new Background(new BackgroundFill(Paint.valueOf("LightGray"), new CornerRadii(2), new Insets(0))));
 	}
-	
+
+	public static void setBorder(int border) {
+		FilePane.border = border;
+	}
+
+	public static void setWidth(int width) {
+		FilePane.width = width;
+	}
+
+	public static void setHeight(int height) {
+		FilePane.height = height;
+	}
+
 	// Get the file stored within the filePane
 	// Instead of storing a file, this object could just store an index/key that points to a file in a "master collection"
 	// Something like a hashset could work as long as we have a separate array to hold the keys sorted as needed
 	public String getFile() {
 	
-		return file;
+		return ((Label) getSelectionArea().getChildren().get(1)).getText();
 	}
 	
 	public VBox getSelectionArea() {
 		
-		return fileDisplay;
+		return (VBox) getChildren().get(0);
 	}
 	
 	public boolean isSelected() {

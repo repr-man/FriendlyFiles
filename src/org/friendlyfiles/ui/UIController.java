@@ -349,19 +349,21 @@ public class UIController {
     	//Image imgIcon = new Image("/img/ico_img");
     	
     	// Component size properties
-    	int height = 112;
-		int width = 80;
-		int border = 12;
+        FilePane.setHeight(112);
+        FilePane.setWidth(80);
+		FilePane.setBorder(12);
 
-        tpn_fileDisplay.getChildren().addAll(switchboard.getAllFileNames()
-                .map(item -> {
-                    FilePane filePane = new FilePane(item, height, width, border, otherIcon);
-                    filePane.getSelectionArea().addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
-                        System.out.println(filePane.getFile());
-                    });
-                    return filePane;
-                })
-                .collect(Collectors.toList()));
+        if(fileNames != null) {
+            tpn_fileDisplay.getChildren().addAll(fileNames
+                    .map(item -> {
+                        FilePane filePane = new FilePane(item, otherIcon);
+                        filePane.getSelectionArea().addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
+                            System.out.println(filePane.getFile());
+                        });
+                        return filePane;
+                    })
+                    .collect(Collectors.toList()));
+        }
     }
     
     
