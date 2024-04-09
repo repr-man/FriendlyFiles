@@ -414,7 +414,7 @@ public final class PostingList implements Backend {
             bitset = Arrays.stream(query.split("\\w"))
                     .parallel()
                     .map(this::getStrings)
-                    .reduce(new RoaringBitmap(), (acc, item) -> RoaringBitmap.and(acc, item));
+                    .reduce(RoaringBitmap.bitmapOfRange(0, strings.size()), (acc, item) -> RoaringBitmap.and(acc, item));
 
             bitset.and(filteredBitset.join());
         } else {
@@ -422,7 +422,7 @@ public final class PostingList implements Backend {
             bitset = Arrays.stream(query.split("\\w"))
                     .parallel()
                     .map(this::getStrings)
-                    .reduce(new RoaringBitmap(), (acc, item) -> RoaringBitmap.and(acc, item));
+                    .reduce(RoaringBitmap.bitmapOfRange(0, strings.size()), (acc, item) -> RoaringBitmap.and(acc, item));
         }
 
         return bitset.stream()

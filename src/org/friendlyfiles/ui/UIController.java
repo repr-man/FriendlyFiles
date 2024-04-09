@@ -1,11 +1,13 @@
 package org.friendlyfiles.ui;
 
 import java.io.IOException;
+import java.lang.management.GarbageCollectorMXBean;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.friendlyfiles.Backend;
 import org.friendlyfiles.FileSource;
@@ -111,12 +113,9 @@ public class UIController {
 
     @FXML
     public void btn_search_click(ActionEvent event) {
-        // TODO: Make this not use RealPaths or ArrayLists.
-        fileKeys = (ArrayList<String>) switchboard.search(tbx_search.getText())
-                .map(item -> item.name)
-                .collect(Collectors.toList());
-        //TODO: Make this not require an argument.
-    	//updateFiles(fileKeys);
+        fileNames = switchboard.search(tbx_search.getText())
+                .map(item -> item.name);
+    	updateFiles();
     }
 
     private Switchboard switchboard;
@@ -126,6 +125,9 @@ public class UIController {
     
     // Current ordered list of files
     private ArrayList<String> fileKeys;
+
+    // We park the stream of file names here so that multiple functions can consume it, or part of it.
+    private Stream<String> fileNames;
     
     public void initialize() {
     	
@@ -156,6 +158,7 @@ public class UIController {
         } else {
             switchboard = new Switchboard(this, new PostingList(dbPath), new FileSource());
         }
+        fileNames = switchboard.getAllFileNames();
         updateFiles();
     }
 
@@ -202,6 +205,7 @@ public class UIController {
     
     // Set of all the selected directory items
     // Since each item stores the full path of the directory it refers to, implementing a directory inclusion/exclusion toggle shouldn't be the most difficult thing in the world
+    // TODO: Probably turn this into a `RoaringBitmap`...
     private ObservableSet<DirectoryTreeItem> checkedDirItems = FXCollections.observableSet();
     
     /**
