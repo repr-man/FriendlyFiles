@@ -66,19 +66,19 @@ public interface Backend extends AutoCloseable {
      * @param filter filters the query results
      * @return the result of the query
      */
-    Stream<FileModel> get(String query, QueryFilter filter);
+    Stream<String> get(String query, QueryFilter filter);
 
     /**
      * Queries the backend for files without a filter.
      * @param query the string with which to search the backend
      * @return the result of the query
      */
-    Stream<FileModel> get(String query);
+    Stream<String> get(String query);
 
     /**
      * Queries the backend for files without a search string.
      * @param filter filters the query results
      * @return the result of the query
      */
-    Stream<FileModel> get(QueryFilter filter);
+    Stream<String> get(QueryFilter filter);
 }

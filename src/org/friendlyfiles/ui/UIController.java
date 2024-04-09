@@ -113,8 +113,7 @@ public class UIController {
 
     @FXML
     public void btn_search_click(ActionEvent event) {
-        fileNames = switchboard.search(tbx_search.getText())
-                .map(item -> item.name);
+        fileNames = switchboard.search(tbx_search.getText());
     	updateFiles();
     }
 
@@ -358,8 +357,7 @@ public class UIController {
 		FilePane.setBorder(12);
 
         if(fileNames != null) {
-            tpn_fileDisplay.getChildren().addAll(fileNames
-                    .map(item -> {
+            tpn_fileDisplay.getChildren().addAll(fileNames.map(item -> {
                         FilePane filePane = new FilePane(item, otherIcon);
                         filePane.getSelectionArea().addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
                             System.out.println(filePane.getFile());

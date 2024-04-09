@@ -21,8 +21,8 @@ public class FilePane extends Pane {
 	private static int height;
 	private static int width;
 	private static int border;
-	
-	// FX Components
+
+	private String filePath;
 
     // Selected property
 	private boolean isSelected;
@@ -39,6 +39,7 @@ public class FilePane extends Pane {
 		this.setPrefWidth(width);
 		this.setMaxWidth(width);
 
+		this.filePath = file;
 
 		setup(file, image);
 	}
@@ -63,7 +64,7 @@ public class FilePane extends Pane {
 		fileDisplay.setAlignment(Pos.CENTER);
 		
 		// Create a label for the file and set its properties
-        Label fileLabel = new Label(file);
+        Label fileLabel = new Label(file.substring(file.lastIndexOf('/') + 1));
 		
 		fileLabel.setMinWidth(width - border);
 		fileLabel.setPrefWidth(width - border);
@@ -135,8 +136,8 @@ public class FilePane extends Pane {
 	// Instead of storing a file, this object could just store an index/key that points to a file in a "master collection"
 	// Something like a hashset could work as long as we have a separate array to hold the keys sorted as needed
 	public String getFile() {
-	
-		return ((Label) getSelectionArea().getChildren().get(1)).getText();
+
+		return filePath;
 	}
 	
 	public VBox getSelectionArea() {

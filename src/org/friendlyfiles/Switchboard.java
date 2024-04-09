@@ -10,7 +10,6 @@ import java.util.stream.Stream;
 public class Switchboard {
 	private final UIController controller;
     private Backend backend;
-    // TODO: Change this to an array so we can have multiple file sources at once?
     private final FileSource fileSource;
     
     public Switchboard(UIController controller, Backend backend, FileSource fileSource) {
@@ -30,16 +29,16 @@ public class Switchboard {
     }
 
     // This function is going to change a lot as we figure out the best way to build filters and their queries.
-    public Stream<FileModel> search(String query) {
+    public Stream<String> search(String query) {
         return backend.get(query);
     }
 
-    public Stream<FileModel> search(String query, QueryFilter filter) {
+    public Stream<String> search(String query, QueryFilter filter) {
         return backend.get(query, filter);
     }
 
     // Rename this?
-    public Stream<FileModel> search(QueryFilter filter) {
+    public Stream<String> search(QueryFilter filter) {
         return backend.get(filter);
     }
 }

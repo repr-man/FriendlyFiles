@@ -400,10 +400,10 @@ public final class PostingList implements Backend {
      * Queries the backend for files.
      * @param query the string with which to search the backend
      * @param filter filters the query results
-     * @return a stream of FileModels corresponding to the results of the query
+     * @return a stream of file names corresponding to the results of the query
      */
     @Override
-    public Stream<FileModel> get(String query, QueryFilter filter) {
+    public Stream<String> get(String query, QueryFilter filter) {
         if (query.isEmpty()) return Stream.empty();
 
         // This is awful, but it's simple.  We need to do it so we can join the `getFiltered` thread.
@@ -428,16 +428,16 @@ public final class PostingList implements Backend {
         return bitset.stream()
                 .parallel()
                 .filter(i -> strings.get(i).contains(query))
-                .mapToObj(i -> new FileModel(strings.get(i)));
+                .mapToObj(i -> strings.get(i));
     }
 
     /**
      * Queries the backend for files without a filter.
      * @param query the string with which to search the backend
-     * @return a stream of FileModels corresponding to the results of the query
+     * @return a stream of file names corresponding to the results of the query
      */
     @Override
-    public Stream<FileModel> get(String query) {
+    public Stream<String> get(String query) {
         return get(query, null);
     }
 
@@ -447,10 +447,10 @@ public final class PostingList implements Backend {
      * @return the result of the query
      */
     @Override
-    public Stream<FileModel> get(QueryFilter filter) {
+    public Stream<String> get(QueryFilter filter) {
         return getFiltered(filter).stream()
                 .parallel()
-                .mapToObj(i -> new FileModel(strings.get(i)));
+                .mapToObj(i -> strings.get(i));
     }
 
     /**
