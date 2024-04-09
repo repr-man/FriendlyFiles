@@ -127,7 +127,7 @@ public class UIController {
 
     // We park the stream of file names here so that multiple functions can consume it, or part of it.
     private Stream<String> fileNames;
-    
+
     public void initialize() {
     	
     	// Enable caching of the file display panel
@@ -145,20 +145,27 @@ public class UIController {
             }
         });
 
-        // TODO: Make this write the database file when the application closes.
         Path dbPath = Paths.get("FriendlyFilesDatabase");
         if (Files.exists(dbPath)) {
-            try (Backend backend = PostingList.deserializeFrom(dbPath)) {
+            try {
+                Backend backend = PostingList.deserializeFrom(dbPath);
                 switchboard = new Switchboard(this, backend, new FileSource());
             } catch (Exception e) {
-                // TODO: Show the user an error message or something and exit program.
-                throw new Error(e);
+                // If we can't open the database file, we just start making a new one.
+                switchboard = new Switchboard(this, new PostingList(dbPath), new FileSource());
             }
         } else {
             switchboard = new Switchboard(this, new PostingList(dbPath), new FileSource());
         }
         fileNames = switchboard.getAllFileNames();
         updateFiles();
+    }
+
+    /**
+     * Shuts down the items controlled by the switchboard.
+     */
+    public void shutDown() {
+        switchboard.shutDown();
     }
 
     /**

@@ -133,8 +133,6 @@ public class FilePane extends Pane {
 	}
 
 	// Get the file stored within the filePane
-	// Instead of storing a file, this object could just store an index/key that points to a file in a "master collection"
-	// Something like a hashset could work as long as we have a separate array to hold the keys sorted as needed
 	public String getFile() {
 
 		return filePath;

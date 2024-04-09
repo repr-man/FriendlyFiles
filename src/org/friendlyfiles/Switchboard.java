@@ -19,6 +19,17 @@ public class Switchboard {
         backend.generateFromFilesystem(this);
     }
 
+    /**
+     * Shuts down the backend.
+     */
+    public void shutDown() {
+        try {
+            backend.close();
+        } catch (Exception e) {
+            throw new Error(e);
+        }
+    }
+
     public void swapInBackend(Backend backend) {
         this.backend = backend;
         controller.displayFiles(this);

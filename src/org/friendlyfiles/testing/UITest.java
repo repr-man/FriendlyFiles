@@ -48,4 +48,13 @@ public class UITest extends Application {
 		//demo.setController(controller);
 	}
 
+	/**
+	 * Shuts down the application.
+	 * @throws Exception not that it really matters at this point
+	 */
+	@Override
+	public void stop() throws Exception {
+		super.stop();
+		controller.shutDown();
+	}
 }
