@@ -37,6 +37,7 @@ public interface Backend extends AutoCloseable {
 
     /**
      * Gets a list of files that the backend keeps track of.
+     *
      * @return a stream of file models for the ui
      */
     Stream<String> getAllFileNames();
@@ -62,7 +63,8 @@ public interface Backend extends AutoCloseable {
 
     /**
      * Queries the backend for files.
-     * @param query the string with which to search the backend
+     *
+     * @param query  the string with which to search the backend
      * @param filter filters the query results
      * @return the result of the query
      */
@@ -70,6 +72,7 @@ public interface Backend extends AutoCloseable {
 
     /**
      * Queries the backend for files without a filter.
+     *
      * @param query the string with which to search the backend
      * @return the result of the query
      */
@@ -77,6 +80,7 @@ public interface Backend extends AutoCloseable {
 
     /**
      * Queries the backend for files without a search string.
+     *
      * @param filter filters the query results
      * @return the result of the query
      */

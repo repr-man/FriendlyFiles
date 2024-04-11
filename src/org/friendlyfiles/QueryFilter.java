@@ -13,7 +13,7 @@ public final class QueryFilter {
     }
 
     public QueryFilter addFileSizeRange(long lower, long upper) {
-        assert(lower <= upper);
+        assert (lower <= upper);
         if (lower > fileSizeLower && lower <= fileSizeUpper) {
             fileSizeLower = lower;
         }

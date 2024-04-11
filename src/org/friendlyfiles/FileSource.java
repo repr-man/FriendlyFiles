@@ -21,12 +21,13 @@ public class FileSource {
      * @param oldPath the path to the directory to be renamed
      * @param newName the name to change the old name to
      * @throws FileAlreadyExistsException if the new file name already exists
-     * @throws IOException if an I/O error occurs
+     * @throws IOException                if an I/O error occurs
      */
-	//@Override
+    //@Override
     public void renameDir(Path oldPath, String newName) throws FileAlreadyExistsException, IOException {
         Files.move(oldPath, oldPath.resolveSibling(newName));
     }
+
     /**
      * Changes the name of a file.
      *
@@ -34,35 +35,38 @@ public class FileSource {
      * @param newName the name to change the old name to
      * @throws DirectoryNotEmptyException if directory is not empty
      * @throws FileAlreadyExistsException if the new file name already exists
-     * @throws IOException if an I/O error occurs
+     * @throws IOException                if an I/O error occurs
      */
     //@Override
     public void renameFile(Path oldPath, String newName) throws DirectoryIteratorException, FileAlreadyExistsException, IOException {
         Path newPath = oldPath.resolveSibling(newName);
         Files.move(oldPath, newPath);
     }
+
     /**
      * Deletes a file at the given path.
      * <p>
      * This method assumes that the file exists and that it is not a directory.
+     *
      * @param path the path of the file to remove
      * @throws NoSuchFileException if the given file does not exist
-     * @throws IOException if other I/O errors occur
+     * @throws IOException         if other I/O errors occur
      */
     //@Override
     public void remove(Path path) throws NoSuchFileException, IOException {
         Files.delete(path);
     }
+
     /**
      * Removes the entire tree of the file system beneath the given path.
      * <p>
      * This method deletes the directory passed in and all the files and
      * directories inside of it.
-     * 
+     *
      * @param top the directory to remove
      * @throws IOException if an I/O error occurs
      */
-   // @Override
+    // @Override
     public void rmrf(Path top) throws IOException {
         Files.walkFileTree(top, new SimpleFileVisitor<Path>() {
             @Override
@@ -95,7 +99,9 @@ interface ParallelFileTreeVisitor {
                 if (res == null) break;
                 op(res);
             }
-        } catch (Exception e) { throw new Error(e); }
+        } catch (Exception e) {
+            throw new Error(e);
+        }
     }
 
     static void walkUpperTree(LinkedTransferQueue<String> result, Path path) {
@@ -115,7 +121,7 @@ interface ParallelFileTreeVisitor {
     static void walkLowerTree(LinkedTransferQueue<String> result, Path path) {
         if (Files.isDirectory(path)) {
             try {
-                Files.walkFileTree(path, new SimpleFileVisitor<Path>(){
+                Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
                     @Override
                     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                         result.add(file.toString());

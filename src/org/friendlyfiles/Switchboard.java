@@ -6,10 +6,10 @@ import java.util.stream.Stream;
 
 // Handles all coordination between the ui, backend, and file system.
 public class Switchboard {
-	private final UIController controller;
+    private final UIController controller;
     private Backend backend;
     private final FileSource fileSource;
-    
+
     public Switchboard(UIController controller, Backend backend, FileSource fileSource) {
         this.controller = controller;
         this.backend = backend;

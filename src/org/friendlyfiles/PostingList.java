@@ -8,9 +8,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
+import java.util.stream.*;
 
 /**
  * A posting list is a data structure that is the inverse of an array.
@@ -158,6 +156,7 @@ public final class PostingList implements Backend {
 
     /**
      * Compresses and writes the posting list to a file.
+     *
      * @param filename the name of the file to write the posting list to
      * @throws IOException if there is an error writing to the file
      */
@@ -200,6 +199,7 @@ public final class PostingList implements Backend {
 
     /**
      * Creates a new posting list by reading it from a file.
+     *
      * @param filename the name of the file to read from
      * @return a new posting list
      * @throws IOException if the file can't be read
@@ -228,7 +228,7 @@ public final class PostingList implements Backend {
                     byte[] bytes = new byte[strSize];
                     mbb.get(bytes, 0, strSize);
                     pl.strings.add(new String(bytes));
-                } else  {
+                } else {
                     pl.strings.add("");
                 }
             }
@@ -263,6 +263,7 @@ public final class PostingList implements Backend {
 
     /**
      * Gets a list of files that the backend keeps track of.
+     *
      * @return a stream of file models for the ui
      */
     @Override
@@ -283,6 +284,7 @@ public final class PostingList implements Backend {
 
     /**
      * Registers a new file or directory at the given path.
+     *
      * @param path the path at which to add the new item
      * @param size the size of the item
      */
@@ -295,6 +297,7 @@ public final class PostingList implements Backend {
     /**
      * Breaks a string into trigrams, adds the string to the list of potential strings, and adds the trigrams
      * to the posting list.
+     *
      * @param str the string to add to the posting list
      */
     private void addString(String str) {
@@ -323,6 +326,7 @@ public final class PostingList implements Backend {
      * <p>
      * This method assumes that the files exists.  These assumptions should be checked in
      * the ui or controller code so that they can display an error message to the user.
+     *
      * @param path the path of the file to remove
      * @return true if str is not in the list; false if str was in the list and was removed
      */
@@ -334,6 +338,7 @@ public final class PostingList implements Backend {
     /**
      * Ditto.
      * This function is used internally in both `remove` and `rename`.
+     *
      * @param path the path of the file to remove
      * @return -1 if str is not in the list; otherwise, the index of the removed item
      */
@@ -370,6 +375,7 @@ public final class PostingList implements Backend {
 
     /**
      * Removes a string from the posting list and haystack if they contain the string.
+     *
      * @param str the string to remove
      * @return -1 if str is not in the list; otherwise, the index of the removed item
      */
@@ -398,7 +404,8 @@ public final class PostingList implements Backend {
 
     /**
      * Queries the backend for files.
-     * @param query the string with which to search the backend
+     *
+     * @param query  the string with which to search the backend
      * @param filter filters the query results
      * @return a stream of file names corresponding to the results of the query
      */
@@ -412,27 +419,28 @@ public final class PostingList implements Backend {
         if (filter != null) {
             ForkJoinTask<RoaringBitmap> filteredBitset = ForkJoinPool.commonPool().submit(() -> getFiltered(filter));
             bitset = Arrays.stream(splitQuery)
-                    .parallel()
-                    .map(this::getStrings)
-                    .reduce(RoaringBitmap.bitmapOfRange(0, strings.size()), (acc, item) -> RoaringBitmap.and(acc, item));
+                           .parallel()
+                           .map(this::getStrings)
+                           .reduce(RoaringBitmap.bitmapOfRange(0, strings.size()), (acc, item) -> RoaringBitmap.and(acc, item));
 
             bitset.and(filteredBitset.join());
         } else {
             // Splits the query string.
             bitset = Arrays.stream(splitQuery)
-                    .parallel()
-                    .map(this::getStrings)
-                    .reduce(RoaringBitmap.bitmapOfRange(0, strings.size()), (acc, item) -> RoaringBitmap.and(acc, item));
+                           .parallel()
+                           .map(this::getStrings)
+                           .reduce(RoaringBitmap.bitmapOfRange(0, strings.size()), (acc, item) -> RoaringBitmap.and(acc, item));
         }
 
         return bitset.stream()
-                .parallel()
-                .filter(i -> Arrays.stream(splitQuery).allMatch(strings.get(i)::contains))
-                .mapToObj(i -> strings.get(i));
+                     .parallel()
+                     .filter(i -> Arrays.stream(splitQuery).allMatch(strings.get(i)::contains))
+                     .mapToObj(i -> strings.get(i));
     }
 
     /**
      * Queries the backend for files without a filter.
+     *
      * @param query the string with which to search the backend
      * @return a stream of file names corresponding to the results of the query
      */
@@ -443,6 +451,7 @@ public final class PostingList implements Backend {
 
     /**
      * Queries the backend for files without a search string.
+     *
      * @param filter filters the query results
      * @return the result of the query
      */
@@ -455,6 +464,7 @@ public final class PostingList implements Backend {
 
     /**
      * Retrieves all the strings corresponding to a query string.
+     *
      * @param query the string to search for
      * @return a bitset of indexes of strings containing the result of the query
      */
@@ -462,9 +472,9 @@ public final class PostingList implements Backend {
         if (query.length() < 3) {
             RoaringBitmap bitset = new RoaringBitmap();
             IntStream.range(0, strings.size())
-                    .parallel()
-                    .filter(i -> strings.get(i).contains(query))
-                    .forEach(bitset::add);
+                     .parallel()
+                     .filter(i -> strings.get(i).contains(query))
+                     .forEach(bitset::add);
             return bitset;
         } else {
             int a = mapChar(query.charAt(0)), b = mapChar(query.charAt(1)), c = mapChar(query.charAt(2));
@@ -491,13 +501,14 @@ public final class PostingList implements Backend {
 
     /**
      * Changes the name of a file.
+     *
      * @param oldPath the path to the file to be renamed
      * @param newName the name to change the old name to
      */
     @Override
     public void renameFile(String oldPath, String newName) {
         int index = removeItem(oldPath);
-        if(index >= 0) {
+        if (index >= 0) {
             long fileSize = sizes.remove(index);
             add(Paths.get(oldPath).resolveSibling(newName).toString(), fileSize);
         }
@@ -505,6 +516,7 @@ public final class PostingList implements Backend {
 
     /**
      * Maps the three mapped characters of a trigram to a posting list index.
+     *
      * @param a the first mapped character to map
      * @param b the second mapped character to map
      * @param c the third mapped character to map
@@ -537,6 +549,7 @@ public final class PostingList implements Backend {
      * It contains the results of the following formula for x in [0, 64):
      * <p>
      * f(x) = (\sum_{n = 65 - x}^{64} \frac{n(n-1)}{2}) - (\sum_{n = 65 - x}^{64} n)
+     *
      * @param n an integer in the range [0, 64)
      * @return the result of the function above
      */
@@ -616,6 +629,7 @@ public final class PostingList implements Backend {
      * It contains the results of the following formula for x in [0, 64):
      * <p>
      * f(x) = (\sum_{n = 65 - x}^{64} n) - x
+     *
      * @param n an integer in the range [0, 64)
      * @return the result of the function above
      */
@@ -710,6 +724,7 @@ public final class PostingList implements Backend {
      * <li>Start/end of string character -> 60</li>
      * <li>All other characters -> 61</li>
      * </ul>
+     *
      * @param c the character to map
      * @return the mapped character
      */
