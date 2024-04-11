@@ -36,6 +36,7 @@ bin/*.class
 *.iml
 .idea/*
 out
+FriendlyFilesDatabase
 
 # John's build scripts
 build
