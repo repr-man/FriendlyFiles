@@ -2,8 +2,6 @@ package org.friendlyfiles;
 
 import org.friendlyfiles.ui.UIController;
 
-import java.util.ArrayList;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 // Handles all coordination between the ui, backend, and file system.
