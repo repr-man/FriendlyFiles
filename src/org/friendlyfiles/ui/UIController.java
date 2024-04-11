@@ -117,12 +117,6 @@ public class UIController {
 
     private Switchboard switchboard;
 
-    // (Probably) temporary variable holding the paths of the root directories, for use in the updateTreeDirs() method
-    private ArrayList<String> rootDirPaths;
-    
-    // Current ordered list of files
-    private ArrayList<String> fileKeys;
-
     // We park the stream of file names here so that multiple functions can consume it, or part of it.
     private Stream<String> fileNames;
 
@@ -342,19 +336,11 @@ public class UIController {
 
     /**
      * Display the list of files to the user.
-     */
-    private void displayFiles() {
-        displayFiles(switchboard);
-    }
-    
-    /**
-     * Display the list of files to the user.
      * <p>
      * This function is separated from the `displayFiles` instance method to allow for swapping out the backend
      * after startup.
-     * @param switchboard the switchboard to get the items from
      */
-    public void displayFiles(Switchboard switchboard) {
+    public void displayFiles() {
     	
     	// Clear previous file panes before filling in with new data
     	tpn_fileDisplay.getChildren().clear();
