@@ -248,7 +248,7 @@ public final class PostingList implements Backend {
         Executors.newSingleThreadExecutor().submit(() -> {
             PostingList pl = new PostingList(Paths.get(fileLocation));
             ParallelFileTreeVisitor walker = pl::add;
-            walker.walk(Paths.get(System.getProperty("user.dir")));//.getRoot());
+            walker.walk(Paths.get(System.getProperty("user.dir")).getRoot());
             switchboard.swapInBackend(pl);
         });
     }

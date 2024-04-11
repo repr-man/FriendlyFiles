@@ -30,11 +30,7 @@ public class Switchboard {
 
     public void swapInBackend(Backend backend) {
         this.backend = backend;
-        controller.displayFiles(this);
-    }
-
-    public Stream<String> getAllFileNames() {
-        return backend.getAllFileNames();
+        controller.displayFiles();
     }
 
     // This function is going to change a lot as we figure out the best way to build filters and their queries.
