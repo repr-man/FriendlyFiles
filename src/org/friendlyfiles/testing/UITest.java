@@ -1,12 +1,11 @@
 package org.friendlyfiles.testing;
 
-import org.friendlyfiles.ui.UIController;
-
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import org.friendlyfiles.ui.UIController;
 
 public class UITest extends Application {
 	
@@ -30,7 +29,7 @@ public class UITest extends Application {
 		
 		// Get the UI controller from the fxmloader object
 		controller = (UIController)fxmlLoader.getController();
-		
+
 		// Continue with the standard UI setup, primarily initializing/presenting the stage
 		primaryStage.setTitle("FriendlyFiles File Utility");
 		
