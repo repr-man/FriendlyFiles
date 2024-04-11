@@ -481,7 +481,7 @@ public final class PostingList implements Backend {
     }
 
     private RoaringBitmap getFiltered(QueryFilter filter) {
-        RoaringBitmap bitset = new RoaringBitmap();
+        RoaringBitmap bitset = getStrings(filter.getRoot());
         IntStream.range(0, sizes.size())
                 .parallel()
                 .filter(filter::isInFileSizeRange)

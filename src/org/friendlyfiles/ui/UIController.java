@@ -111,7 +111,7 @@ public class UIController {
 
     @FXML
     public void btn_search_click(ActionEvent event) {
-        fileNames = switchboard.search(tbx_search.getText());
+        fileNames = switchboard.search(tbx_search.getText(), filter);
     	updateFiles();
     }
 
@@ -125,6 +125,8 @@ public class UIController {
 
     // We park the stream of file names here so that multiple functions can consume it, or part of it.
     private Stream<String> fileNames;
+
+    private QueryFilter filter;
 
     public void initialize() {
     	
@@ -155,7 +157,13 @@ public class UIController {
         } else {
             switchboard = new Switchboard(this, new PostingList(dbPath), new FileSource());
         }
-        fileNames = switchboard.getAllFileNames();
+
+        DirectoryChooser chooser = new DirectoryChooser();
+        chooser.setTitle("Select search root:");
+        String topDirectory = chooser.showDialog(null).getAbsolutePath();
+        System.out.println(topDirectory);
+        filter = new QueryFilter(topDirectory);
+        fileNames = switchboard.search(filter);
         updateFiles();
     }
 
