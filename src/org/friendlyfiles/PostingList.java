@@ -115,7 +115,7 @@ import java.util.stream.*;
  * serialization.
  * <p>
  * Second, and more importantly, we only want to serialize posting lists via memory mapped files.  Posting lists can
- * often be large (tens of megabytes).  Reading them with normal file io would be prohibitively expensive.  Memory
+ * often be large (hundreds of megabytes).  Reading them with normal file io would be prohibitively expensive.  Memory
  * mapped files use operating system magic to avoid this overhead.
  * <p>
  * The format of the serialized file is as follows:

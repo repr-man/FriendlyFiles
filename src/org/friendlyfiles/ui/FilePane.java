@@ -9,7 +9,7 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 
-public class FilePane extends Pane {
+public class FilePane extends VBox {
 
     // Color properties
     private static final Color selectedColor = new Color(3 / 255., 189 / 255., 245 / 255., 1);
@@ -17,9 +17,9 @@ public class FilePane extends Pane {
     private static final Border normalBorder = new Border(new BorderStroke(new Color(0, 0, 0, 0), BorderStrokeStyle.SOLID, new CornerRadii(6), new BorderWidths(3)));
 
     // Data components
-    private static int height;
-    private static int width;
-    private static int border;
+    private static int height = 112;
+    private static int width = 80;
+    private static int border = 12;
 
     private final String filePath;
 
@@ -46,21 +46,12 @@ public class FilePane extends Pane {
     public void setup(String file, Image image) {
 
         // Create file display area and set its properties
-        VBox fileDisplay = new VBox();
-
-        fileDisplay.setMinHeight(height - border);
-        fileDisplay.setPrefHeight(height - border);
-        fileDisplay.setMaxHeight(height - border);
-
-        fileDisplay.setMinWidth(width - border);
-        fileDisplay.setPrefWidth(width - border);
-        fileDisplay.setMaxHeight(width - border);
 
         //fileDisplay.setAlignment(Pos.CENTER);
-        fileDisplay.setFillWidth(true);
+        setFillWidth(true);
 
 
-        fileDisplay.setAlignment(Pos.CENTER);
+        setAlignment(Pos.CENTER);
 
         // Create a label for the file and set its properties
         Label fileLabel = new Label(file.substring(file.lastIndexOf('/') + 1));
@@ -83,63 +74,45 @@ public class FilePane extends Pane {
         imageView.setCache(true);
 
         // Add content to the file display area
-        fileDisplay.getChildren().add(imageView);
-        fileDisplay.getChildren().add(fileLabel);
+        getChildren().add(imageView);
+        getChildren().add(fileLabel);
 
         // Set default border of the file display area
-        fileDisplay.setBorder(normalBorder);
-
-        // Add all content to this file pane
-        this.getChildren().add(fileDisplay);
+        setBorder(normalBorder);
 
         // Style the components to center the content
         //fileLabel.setStyle("-fx-alignment: center");
 
         // Add a mouse hover enter event to the file pane
-        fileDisplay.addEventHandler(MouseEvent.MOUSE_ENTERED, new EventHandler<MouseEvent>() {
+        addEventHandler(MouseEvent.MOUSE_ENTERED, new EventHandler<MouseEvent>() {
 
             @Override
             public void handle(MouseEvent event) {
-
-                fileDisplay.setBorder(hoverBorder);
+                setBorder(hoverBorder);
             }
         });
 
         // Add a mouse hover exit event to the file pane
-        fileDisplay.addEventHandler(MouseEvent.MOUSE_EXITED, new EventHandler<MouseEvent>() {
+        addEventHandler(MouseEvent.MOUSE_EXITED, new EventHandler<MouseEvent>() {
 
             @Override
             public void handle(MouseEvent event) {
 
-                fileDisplay.setBorder(normalBorder);
+                setBorder(normalBorder);
             }
         });
 
+        addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
+            System.out.println(getFile());
+        });
         // Temporary colored background
         //fileDisplay.setBackground(new Background(new BackgroundFill(Paint.valueOf("LightGray"), new CornerRadii(2), new Insets(0))));
-    }
-
-    public static void setBorder(int border) {
-        FilePane.border = border;
-    }
-
-    public static void setWidth(int width) {
-        FilePane.width = width;
-    }
-
-    public static void setHeight(int height) {
-        FilePane.height = height;
     }
 
     // Get the file stored within the filePane
     public String getFile() {
 
         return filePath;
-    }
-
-    public VBox getSelectionArea() {
-
-        return (VBox) getChildren().get(0);
     }
 
     public boolean isSelected() {

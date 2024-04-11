@@ -350,19 +350,8 @@ public class UIController {
         //Image txtIcon = new Image("/img/ico_txt");
         //Image imgIcon = new Image("/img/ico_img");
 
-        // Component size properties
-        FilePane.setHeight(112);
-        FilePane.setWidth(80);
-        FilePane.setBorder(12);
-
         if (fileNames != null) {
-            tpn_fileDisplay.getChildren().addAll(fileNames.map(item -> {
-                FilePane filePane = new FilePane(item, otherIcon);
-                filePane.getSelectionArea().addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
-                    System.out.println(filePane.getFile());
-                });
-                return filePane;
-            }).collect(Collectors.toList()));
+            tpn_fileDisplay.getChildren().addAll(fileNames.map(item -> new FilePane(item, otherIcon)).collect(Collectors.toList()));
         }
     }
 
