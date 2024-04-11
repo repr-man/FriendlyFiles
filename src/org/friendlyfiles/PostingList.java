@@ -408,10 +408,10 @@ public final class PostingList implements Backend {
 
         // This is awful, but it's simple.  We need to do it so we can join the `getFiltered` thread.
         RoaringBitmap bitset;
+        String[] splitQuery = query.split("\\s");
         if (filter != null) {
             ForkJoinTask<RoaringBitmap> filteredBitset = ForkJoinPool.commonPool().submit(() -> getFiltered(filter));
-            // Splits the query string.
-            bitset = Arrays.stream(query.split("\\w"))
+            bitset = Arrays.stream(splitQuery)
                     .parallel()
                     .map(this::getStrings)
                     .reduce(RoaringBitmap.bitmapOfRange(0, strings.size()), (acc, item) -> RoaringBitmap.and(acc, item));
@@ -419,7 +419,7 @@ public final class PostingList implements Backend {
             bitset.and(filteredBitset.join());
         } else {
             // Splits the query string.
-            bitset = Arrays.stream(query.split("\\w"))
+            bitset = Arrays.stream(splitQuery)
                     .parallel()
                     .map(this::getStrings)
                     .reduce(RoaringBitmap.bitmapOfRange(0, strings.size()), (acc, item) -> RoaringBitmap.and(acc, item));
@@ -427,7 +427,7 @@ public final class PostingList implements Backend {
 
         return bitset.stream()
                 .parallel()
-                .filter(i -> strings.get(i).contains(query))
+                .filter(i -> Arrays.stream(splitQuery).allMatch(strings.get(i)::contains))
                 .mapToObj(i -> strings.get(i));
     }
 
