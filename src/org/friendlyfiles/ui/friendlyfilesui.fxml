@@ -27,13 +27,12 @@
                      <content>
                         <HBox fx:id="hbox_headerContent" alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="8.0">
                            <children>
-                              <TextField fx:id="tbx_search" maxHeight="-Infinity" prefHeight="24.0" promptText="Search for Files">
+                              <TextField fx:id="tbx_search" maxHeight="-Infinity" prefHeight="24.0" promptText="Search for Files" onAction="#btn_search_click">
                                  <HBox.margin>
                                     <Insets />
                                  </HBox.margin>
                               </TextField>
                               <Button fx:id="btn_search" mnemonicParsing="false" onAction="#btn_search_click" text="Search" />
-                              <CheckBox fx:id="cbx_searchExtension" mnemonicParsing="false" text="Include Extension in Search" />
                            </children>
                            <padding>
                               <Insets left="8.0" right="8.0" />
