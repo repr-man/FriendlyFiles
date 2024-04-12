@@ -470,7 +470,6 @@ public final class PostingList implements Backend {
      * @return a bitset of indexes of strings containing the result of the query
      */
     private RoaringBitmap getStrings(String query) {
-        long startTime = System.currentTimeMillis();
         if (query.length() < 3) {
             return IntStream.range(0, strings.size())
                             .filter(i -> strings.get(i).contains(query))
@@ -485,8 +484,6 @@ public final class PostingList implements Backend {
                 bitset.and(lists.get(mapTrigramToIndex(a, b, c)));
             }
             //bitset.and(lists.get(mapTrigramToIndex(b, c, 60)));
-            System.out.print("getStrings > 3 time: ");
-            System.out.println(System.currentTimeMillis() - startTime);
             return bitset;
         }
     }
