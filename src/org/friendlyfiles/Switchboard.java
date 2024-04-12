@@ -1,5 +1,6 @@
 package org.friendlyfiles;
 
+import javafx.application.Platform;
 import org.friendlyfiles.ui.UIController;
 
 import java.util.stream.Stream;
@@ -30,7 +31,6 @@ public class Switchboard {
 
     public void swapInBackend(Backend backend) {
         this.backend = backend;
-        controller.displayFiles();
     }
 
     // This function is going to change a lot as we figure out the best way to build filters and their queries.

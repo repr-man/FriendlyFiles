@@ -29,6 +29,9 @@ import java.util.stream.Stream;
 public class UIController {
 
     @FXML
+    public ListView<String> lv_fileDisplay;
+
+    @FXML
     private Accordion acc_leftPane;
 
     @FXML
@@ -86,9 +89,6 @@ public class UIController {
     private TitledPane tpn_dirTree;
 
     @FXML
-    private TilePane tpn_fileDisplay;
-
-    @FXML
     private TitledPane tpn_filterStack;
 
     @FXML
@@ -125,8 +125,9 @@ public class UIController {
     public void initialize() {
 
         // Enable caching of the file display panel
-        tpn_fileDisplay.setCache(true);
-        tpn_fileDisplay.setCacheHint(CacheHint.SPEED);
+        lv_fileDisplay.setCache(true);
+        lv_fileDisplay.setCacheHint(CacheHint.SPEED);
+        lv_fileDisplay.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
         // For future reference, much of the following cellfactory instantiation code was based off of the following resource:
         // https://stackoverflow.com/a/39466520
@@ -343,7 +344,7 @@ public class UIController {
     public void displayFiles() {
 
         // Clear previous file panes before filling in with new data
-        tpn_fileDisplay.getChildren().clear();
+        lv_fileDisplay.getItems().clear();
 
         // Get possible file icon images
         Image otherIcon = new Image("/org/friendlyfiles/img/ico_other.png");
@@ -351,7 +352,7 @@ public class UIController {
         //Image imgIcon = new Image("/img/ico_img");
 
         if (fileNames != null) {
-            tpn_fileDisplay.getChildren().addAll(fileNames.map(item -> new FilePane(item, otherIcon)).collect(Collectors.toList()));
+            lv_fileDisplay.getItems().addAll(fileNames.collect(Collectors.toList()));
         }
     }
 
