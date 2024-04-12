@@ -1,6 +1,7 @@
 package org.friendlyfiles;
 
-import org.roaringbitmap.RoaringBitmap;
+import org.roaringbitmap.*;
+import org.roaringbitmap.longlong.Roaring64Bitmap;
 
 import java.io.*;
 import java.nio.MappedByteBuffer;
@@ -469,13 +470,11 @@ public final class PostingList implements Backend {
      * @return a bitset of indexes of strings containing the result of the query
      */
     private RoaringBitmap getStrings(String query) {
+        long startTime = System.currentTimeMillis();
         if (query.length() < 3) {
-            RoaringBitmap bitset = new RoaringBitmap();
-            IntStream.range(0, strings.size())
-                     .parallel()
-                     .filter(i -> strings.get(i).contains(query))
-                     .forEach(bitset::add);
-            return bitset;
+            return IntStream.range(0, strings.size())
+                            .filter(i -> strings.get(i).contains(query))
+                            .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or);
         } else {
             int a = mapChar(query.charAt(0)), b = mapChar(query.charAt(1)), c = mapChar(query.charAt(2));
             RoaringBitmap bitset = lists.get(mapTrigramToIndex(a, b, c));
@@ -486,16 +485,18 @@ public final class PostingList implements Backend {
                 bitset.and(lists.get(mapTrigramToIndex(a, b, c)));
             }
             //bitset.and(lists.get(mapTrigramToIndex(b, c, 60)));
+            System.out.print("getStrings > 3 time: ");
+            System.out.println(System.currentTimeMillis() - startTime);
             return bitset;
         }
     }
 
     private RoaringBitmap getFiltered(QueryFilter filter) {
-        RoaringBitmap bitset = getStrings(filter.getRoot());
-        IntStream.range(0, sizes.size())
-                .parallel()
-                .filter(filter::isInFileSizeRange)
-                .forEach(bitset::add);
+        RoaringBitmap bitset = IntStream
+                .range(0, sizes.size())
+                .filter(i -> filter.isInFileSizeRange(sizes.get(i)))
+                .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or);
+        bitset.and(getStrings(filter.getRoot()));
         return bitset;
     }
 

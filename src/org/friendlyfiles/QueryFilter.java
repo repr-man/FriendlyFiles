@@ -2,7 +2,7 @@ package org.friendlyfiles;
 
 public final class QueryFilter {
     private final String root;
-    private long fileSizeLower, fileSizeUpper;
+    private long fileSizeLower, fileSizeUpper = Long.MAX_VALUE;
 
     public QueryFilter(String root) {
         this.root = root;
