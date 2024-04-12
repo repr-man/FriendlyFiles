@@ -31,6 +31,7 @@ public class Switchboard {
 
     public void swapInBackend(Backend backend) {
         this.backend = backend;
+        Platform.runLater(controller::notifyBackendSwapCompleted);
     }
 
     // This function is going to change a lot as we figure out the best way to build filters and their queries.

@@ -115,6 +115,8 @@ public class UIController {
         updateFiles();
     }
 
+    private Dialog<Object> waitingForSwapDialog = null;
+
     private Switchboard switchboard;
 
     // We park the stream of file names here so that multiple functions can consume it, or part of it.
@@ -148,9 +150,11 @@ public class UIController {
             } catch (Exception e) {
                 // If we can't open the database file, we just start making a new one.
                 switchboard = new Switchboard(this, new PostingList(dbPath), new FileSource());
+                showWaitingForSwapDialog();
             }
         } else {
             switchboard = new Switchboard(this, new PostingList(dbPath), new FileSource());
+            showWaitingForSwapDialog();
         }
 
         DirectoryChooser chooser = new DirectoryChooser();
@@ -354,6 +358,22 @@ public class UIController {
         if (fileNames != null) {
             lv_fileDisplay.getItems().addAll(fileNames.collect(Collectors.toList()));
         }
+    }
+
+    public void notifyBackendSwapCompleted() {
+        if (waitingForSwapDialog != null) {
+            fileNames = switchboard.search(filter);
+            updateFiles();
+            waitingForSwapDialog.close();
+            waitingForSwapDialog.getDialogPane().getScene().getWindow().hide();
+        }
+    }
+
+    private void showWaitingForSwapDialog() {
+        waitingForSwapDialog = new Dialog<>();
+        waitingForSwapDialog.setHeaderText("One moment, please...");
+        waitingForSwapDialog.setContentText("We are indexing your file system.");
+        waitingForSwapDialog.show();
     }
 
 
