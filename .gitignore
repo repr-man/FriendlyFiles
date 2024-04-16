@@ -37,6 +37,10 @@ bin/*.class
 .idea/*
 out
 FriendlyFilesDatabase
+.project
+.classpath
+bin
+.settings
 
 # John's build scripts
 build
