@@ -45,9 +45,9 @@ public class Switchboard {
         return backend.get(query, filter);
     }
 
-    // Rename this?
     public Stream<String> search(QueryFilter filter) {
-        return backend.get(filter);
+        return filter == null ? Stream.empty() : backend.get(filter);
+    }
 
     public void openFile(String filePath) {
         try {
