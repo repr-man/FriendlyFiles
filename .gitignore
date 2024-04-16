@@ -41,6 +41,7 @@ FriendlyFilesDatabase
 .classpath
 bin
 .settings
+src/org/friendlyfiles/.metadata
 
 # John's build scripts
 build
