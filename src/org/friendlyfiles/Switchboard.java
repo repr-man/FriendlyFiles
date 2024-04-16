@@ -3,6 +3,8 @@ package org.friendlyfiles;
 import javafx.application.Platform;
 import org.friendlyfiles.ui.UIController;
 
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.stream.Stream;
 
 // Handles all coordination between the ui, backend, and file system.
@@ -46,6 +48,13 @@ public class Switchboard {
     // Rename this?
     public Stream<String> search(QueryFilter filter) {
         return backend.get(filter);
+
+    public void openFile(String filePath) {
+        try {
+            fileSource.openFile(Paths.get(filePath));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
 

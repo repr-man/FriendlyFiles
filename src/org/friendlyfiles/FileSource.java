@@ -1,6 +1,7 @@
 package org.friendlyfiles;
 
-import java.io.IOException;
+import java.awt.*;
+import java.io.*;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.concurrent.*;
@@ -81,6 +82,32 @@ public class FileSource {
                 return FileVisitResult.CONTINUE;
             }
         });
+    }
+
+    public void openFile(Path path) throws IOException {
+        if (!Desktop.isDesktopSupported()) {
+            System.err.println("Desktop operations are not supported on this platform.");
+            return;
+        }
+
+        Desktop desktop = Desktop.getDesktop();
+        if (!desktop.isSupported(Desktop.Action.OPEN)) {
+            System.err.println("Open action is not supported on this platform.");
+            return;
+        }
+
+        File file = path.toFile();
+        if (file.exists()) {
+            Executors.defaultThreadFactory().newThread(() -> {
+                try {
+                    desktop.open(file);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }).start();
+        } else {
+            System.err.println("File does not exist: " + file.getAbsolutePath());
+        }
     }
 }
 

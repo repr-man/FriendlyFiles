@@ -1,5 +1,6 @@
 package org.friendlyfiles.ui;
 
+import com.sun.javafx.scene.control.skin.LabeledText;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -127,6 +128,12 @@ public class UIController {
         lv_fileDisplay.setCache(true);
         lv_fileDisplay.setCacheHint(CacheHint.SPEED);
         lv_fileDisplay.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        lv_fileDisplay.setOnMouseClicked(mouseEvent -> {
+            if (mouseEvent.getClickCount() == 2 && mouseEvent.getTarget().getClass() == LabeledText.class) {
+                String filePath = lv_fileDisplay.getSelectionModel().getSelectedItem();
+                switchboard.openFile(filePath);
+            }
+        });
 
         // For future reference, much of the following cellfactory instantiation code was based off of the following resource:
         // https://stackoverflow.com/a/39466520
