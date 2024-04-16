@@ -5,8 +5,6 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
 import javafx.event.ActionEvent;
-import javafx.event.Event;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.CacheHint;
 import javafx.scene.control.*;
@@ -18,7 +16,6 @@ import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.util.Callback;
 import org.friendlyfiles.*;
-import com.sun.javafx.scene.control.skin.LabeledText;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -130,32 +127,6 @@ public class UIController {
         lv_fileDisplay.setCache(true);
         lv_fileDisplay.setCacheHint(CacheHint.SPEED);
         lv_fileDisplay.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        
-        lv_fileDisplay.setOnMouseClicked(new EventHandler<Event>() {
-
-			@Override
-			public void handle(Event event) {
-				
-				if (event.getTarget().getClass() == LabeledText.class) {
-					
-					String filePath = lv_fileDisplay.getSelectionModel().getSelectedItem().toString();
-					System.out.println(filePath);
-					
-					
-					/*
-					 * Using Phill's openFile method to open files based on their file paths
-					 * Works on Windows, John can test on linux
-					 */
-//					FileSource fSource = new FileSource();
-//					try {
-//						fSource.openFile(Paths.get(filePath));
-//					} catch (IOException e) {
-//						// TODO Auto-generated catch block
-//						e.printStackTrace();
-//					}
-				}
-			}
-		});
 
         // For future reference, much of the following cellfactory instantiation code was based off of the following resource:
         // https://stackoverflow.com/a/39466520
