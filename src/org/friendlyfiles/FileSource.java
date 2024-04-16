@@ -5,6 +5,12 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.concurrent.*;
 import java.util.stream.Stream;
+import java.awt.Desktop;
+import java.io.IOException;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.concurrent.*;
+import java.util.stream.Stream;
 
 /**
  * Describes all the operations that will be used when interacting with real filesystems,
@@ -138,6 +144,25 @@ interface ParallelFileTreeVisitor {
             }
         } else {
             result.add(path.toString());
+        }
+    }
+    public void openFile(Path path) throws IOException {
+        if (!Desktop.isDesktopSupported()) {
+            System.err.println("Desktop operations are not supported on this platform.");
+            return;
+        }
+
+        Desktop desktop = Desktop.getDesktop();
+        if (!desktop.isSupported(Desktop.Action.OPEN)) {
+            System.err.println("Open action is not supported on this platform.");
+            return;
+        }
+
+        File file = path.toFile();
+        if (file.exists()) {
+            desktop.open(file);
+        } else {
+            System.err.println("File does not exist: " + file.getAbsolutePath());
         }
     }
 }
