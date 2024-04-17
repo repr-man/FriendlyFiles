@@ -13,19 +13,18 @@
 <?import javafx.scene.control.TreeView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.TilePane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane fx:id="bp_root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.friendlyfiles.ui.UIController">
+<BorderPane fx:id="bp_root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.friendlyfiles.ui.UIController">
    <top>
-      <VBox fx:id="vbox_header" BorderPane.alignment="CENTER">
+      <VBox BorderPane.alignment="CENTER">
          <children>
-            <TabPane fx:id="tbp_header" prefHeight="80.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE">
+            <TabPane prefHeight="80.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE">
               <tabs>
                 <Tab fx:id="tab_query" text="Query">
                      <content>
-                        <HBox fx:id="hbox_headerContent" alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="8.0">
+                        <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="8.0">
                            <children>
                               <TextField fx:id="tbx_search" maxHeight="-Infinity" onAction="#btn_search_click" prefHeight="24.0" promptText="Search for Files">
                                  <HBox.margin>
@@ -40,7 +39,17 @@
                         </HBox>
                      </content>
                 </Tab>
-                <Tab fx:id="tab_filter" text="Filter" />
+                <Tab fx:id="tab_filter" text="Filter">
+                     <content>
+                        <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="8.0">
+                           <children>
+                              <Button fx:id="btn_addFilter" mnemonicParsing="false" onAction="#btn_addFilter_clicked" text="Add Filter" />
+                           </children>
+                           <padding>
+                              <Insets left="8.0" right="8.0" />
+                           </padding>
+                        </HBox>
+                     </content></Tab>
                   <Tab fx:id="tab_sort" text="Sort" />
                   <Tab fx:id="tab_db" text="Database" />
               </tabs>
@@ -52,30 +61,30 @@
       </VBox>
    </top>
    <bottom>
-      <HBox fx:id="hbx_statusBar" maxHeight="-Infinity" maxWidth="1.7976931348623157E308" minHeight="-Infinity" prefHeight="20.0" BorderPane.alignment="CENTER" />
+      <HBox maxHeight="-Infinity" maxWidth="1.7976931348623157E308" minHeight="-Infinity" prefHeight="20.0" BorderPane.alignment="CENTER" />
    </bottom>
    <center>
-      <ScrollPane fx:id="spn_fileDisplay" fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" BorderPane.alignment="CENTER">
+      <ScrollPane fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" BorderPane.alignment="CENTER">
          <content>
-            <ListView fx:id="lv_fileDisplay" />
+            <ListView fx:id="lv_fileDisplay" onMouseClicked="#lv_fileDisplay_clicked" />
          </content>
       </ScrollPane>
    </center>
    <left>
-      <VBox fx:id="vbx_leftPane" BorderPane.alignment="CENTER">
+      <VBox BorderPane.alignment="CENTER">
          <children>
-            <Label fx:id="lbl_view" alignment="CENTER" maxHeight="-Infinity" maxWidth="1.7976931348623157E308" minHeight="-Infinity" prefHeight="18.0" text="Content View" textAlignment="CENTER">
+            <Label alignment="CENTER" maxHeight="-Infinity" maxWidth="1.7976931348623157E308" minHeight="-Infinity" prefHeight="18.0" text="Content View" textAlignment="CENTER">
                <font>
                   <Font name="System Bold" size="12.0" />
                </font>
             </Label>
-            <ScrollPane fx:id="spn_leftPane" fitToWidth="true" prefWidth="130.0">
+            <ScrollPane fitToWidth="true" prefWidth="130.0">
                <content>
-                  <VBox fx:id="vbx_leftSpnBody">
+                  <VBox>
                      <children>
-                        <Accordion fx:id="acc_leftPane">
+                        <Accordion>
                           <panes>
-                            <TitledPane fx:id="tpn_dirTree" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="200.0" text="Directory Tree">
+                            <TitledPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="200.0" text="Directory Tree">
                                  <content>
                                     <TreeView fx:id="tvw_dirTree" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="200.0" showRoot="false" />
                                  </content>
@@ -91,20 +100,44 @@
       </VBox>
    </left>
    <right>
-      <VBox fx:id="vbx_rightPane" BorderPane.alignment="CENTER">
+      <VBox prefWidth="160.0" BorderPane.alignment="CENTER">
          <children>
-            <Label fx:id="lbl_advFilter" alignment="CENTER" maxHeight="-Infinity" maxWidth="1.7976931348623157E308" minHeight="-Infinity" prefHeight="18.0" text="Advanced Filtering" textAlignment="CENTER">
+            <Label alignment="CENTER" maxHeight="-Infinity" maxWidth="1.7976931348623157E308" minHeight="-Infinity" prefHeight="18.0" text="Advanced Filtering" textAlignment="CENTER">
                <font>
                   <Font name="System Bold" size="12.0" />
                </font>
             </Label>
-            <ScrollPane fx:id="spn_rightPane" fitToWidth="true" prefWidth="130.0">
+            <ScrollPane fitToWidth="true" prefWidth="130.0">
                <content>
-                  <VBox fx:id="vbx_rightSpnBody">
+                  <VBox>
                      <children>
-                        <Accordion fx:id="acc_rightPane">
+                        <Accordion>
                           <panes>
-                            <TitledPane fx:id="tpn_filterStack" text="Filter Stack" />
+                            <TitledPane text="Filter Stack">
+                                 <content>
+                                    <HBox alignment="CENTER_LEFT" spacing="4.0">
+                                       <children>
+                                          <ScrollPane hbarPolicy="NEVER">
+                                             <content>
+                                                <ListView fx:id="lsv_filterStack" onMouseClicked="#lsv_filterStack_clicked" prefHeight="200.0" prefWidth="200.0" />
+                                             </content>
+                                          </ScrollPane>
+                                          <VBox minHeight="56.0" minWidth="28.0" prefHeight="56.0" prefWidth="28.0" spacing="2.0">
+                                             <children>
+                                                <Button fx:id="btn_filterStackUp" minHeight="28.0" minWidth="28.0" mnemonicParsing="false" onAction="#btn_filterStackUp_clicked" prefHeight="28.0" prefWidth="28.0" text="^" textAlignment="CENTER">
+                                                   <font>
+                                                      <Font name="System Bold" size="12.0" />
+                                                   </font>
+                                                </Button>
+                                                <Button fx:id="btn_filterStackDown" minHeight="28.0" minWidth="28.0" mnemonicParsing="false" onAction="#btn_filterStackDown_clicked" prefHeight="28.0" prefWidth="28.0" text="v" textAlignment="CENTER" />
+                                             </children>
+                                             <HBox.margin>
+                                                <Insets top="16.0" />
+                                             </HBox.margin>
+                                          </VBox>
+                                       </children>
+                                    </HBox>
+                                 </content></TitledPane>
                             <TitledPane expanded="false" text="untitled 2" />
                           </panes>
                         </Accordion>
@@ -113,6 +146,9 @@
                </content>
             </ScrollPane>
          </children>
+         <BorderPane.margin>
+            <Insets />
+         </BorderPane.margin>
       </VBox>
    </right>
 </BorderPane>

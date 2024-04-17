@@ -4,6 +4,7 @@ import com.sun.javafx.scene.control.skin.LabeledText;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.collections.ObservableSet;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -11,59 +12,45 @@ import javafx.scene.CacheHint;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxTreeCell;
 import javafx.scene.image.Image;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.util.Callback;
 import org.friendlyfiles.*;
+
+import java.awt.event.ItemEvent;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class UIController {
 
-    @FXML
-    public ListView<String> lv_fileDisplay;
-
-    @FXML
-    private Accordion acc_leftPane;
-
-    @FXML
-    private Accordion acc_rightPane;
-
-    @FXML
+	@FXML
     private BorderPane bp_root;
+
+    @FXML
+    private Button btn_addFilter;
+
+    @FXML
+    private Button btn_filterStackDown;
+
+    @FXML
+    private Button btn_filterStackUp;
 
     @FXML
     private Button btn_search;
 
     @FXML
-    private CheckBox cbx_searchExtension;
+    private ListView<String> lsv_filterStack;
 
     @FXML
-    private HBox hbox_headerContent;
-
-    @FXML
-    private HBox hbx_statusBar;
-
-    @FXML
-    private Label lbl_advFilter;
-
-    @FXML
-    private Label lbl_view;
-
-    @FXML
-    private ScrollPane spn_fileDisplay;
-
-    @FXML
-    private ScrollPane spn_leftPane;
-
-    @FXML
-    private ScrollPane spn_rightPane;
+    private ListView<String> lv_fileDisplay;
 
     @FXML
     private Tab tab_db;
@@ -78,40 +65,84 @@ public class UIController {
     private Tab tab_sort;
 
     @FXML
-    private TabPane tbp_header;
-
-    @FXML
     private TextField tbx_search;
-
-    @FXML
-    private TitledPane tpn_dirTree;
-
-    @FXML
-    private TitledPane tpn_filterStack;
 
     @FXML
     private TreeView<String> tvw_dirTree;
 
     @FXML
-    private VBox vbox_header;
-
-    @FXML
-    private VBox vbx_leftPane;
-
-    @FXML
-    private VBox vbx_leftSpnBody;
-
-    @FXML
-    private VBox vbx_rightPane;
-
-    @FXML
-    private VBox vbx_rightSpnBody;
-
-    @FXML
     public void btn_search_click(ActionEvent event) {
+    	
         fileNames = switchboard.search(tbx_search.getText(), filter);
         updateFiles();
     }
+    
+    @FXML
+    void btn_addFilter_clicked(ActionEvent event) {
+    	
+    	// TODO: Create popup to allow a new filter to be configured and added to the filterList
+    }
+    
+    @FXML
+    void lv_fileDisplay_clicked(MouseEvent event) {
+    	
+    	if (event.getClickCount() == 2 && event.getTarget().getClass() == LabeledText.class) {
+    		
+            String filePath = lv_fileDisplay.getSelectionModel().getSelectedItem();
+            switchboard.openFile(filePath);
+        }
+    }
+    
+    @FXML
+    void btn_filterStackUp_clicked(ActionEvent event) {
+    	
+    	// TODO: Implement actual code here (this code is completely untested and doesn't update the listview)
+    	
+    	// Demo
+//    	if (selectedFilterIndex > 0) {
+//    		
+//			filterList.remove(selectedFilterIndex);
+//			filterList.add(selectedFilterIndex - 1, selectedFilter);
+//			
+//    	}
+    }
+    
+    @FXML
+    void btn_filterStackDown_clicked(ActionEvent event) {
+    	
+    	// TODO: Implement actual code here (this code is completely untested and doesn't update the listview)
+    	
+    	// Demo
+//    	if (selectedFilterIndex != -1 && selectedFilterIndex < filterList.size() - 1) {
+//    		
+//    		filterList.remove(selectedFilterIndex);
+//    		filterList.add(selectedFilterIndex + 1, selectedFilter);
+//    		
+//    	}
+    }
+
+    @FXML
+    void lsv_filterStack_clicked(MouseEvent event) {
+    	
+    	if (event.getClickCount() == 2 && event.getTarget().getClass() == LabeledText.class) {
+    		
+    		// Get the index of the filter that was clicked
+    		// We can then use the index to select the filter from the list of filters below this method
+//            selectedFilterIndex = lv_fileDisplay.getSelectionModel().getSelectedIndex();
+//            selectedFilter = filterList.get(selectedFilterIndex);
+        }
+    	else {
+    		
+    		// selectedFilterIndex = -1;
+    	}
+    }
+    
+    /** TODO: Custom filter objects to specify each individual filtering step. OurFilter is simply a placeholder name.
+     * (individual filters could be applied individually or read in by the master QueryFilter to compile and execute one large query?)
+     */
+//    private ObservableList<OurFilter> filterList = FXCollections.observableList(new ArrayList<OurFilter>());
+//    private OurFilter selectedFilter = null;
+//    private int selectedFilterIndex = -1;
 
     private Dialog<Object> waitingForSwapDialog = null;
 
@@ -127,13 +158,11 @@ public class UIController {
         // Enable caching of the file display panel
         lv_fileDisplay.setCache(true);
         lv_fileDisplay.setCacheHint(CacheHint.SPEED);
+        
+        // Set up file listview selection
         lv_fileDisplay.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        lv_fileDisplay.setOnMouseClicked(mouseEvent -> {
-            if (mouseEvent.getClickCount() == 2 && mouseEvent.getTarget().getClass() == LabeledText.class) {
-                String filePath = lv_fileDisplay.getSelectionModel().getSelectedItem();
-                switchboard.openFile(filePath);
-            }
-        });
+        
+        // OnClick moved to FX event (above)
 
         // For future reference, much of the following cellfactory instantiation code was based off of the following resource:
         // https://stackoverflow.com/a/39466520
@@ -145,6 +174,26 @@ public class UIController {
                 return new DirectoryTreeCell();
             }
         });
+        
+        // Set cell factory for the filter stack list view in order to show only the names of our custom filters
+        // TODO: Implement the filter item that will be added to this list
+        // Ensure the filter item has a getName() property or some other way to access text that identifies the filter to the user
+//        lsv_filterStack.setCellFactory(cell -> new ListCell<OurFilter>() {
+//        	
+//        	@Override
+//        	protected void updateItem(OurFilter item, boolean empty) {
+//        		super.updateItem(item, empty);
+//        		
+//        		if (item == null || empty) {
+//        			
+//        			setText(null);
+//        		}
+//        		else {
+//        			
+//        			setText(item.getName());
+//        		}
+//        	}
+//        });
 
         Path dbPath = Paths.get("FriendlyFilesDatabase");
         if (Files.exists(dbPath)) {
@@ -160,8 +209,19 @@ public class UIController {
             switchboard = new Switchboard(this, new PostingList(dbPath), new FileSource());
             showWaitingForSwapDialog();
         }
-
-        DirectoryChooser chooser = new DirectoryChooser();
+        
+        // Prompt the user to load a directory
+        // Possibly remove this from the initialize method and have the user manually click an "add folder" button each time?
+        loadDirectory();
+    }
+    
+    /**
+     * Load the selected directory and its files into the application
+     * TODO: Allow folders to be selected and their data to be added onto existing selected data, rather than replacing?
+     */
+    public void loadDirectory() {
+    	
+    	DirectoryChooser chooser = new DirectoryChooser();
         chooser.setTitle("Select search root:");
         String topDirectory = chooser.showDialog(null).getAbsolutePath();
         System.out.println(topDirectory);
