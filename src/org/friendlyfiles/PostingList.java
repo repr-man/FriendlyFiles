@@ -1,7 +1,6 @@
 package org.friendlyfiles;
 
 import org.roaringbitmap.*;
-import org.roaringbitmap.longlong.Roaring64Bitmap;
 
 import java.io.*;
 import java.nio.MappedByteBuffer;
@@ -252,14 +251,6 @@ public final class PostingList implements Backend {
             walker.walk(Paths.get(System.getProperty("user.dir")).getRoot());
             switchboard.swapInBackend(pl);
         });
-    }
-
-    private void updateAllFields(List<RoaringBitmap> lists, ArrayList<String> strings, ArrayList<Long> sizes, long totalStringsSize, byte numHoles) {
-        this.lists = lists;
-        this.strings = strings;
-        this.sizes = sizes;
-        this.totalStringsSize = totalStringsSize;
-        this.numHoles = numHoles;
     }
 
     /**

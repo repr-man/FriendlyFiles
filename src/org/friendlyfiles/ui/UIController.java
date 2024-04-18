@@ -1,33 +1,24 @@
 package org.friendlyfiles.ui;
 
 import com.sun.javafx.scene.control.skin.LabeledText;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.collections.ObservableSet;
+import javafx.beans.value.*;
+import javafx.collections.*;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.CacheHint;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxTreeCell;
-import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.util.Callback;
 import org.friendlyfiles.*;
 
-import java.awt.event.ItemEvent;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.stream.*;
 
 public class UIController {
 
@@ -71,7 +62,7 @@ public class UIController {
     private TreeView<String> tvw_dirTree;
 
     @FXML
-    public void btn_search_click(ActionEvent event) {
+    public void btn_search_click(ActionEvent ignoredEvent) {
     	
         fileNames = switchboard.search(tbx_search.getText(), filter);
         updateFiles();
@@ -123,16 +114,16 @@ public class UIController {
 
     @FXML
     void lsv_filterStack_clicked(MouseEvent event) {
-    	
+
     	if (event.getClickCount() == 2 && event.getTarget().getClass() == LabeledText.class) {
-    		
+
     		// Get the index of the filter that was clicked
     		// We can then use the index to select the filter from the list of filters below this method
 //            selectedFilterIndex = lv_fileDisplay.getSelectionModel().getSelectedIndex();
 //            selectedFilter = filterList.get(selectedFilterIndex);
         }
     	else {
-    		
+
     		// selectedFilterIndex = -1;
     	}
     }
@@ -413,11 +404,6 @@ public class UIController {
 
         // Clear previous file panes before filling in with new data
         lv_fileDisplay.getItems().clear();
-
-        // Get possible file icon images
-        Image otherIcon = new Image("/org/friendlyfiles/img/ico_other.png");
-        //Image txtIcon = new Image("/img/ico_txt");
-        //Image imgIcon = new Image("/img/ico_img");
 
         if (fileNames != null) {
             lv_fileDisplay.getItems().addAll(fileNames.collect(Collectors.toList()));
