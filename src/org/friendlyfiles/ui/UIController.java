@@ -212,10 +212,12 @@ public class UIController {
     public void loadDirectory() {
     	DirectoryChooser chooser = new DirectoryChooser();
         chooser.setTitle("Add search root:");
-        String topDirectory = chooser.showDialog(null).getAbsolutePath();
-        filter.addRoot(topDirectory);
-        fileNames = switchboard.search(filter);
-        updateFiles();
+        try {
+            String topDirectory = chooser.showDialog(null).getAbsolutePath();
+            filter.addRoot(topDirectory);
+            fileNames = switchboard.search(filter);
+            updateFiles();
+        } catch (NullPointerException ignored) {}
     }
 
     /**
