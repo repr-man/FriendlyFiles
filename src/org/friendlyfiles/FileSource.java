@@ -120,15 +120,7 @@ interface ParallelFileTreeVisitor {
     default void walk(Path top) {
         LinkedTransferQueue<String> result = new LinkedTransferQueue<>();
         walkUpperTree(result, top);
-        try {
-            while (true) {
-                String res = result.poll(5, TimeUnit.MILLISECONDS);
-                if (res == null) break;
-                op(res);
-            }
-        } catch (Exception e) {
-            throw new Error(e);
-        }
+        result.stream().forEach(this::op);
     }
 
     static void walkUpperTree(LinkedTransferQueue<String> result, Path path) {
