@@ -1,15 +1,21 @@
 package org.friendlyfiles;
 
+import java.util.ArrayList;
+
 public final class QueryFilter {
-    private final String root;
+    private final ArrayList<String> roots = new ArrayList<>();
     private long fileSizeLower, fileSizeUpper = Long.MAX_VALUE;
 
-    public QueryFilter(String root) {
-        this.root = root;
+    public ArrayList<String> getRoots() {
+        return roots;
     }
 
-    public String getRoot() {
-        return root;
+    public void addRoot(String root) {
+        roots.add(root);
+    }
+
+    public void removeRoot(String root) {
+        roots.remove(root);
     }
 
     public QueryFilter addFileSizeRange(long lower, long upper) {

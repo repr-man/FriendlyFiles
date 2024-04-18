@@ -17,7 +17,7 @@ import org.friendlyfiles.*;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.List;
+import java.util.*;
 import java.util.stream.*;
 
 public class UIController {
@@ -142,7 +142,7 @@ public class UIController {
     // We park the stream of file names here so that multiple functions can consume it, or part of it.
     private Stream<String> fileNames;
 
-    private QueryFilter filter;
+    private final QueryFilter filter = new QueryFilter();
 
     public void initialize() {
 
@@ -208,15 +208,12 @@ public class UIController {
     
     /**
      * Load the selected directory and its files into the application
-     * TODO: Allow folders to be selected and their data to be added onto existing selected data, rather than replacing?
      */
     public void loadDirectory() {
-    	
     	DirectoryChooser chooser = new DirectoryChooser();
-        chooser.setTitle("Select search root:");
+        chooser.setTitle("Add search root:");
         String topDirectory = chooser.showDialog(null).getAbsolutePath();
-        System.out.println(topDirectory);
-        filter = new QueryFilter(topDirectory);
+        filter.addRoot(topDirectory);
         fileNames = switchboard.search(filter);
         updateFiles();
     }
