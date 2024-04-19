@@ -132,7 +132,7 @@ import java.util.stream.*;
  */
 public final class PostingList implements Backend {
     private final String fileLocation;
-    private List<RoaringBitmap> lists;
+    private final List<RoaringBitmap> lists;
     private ArrayList<String> strings;
     private ArrayList<Long> sizes;
     private long totalStringsSize = 0;
@@ -263,15 +263,6 @@ public final class PostingList implements Backend {
         return strings.stream()
                 .filter(item -> !item.isEmpty())
                 .map(item -> Paths.get(item).getFileName().toString());
-    }
-
-    private void add(String path) {
-        addString(path);
-        try {
-            sizes.add(Files.size(Paths.get(path)));
-        } catch (IOException e) {
-            sizes.add(Long.MIN_VALUE);
-        }
     }
 
     /**
@@ -504,6 +495,23 @@ public final class PostingList implements Backend {
             long fileSize = sizes.remove(index);
             add(Paths.get(oldPath).resolveSibling(newName).toString(), fileSize);
         }
+    }
+
+    @Override
+    public Stream<String> getDirectories(QueryFilter filter) {
+        // @formatter:off
+        RoaringBitmap dirs = new RoaringBitmap();
+        for (int i = 0; i < sizes.size(); ++i){
+            if (sizes.get(i) == -1) dirs.add(i);
+        }
+        RoaringBitmap rootPaths = filter.getRoots().parallelStream()
+                                          .map(this::getStrings)
+                                          .reduce(RoaringBitmap.bitmapOfRange(0, strings.size()), ParallelAggregation::or);
+        rootPaths.and(dirs);
+        return rootPaths.stream().parallel()
+                       .mapToObj(strings::get)
+                       .filter(s -> s.startsWith(filter.getRoots().get(0)));
+        // @formatter:on
     }
 
     /**

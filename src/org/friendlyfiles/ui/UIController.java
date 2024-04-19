@@ -14,13 +14,14 @@ import javafx.stage.DirectoryChooser;
 import javafx.util.Callback;
 import org.friendlyfiles.*;
 
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.*;
+import java.util.List;
 import java.util.stream.*;
 
 public class UIController {
+    private static final String fileSeparator = File.separatorChar == '\\' ? "\\\\" : "/";
 
 	@FXML
     private BorderPane bp_root;
@@ -217,6 +218,7 @@ public class UIController {
             filter.addRoot(topDirectory);
             fileNames = switchboard.search(filter);
             updateFiles();
+            updateDirTree();
         } catch (NullPointerException ignored) {}
     }
 
@@ -235,162 +237,37 @@ public class UIController {
         displayFiles();
     }
 
-    /**
-     * Adds a listener to the given item which will fire whenever the item is checked/unchecked.
-     *
-     * @param i the tree item to add the listener to
-     */
-    private void addCheckListenerToItem(DirectoryTreeItem i) {
 
-        // Check all boxes and add them to the set initially
-        i.selectedProperty().set(true);
-        checkedDirItems.add(i);
-
-        i.selectedProperty().addListener(new ChangeListener<Boolean>() {
-
-            @Override
-            public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
-
-                // Prevents any issues with the listener being triggered without any change occuring (should never happen)
-                if (newValue != oldValue) {
-
-                    if (newValue) {
-
-                        // Add the directory item to the selected set
-                        checkedDirItems.add(i);
-                    } else {
-
-                        // Remove the directory item from the selected set
-                        checkedDirItems.remove(i);
-                    }
-                }
-            }
-        });
-    }
 
     // Set of all the selected directory items
     // Since each item stores the full path of the directory it refers to, implementing a directory inclusion/exclusion toggle shouldn't be the most difficult thing in the world
-    // TODO: Probably turn this into a `RoaringBitmap`...
     private final ObservableSet<DirectoryTreeItem> checkedDirItems = FXCollections.observableSet();
 
     /**
      * Updates the Directory treeview using the provided list of top-level directories.<br>
      * Note: This method can cause issues if called while the UI is still setting up; at the earliest it should be called towards the end of the initialize() method.
-     *
-     * @param rootDirs the list of directories to treat as the "root" or top-level directories. These directories and their subdirectories will be loaded into the treeview.
      */
-    public void updateDirTree(List<String> rootDirs) {
+    public void updateDirTree() {
+        List<String> directories = switchboard.getDirectories(filter).collect(Collectors.toList());
 
         // Set the treeview's root directory to a new Directory item with no path
         DirectoryTreeItem treeRoot = new DirectoryTreeItem(null);
         treeRoot.setIndependent(true);
         tvw_dirTree.setRoot(treeRoot);
 
-        // For each relative directory root, walk through its entire logical directory tree, and add items to the visual tree view as those logical directories are visited
-        for (String dirRoot : rootDirs) {
-
+        filter.getRoots().parallelStream().forEach(root -> {
             // Add the current root to the base of the treeview
-            DirectoryTreeItem dirRootItem = new DirectoryTreeItem(dirRoot);
+            DirectoryTreeItem dirRootItem = new DirectoryTreeItem(root);
             dirRootItem.setIndependent(true);
-            addCheckListenerToItem(dirRootItem);
+            dirRootItem.addCheckListener(checkedDirItems);
             treeRoot.getChildren().add(dirRootItem);
 
-            // Walk through subdirectories and add them as children
-            try {
-                Files.walkFileTree(Paths.get(dirRoot).toAbsolutePath(), new SimpleFileVisitor<Path>() {
-
-                    @Override
-                    public FileVisitResult preVisitDirectory(Path file, BasicFileAttributes attrs) throws IOException {
-
-                        if (!file.toString().equals(dirRoot)) {
-
-                            // Create a new directory item within the visual tree according to its path relative to the root
-                            createDirItemFromPath(file.toString(), dirRootItem);
-                        }
-
-
-                        return FileVisitResult.CONTINUE;
-                    }
-                });
-            } catch (IOException e) {
-
-                e.printStackTrace();
-            }
-        }
-    }
-
-    /**
-     * Method used by updateRootDirectories to attach subdirectories to the roots, no use for this to be called elsewhere.<br>
-     * Loops through from the "root"/top-level directory down to the target path, allowing a new tree item(s) to be created in the correct location within the treeview.
-     *
-     * @param path the path of the target directory
-     * @param root the tree item holding the target directory's relative root directory
-     */
-    private void createDirItemFromPath(String path, DirectoryTreeItem root) {
-
-        // Get offset/distance of the root directory (for this specific tree of directories) from the filesystem root
-        int rootOffset = Paths.get(root.getValue()).getNameCount();
-
-        // Get number of directories between this file tree's relative root and the inner target directory
-        int targetDepth = Paths.get(path).getNameCount() - rootOffset;
-
-        // Prime the "current item" to be the root of the TreeList
-        DirectoryTreeItem currItem = root;
-
-        /*
-         *
-         * Note: [path].getName(int index) returns the path name with i as the distance from the root
-         * The root element can be thought to have index -1, the root's child is 0, and so on
-         */
-
-        for (int i = 0; i < targetDepth; i++) {
-
-            try {
-
-                // Drill down into the file path, starting from the child of the relative root directory, down to the target
-                // The loop will only happen once if the target is the child of the relative root directory
-                String subPath = String.format("%s%s", Paths.get(path).getRoot(), Paths.get(path).subpath(0, rootOffset + i + 1));
-
-                // Use the subpath information to navigate through and create new children within the existing tree view items
-
-                // Boolean to determine if the current item contains the requested child directory
-                boolean containsChild = false;
-
-                // Loop over the children of the current item
-                for (TreeItem<String> child : currItem.getChildren()) {
-
-                    // Grab a reference to the current child as a DirectoryTreeItem
-                    DirectoryTreeItem childDir = (DirectoryTreeItem) child;
-
-                    // If the child's path is equal to the path of the directory item we are requesting,
-                    // make that child the new current item
-                    if (Files.isSameFile(Paths.get(childDir.getValue()).toAbsolutePath(), Paths.get(subPath).toAbsolutePath())) {
-
-                        containsChild = true;
-                        currItem = childDir;
-                        break;
-                    }
-                }
-
-                // If the child was not found in the current item, create/add it and make it the new current item
-                if (!containsChild) {
-
-                    DirectoryTreeItem newChild = new DirectoryTreeItem(subPath);
-                    currItem.getChildren().add(newChild);
-                    currItem = newChild;
-
-                    // Add check listener to the item
-                    addCheckListenerToItem(currItem);
-                }
-
-                // Before moving to the next part of the tree, set the current item to be independent
-                // Therefore, checking/unchecking the item will not cause other items in the treeview to become selected/unselected
-                currItem.setIndependent(true);
-            } catch (Exception e) {
-
-                System.out.printf("\nPath: %s\nroot offset: %d\nTarget Depth: %d\n", path, rootOffset, targetDepth);
-            }
-        }
+            directories.stream()
+                    .filter(dirName -> dirName.startsWith(root))
+                    .filter(dirName -> dirName.length() != root.length())
+                    .map(dirName -> dirName.substring(root.length()))
+                    .forEach(dirName -> dirRootItem.addAllChildren(dirName, checkedDirItems));
+        });
     }
 
     /**
@@ -449,7 +326,7 @@ public class UIController {
 
         // Update this method to change how the tree cells are named
         private String getString() {
-            return getItem() == null ? "" : "/" + getItem();
+            return getItem() == null ? "" : getItem();
         }
     }
 }

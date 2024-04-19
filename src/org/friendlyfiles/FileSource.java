@@ -4,8 +4,7 @@ import java.awt.*;
 import java.io.*;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.concurrent.*;
-import java.util.stream.Stream;
+import java.util.concurrent.Executors;
 
 /**
  * Describes all the operations that will be used when interacting with real filesystems,
@@ -111,52 +110,3 @@ public class FileSource {
     }
 }
 
-@FunctionalInterface
-interface ParallelFileTreeVisitor {
-    ExecutorService exec = Executors.newWorkStealingPool();
-
-    void op(String path);
-
-    default void walk(Path top) {
-        LinkedTransferQueue<String> result = new LinkedTransferQueue<>();
-        walkUpperTree(result, top);
-        result.stream().forEach(this::op);
-    }
-
-    static void walkUpperTree(LinkedTransferQueue<String> result, Path path) {
-        try (Stream<Path> paths = Files.list(path)) {
-            paths.forEach(p -> {
-                if (Files.isDirectory(p)) {
-                    exec.submit(() -> walkLowerTree(result, p));
-                } else {
-                    result.add(p.toString());
-                }
-            });
-        } catch (Exception e) {
-            throw new Error(e);
-        }
-    }
-
-    static void walkLowerTree(LinkedTransferQueue<String> result, Path path) {
-        if (Files.isDirectory(path)) {
-            try {
-                Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
-                    @Override
-                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                        result.add(file.toString());
-                        return FileVisitResult.CONTINUE;
-                    }
-
-                    @Override
-                    public FileVisitResult visitFileFailed(Path file, IOException exc) {
-                        return FileVisitResult.CONTINUE;
-                    }
-                });
-            } catch (IOException e) {
-                throw new Error(e);
-            }
-        } else {
-            result.add(path.toString());
-        }
-    }
-}

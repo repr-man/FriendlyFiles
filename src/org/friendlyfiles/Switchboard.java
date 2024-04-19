@@ -49,6 +49,10 @@ public class Switchboard {
         return filter == null ? Stream.empty() : backend.get(filter);
     }
 
+    public Stream<String> getDirectories(QueryFilter filter) {
+        return backend.getDirectories(filter);
+    }
+
     public void openFile(String filePath) {
         try {
             fileSource.openFile(Paths.get(filePath));

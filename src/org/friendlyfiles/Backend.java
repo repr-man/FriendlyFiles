@@ -85,4 +85,6 @@ public interface Backend extends AutoCloseable {
      * @return the result of the query
      */
     Stream<String> get(QueryFilter filter);
+
+    Stream<String> getDirectories(QueryFilter filter);
 }
