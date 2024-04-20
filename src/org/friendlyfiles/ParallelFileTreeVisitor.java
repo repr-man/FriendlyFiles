@@ -54,37 +54,41 @@ public interface ParallelFileTreeVisitor {
         }
     }
 
-    default void walkLowerTree(LinkedTransferQueue<Pair<String, Long>> result, Path path) {
-        if (Files.isDirectory(path)) {
-            try {
-                Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
-                    @Override
-                    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
-                        return attrs.isSymbolicLink() ? FileVisitResult.SKIP_SUBTREE : FileVisitResult.CONTINUE;
-                    }
+    /**
+     * The walker task for each thread.
+     * 
+     * @param result the queue into which to put each file's information
+     * @param topPath the path of the top of the file tree to walk
+     */
+    static void walkLowerTree(LinkedTransferQueue<Pair<String, Long>> result, Path topPath) {
+        try {
+            Files.walkFileTree(topPath, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+                    return attrs.isSymbolicLink() ? FileVisitResult.SKIP_SUBTREE : FileVisitResult.CONTINUE;
+                }
 
-                    @Override
-                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                        if (attrs.isRegularFile()) {
-                            result.add(new Pair<>(file.toString(), attrs.size()));
-                        }
-                        return FileVisitResult.CONTINUE;
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    if (attrs.isRegularFile()) {
+                        result.add(new Pair<>(file.toString(), attrs.size()));
                     }
+                    return FileVisitResult.CONTINUE;
+                }
 
-                    @Override
-                    public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-                        result.add(new Pair<>(dir.toString(), -1L));
-                        return FileVisitResult.CONTINUE;
-                    }
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
+                    result.add(new Pair<>(dir.toString(), -1L));
+                    return FileVisitResult.CONTINUE;
+                }
 
-                    @Override
-                    public FileVisitResult visitFileFailed(Path file, IOException exc) {
-                        return FileVisitResult.CONTINUE;
-                    }
-                });
-            } catch (IOException e) {
-                throw new Error(e);
-            }
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc) {
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            throw new Error(e);
         }
     }
 }
