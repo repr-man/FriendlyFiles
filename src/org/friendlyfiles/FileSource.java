@@ -4,7 +4,7 @@ import java.awt.*;
 import java.io.*;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 /**
  * Describes all the operations that will be used when interacting with real filesystems,
@@ -15,6 +15,21 @@ import java.util.concurrent.Executors;
  * implementing and testing them!
  */
 public class FileSource {
+    private Switchboard switchboard;
+
+    /**
+     * Sets the switchboard so that the FileSource can send error messages to the user.
+     *
+     * @see #openFile(Path)
+     * @param switchboard the switchboard used for error handling
+     */
+    // We are not able to set this in the constructor because the FileSource is one of the parameters of
+    // Switchboard's constructor.  In other words, FileSources get created before the Switchboard, so they
+    // have to be linked up to the Switchboard after it is created.
+    public void setSwitchboard(Switchboard switchboard) {
+        this.switchboard = switchboard;
+    }
+
     /**
      * Changes the name of a directory.
      *
@@ -87,29 +102,45 @@ public class FileSource {
         Files.move(source, destination);
     }
 
-    public void openFile(Path path) throws IOException {
-        if (!Desktop.isDesktopSupported()) {
-            System.err.println("Desktop operations are not supported on this platform.");
-            return;
-        }
+    /**
+     * Opens the file using the system's default program for the file's type.
+     * This method uses {@link #switchboard} for logging exceptions.
+     *
+     * @param path the path of the file to open
+     */
+    public void openFile(Path path) {
+        Desktop desktop;
+        try {
+            desktop = Desktop.getDesktop();
+            File file = path.toFile();
 
-        Desktop desktop = Desktop.getDesktop();
-        if (!desktop.isSupported(Desktop.Action.OPEN)) {
-            System.err.println("Open action is not supported on this platform.");
-            return;
-        }
-
-        File file = path.toFile();
-        if (file.exists()) {
-            Executors.defaultThreadFactory().newThread(() -> {
+            // Because this gets run in a different thread, we can't catch any exceptions it throws.  Thus, we set
+            // its exception handler to throw errors to the switchboard.
+            Thread thread = Executors.defaultThreadFactory().newThread(() -> {
                 try {
                     desktop.open(file);
-                } catch (IOException e) {
+                } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
-            }).start();
-        } else {
-            System.err.println("File does not exist: " + file.getAbsolutePath());
+            });
+            thread.setUncaughtExceptionHandler((ignored, exception) -> {
+                Exception ex = (Exception) exception.getCause();
+                if (ex == null)
+                    switchboard.showErrorDialog("An unknown error ocurred when trying to open a file.");
+                else if (ex instanceof IllegalArgumentException)
+                    switchboard.showErrorDialog(String.format("The file `%s` does not exist.", path));
+                else if (ex instanceof UnsupportedOperationException)
+                    switchboard.showErrorDialog("Your platform does not have the ability to open files.");
+                else if (ex instanceof SecurityException)
+                    switchboard.showErrorDialog(String.format("You do not have permission to open file `%s`.", path));
+                else if (ex instanceof IOException)
+                    switchboard.showErrorDialog("Your system does not have a default application for opening files of this type.");
+                else
+                    switchboard.showErrorDialog("An unknown error ocurred when trying to open a file.");
+            });
+            thread.start();
+        } catch (UnsupportedOperationException e) {
+            switchboard.showErrorDialog("Your platform does not support Desktop operations.");
         }
     }
 }

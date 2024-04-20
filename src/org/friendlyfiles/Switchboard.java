@@ -55,11 +55,7 @@ public class Switchboard {
     }
 
     public void openFile(String filePath) {
-        try {
-            fileSource.openFile(Paths.get(filePath));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        fileSource.openFile(Paths.get(filePath));
     }
 
     public void delete(ObservableList<String> selectedItems) {
@@ -108,6 +104,15 @@ public class Switchboard {
                                                                  + "Do you have permission to move this file?", item));
             }
         });
+    }
+
+    /**
+     * Shows an error dialog box via the UI controller.
+     *
+     * @param message the error message to show to the user
+     */
+    public void showErrorDialog(String message) {
+        controller.showErrorDialog(message);
     }
 }
 
