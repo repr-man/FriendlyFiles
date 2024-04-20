@@ -98,6 +98,13 @@ public class FileSource {
         });
     }
 
+    /**
+     * Moves a file from one location to another.
+     *
+     * @param source the file to move
+     * @param destination the location to move `source` to
+     * @throws IOException if the operation is not possible
+     */
     public void moveFile(Path source, Path destination) throws IOException {
         Files.move(source, destination);
     }

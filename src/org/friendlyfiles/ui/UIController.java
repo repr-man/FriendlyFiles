@@ -18,6 +18,9 @@ import java.nio.file.*;
 import java.util.List;
 import java.util.stream.*;
 
+/**
+ * Handles everything associated with the UI.
+ */
 public class UIController {
     private static final String fileSeparator = File.separatorChar == '\\' ? "\\\\" : "/";
 
@@ -178,8 +181,9 @@ public class UIController {
 
     private final QueryFilter filter = new QueryFilter();
 
-    public void initialize() {
+    private final ObservableSet<DirectoryTreeItem> checkedDirItems = FXCollections.observableSet();
 
+    public void initialize() {
         // Enable caching of the file display panel
         lv_fileDisplay.setCache(true);
         lv_fileDisplay.setCacheHint(CacheHint.SPEED);
@@ -241,7 +245,7 @@ public class UIController {
     }
     
     /**
-     * Load the selected directory and its files into the application
+     * Prompts the user for a root directory and loads its files into the UI.
      */
     public void loadDirectory() {
     	DirectoryChooser chooser = new DirectoryChooser();
@@ -263,18 +267,14 @@ public class UIController {
     }
 
     /**
-     * Update the list of file keys stored by the UI. The order of the keys in this list corresponds to the order in which they will display to the user.<br>
-     * Additionally, this method will immediately display these files to the user.
+     * Update the list of files.
      */
+    // TODO: Do we need to delete this?
     public void updateFiles() {
         displayFiles();
     }
 
 
-
-    // Set of all the selected directory items
-    // Since each item stores the full path of the directory it refers to, implementing a directory inclusion/exclusion toggle shouldn't be the most difficult thing in the world
-    private final ObservableSet<DirectoryTreeItem> checkedDirItems = FXCollections.observableSet();
 
     /**
      * Updates the Directory treeview using the provided list of top-level directories.<br>
@@ -319,6 +319,9 @@ public class UIController {
         }
     }
 
+    /**
+     * Closes the waiting dialog and populates the main window with files.
+     */
     public void notifyBackendSwapCompleted() {
         if (waitingForSwapDialog != null) {
             fileNames = switchboard.search(filter);
@@ -328,6 +331,9 @@ public class UIController {
         }
     }
 
+    /**
+     * Creates and shows the user a dialog when there is no available backend.
+     */
     private void showWaitingForSwapDialog() {
         waitingForSwapDialog = new Dialog<>();
         waitingForSwapDialog.setHeaderText("One moment, please...");
@@ -335,6 +341,11 @@ public class UIController {
         waitingForSwapDialog.show();
     }
 
+    /**
+     * Shows the user an error dialog.
+     *
+     * @param contentText the message to show the user
+     */
     public void showErrorDialog(String contentText) {
         Alert errorDialog = new Alert(Alert.AlertType.ERROR, contentText);
         errorDialog.showAndWait();

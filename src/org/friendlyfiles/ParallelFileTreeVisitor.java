@@ -8,28 +8,54 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.concurrent.*;
 import java.util.stream.Stream;
 
+/**
+ * Defines an object that walks the file tree in parallel; it retrieves file information and passes it to a method.
+ * It is defined as a functional interface for convenience.  (e.g. {@link PostingList#generateFromFilesystem(Switchboard)
+ * PostingList.generateFromFilesystem})
+ * <p>
+ * Although {@link #walk(Path)} is a default method, it should NOT be overridden.  It is defined as such to allow this
+ * interface to be a functional interface.
+ */
 @FunctionalInterface
 public interface ParallelFileTreeVisitor {
     ExecutorService exec = Executors.newWorkStealingPool();
 
+    /**
+     * The operation to be performed on every file that is visited.
+     *
+     * @param path the path of the file being visited
+     * @param size the size of the file being visited
+     */
     void op(String path, long size);
 
-    default void walk(Path top) {
+    /**
+     * Starts the walker after it has been defined.
+     *
+     * @implNote collates the results and calls {@link #op} on each of them
+     * @param topPath the path of the top of the file tree to walk
+     */
+    default void walk(Path topPath) {
         LinkedTransferQueue<Pair<String, Long>> result = new LinkedTransferQueue<>();
-        walkUpperTree(result, top);
+        walkUpperTree(result, topPath);
         try {
             while (true) {
                 Pair<String, Long> res = result.poll(10, TimeUnit.MILLISECONDS);
                 if (res == null) break;
                 op(res.getKey(), res.getValue());
             }
-        } catch (Exception e) {
+        } catch (InterruptedException e) {
             throw new Error(e);
         }
     }
 
-    default void walkUpperTree(LinkedTransferQueue<Pair<String, Long>> result, Path path) {
-        try (Stream<Path> paths = Files.list(path)) {
+    /**
+     * Divides the directories to walk among threads and starts walking the file tree.
+     *
+     * @param result the queue into which to put each file's information
+     * @param topPath the path of the top of the file tree to walk
+     */
+    static void walkUpperTree(LinkedTransferQueue<Pair<String, Long>> result, Path topPath) {
+        try (Stream<Path> paths = Files.list(topPath)) {
             Stream<Path> pathStream;
             // We don't want to index the running processes because they are volatile and not useful to the user.
             if (System.getProperty("os.name").equals("Linux")) {
@@ -37,6 +63,7 @@ public interface ParallelFileTreeVisitor {
             } else {
                 pathStream = paths;
             }
+            // Assigns one thread to each direct child directory beneath `topPath`.
             pathStream.forEach(p -> {
                 if (Files.isDirectory(p) && !Files.isSymbolicLink(p)) {
                     exec.submit(() -> walkLowerTree(result, p));

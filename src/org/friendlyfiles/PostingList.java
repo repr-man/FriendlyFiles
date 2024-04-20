@@ -138,6 +138,10 @@ public final class PostingList implements Backend {
     private long totalPathsSize = 0;
     private byte numHoles = 0;
 
+    /**
+     * Sets up an empty posting list at a given location.
+     * @param fileLocation the location to store the database file
+     */
     public PostingList(Path fileLocation) {
         this.plFileLocation = fileLocation.toString();
         ArrayList<RoaringBitmap> tmpLists = new ArrayList<>(45760);
@@ -149,6 +153,10 @@ public final class PostingList implements Backend {
         sizes = new ArrayList<>();
     }
 
+    /**
+     * Serializes the posting list to the list's file location.
+     * @throws Exception if it cannot write the file
+     */
     @Override
     public void close() throws Exception {
         serializeTo(plFileLocation);
@@ -488,6 +496,12 @@ public final class PostingList implements Backend {
         }
     }
 
+    /**
+     * Creates a bitset of items that satisfy all the parameters of the given filter.
+     *
+     * @param filter the filter to use
+     * @return a bitset of the results
+     */
     private RoaringBitmap getFiltered(QueryFilter filter) {
         RoaringBitmap bitset = IntStream
                 .range(0, sizes.size())
@@ -514,6 +528,12 @@ public final class PostingList implements Backend {
         }
     }
 
+    /**
+     * Gets a list of all the directories beneath all the roots specified in the filter.
+     *
+     * @param filter the filter containing root directories
+     * @return the stream of directories
+     */
     @Override
     public Stream<String> getDirectories(QueryFilter filter) {
         // @formatter:off

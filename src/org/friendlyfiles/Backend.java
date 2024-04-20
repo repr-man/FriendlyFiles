@@ -94,5 +94,11 @@ public interface Backend extends AutoCloseable {
      */
     Stream<String> get(QueryFilter filter);
 
+    /**
+     * Gets a list of all the directories beneath all the roots specified in the filter.
+     *
+     * @param filter the filter containing root directories
+     * @return the stream of directories
+     */
     Stream<String> getDirectories(QueryFilter filter);
 }
