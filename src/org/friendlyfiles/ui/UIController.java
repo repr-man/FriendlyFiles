@@ -1,7 +1,6 @@
 package org.friendlyfiles.ui;
 
 import com.sun.javafx.scene.control.skin.LabeledText;
-import javafx.beans.value.*;
 import javafx.collections.*;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -16,14 +15,13 @@ import org.friendlyfiles.*;
 
 import java.io.*;
 import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.stream.*;
 
 public class UIController {
     private static final String fileSeparator = File.separatorChar == '\\' ? "\\\\" : "/";
 
-	@FXML
+    @FXML
     private BorderPane bp_root;
 
     @FXML
@@ -37,6 +35,15 @@ public class UIController {
 
     @FXML
     private Button btn_search;
+
+    @FXML
+    private Button btn_delete;
+
+    @FXML
+    private Button btn_rename;
+
+    @FXML
+    private Button btn_move;
 
     @FXML
     private ListView<String> lsv_filterStack;
@@ -63,12 +70,38 @@ public class UIController {
     private TreeView<String> tvw_dirTree;
 
     @FXML
-    public void btn_search_click(ActionEvent ignoredEvent) {
+    public void btn_search_clicked(ActionEvent ignoredEvent) {
     	
         fileNames = switchboard.search(tbx_search.getText(), filter);
         updateFiles();
     }
-    
+
+    @FXML
+    public void btn_delete_clicked(ActionEvent ignoredEvent) {
+        switchboard.delete(lv_fileDisplay.getSelectionModel().getSelectedItems());
+        btn_search_clicked(ignoredEvent);
+    }
+
+    @FXML
+    public void btn_rename_clicked(ActionEvent ignoredEvent) {
+        TextInputDialog inputDialog = new TextInputDialog();
+        inputDialog.setTitle("Enter new file name:");
+        inputDialog.setHeaderText("Rename Files");
+        inputDialog.showAndWait().ifPresent(newName -> {
+            switchboard.rename(lv_fileDisplay.getSelectionModel().getSelectedItems(), newName);
+        });
+        btn_search_clicked(ignoredEvent);
+    }
+
+    @FXML
+    public void btn_move_clicked(ActionEvent ignoredEvent) {
+        DirectoryChooser chooser = new DirectoryChooser();
+        chooser.setTitle("Choose directory to move files to:");
+        String dest = chooser.showDialog(null).getAbsolutePath();
+        switchboard.move(lv_fileDisplay.getSelectionModel().getSelectedItems(), dest);
+        btn_search_clicked(ignoredEvent);
+    }
+
     @FXML
     void btn_addFilter_clicked(ActionEvent event) {
     	
@@ -302,6 +335,10 @@ public class UIController {
         waitingForSwapDialog.show();
     }
 
+    public void showErrorDialog(String contentText) {
+        Alert errorDialog = new Alert(Alert.AlertType.ERROR, contentText);
+        errorDialog.showAndWait();
+    }
 
     /**
      * A private class defining how the checkbox tree cells should be named.<br>

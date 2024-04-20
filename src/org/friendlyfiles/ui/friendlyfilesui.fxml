@@ -16,7 +16,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane fx:id="bp_root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.friendlyfiles.ui.UIController">
+<BorderPane fx:id="bp_root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.202-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.friendlyfiles.ui.UIController">
    <top>
       <VBox BorderPane.alignment="CENTER">
          <children>
@@ -26,12 +26,15 @@
                      <content>
                         <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="8.0">
                            <children>
-                              <TextField fx:id="tbx_search" maxHeight="-Infinity" onAction="#btn_search_click" prefHeight="24.0" promptText="Search for Files">
+                              <TextField fx:id="tbx_search" maxHeight="-Infinity" onAction="#btn_search_clicked" prefHeight="24.0" promptText="Search for Files">
                                  <HBox.margin>
                                     <Insets />
                                  </HBox.margin>
                               </TextField>
-                              <Button fx:id="btn_search" mnemonicParsing="false" onAction="#btn_search_click" text="Search" />
+                              <Button fx:id="btn_search" mnemonicParsing="false" onAction="#btn_search_clicked" text="Search" />
+                              <Button fx:id="btn_delete" mnemonicParsing="false" onAction="#btn_delete_clicked" text="Delete" />
+                              <Button fx:id="btn_rename" mnemonicParsing="false" onAction="#btn_rename_clicked" text="Rename" />
+                              <Button fx:id="btn_move" mnemonicParsing="false" onAction="#btn_move_clicked" text="Move" />
                            </children>
                            <padding>
                               <Insets left="8.0" right="8.0" />

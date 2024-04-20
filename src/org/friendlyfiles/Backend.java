@@ -62,6 +62,14 @@ public interface Backend extends AutoCloseable {
     boolean remove(String path);
 
     /**
+     * Moves a file to a different directory.
+     *
+     * @param source the path of the file to move
+     * @param destination the path of the directory to move `source` to
+     */
+    void moveFile(String source, String destination);
+
+    /**
      * Queries the backend for files.
      *
      * @param query  the string with which to search the backend

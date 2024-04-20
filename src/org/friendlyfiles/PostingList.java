@@ -323,12 +323,13 @@ public final class PostingList implements Backend {
      * This function is used internally in both `remove` and `rename`.
      *
      * @param path the path of the file to remove
-     * @return -1 if str is not in the list; otherwise, the index of the removed item
+     * @return -1 if str is not in the list; otherwise, the size of the removed item
      */
-    private int removeItem(String path) {
-        int result = removeString(path);
-        if (result < 0) return result;
-        sizes.set(result, -1L);
+    private long removeItem(String path) {
+        int idx = removeString(path);
+        if (idx < 0) return idx;
+        long result = sizes.get(idx);
+        sizes.set(idx, Long.MIN_VALUE);
         // Compact the haystack.
         if (numHoles > 127) {
             strings = (ArrayList<String>) strings.parallelStream()
@@ -386,6 +387,23 @@ public final class PostingList implements Backend {
     }
 
     /**
+     * Moves a file to a different directory.
+     *
+     * @param source the path of the file to move
+     * @param destination the path of the directory to move `source` to
+     */
+    @Override
+    public void moveFile(String source, String destination) {
+        getStrings(source).stream().parallel().filter(i -> strings.get(i).equals(source)).findAny().ifPresent(srcIdx -> {
+            if (srcIdx >= 0) {
+                String destPath = destination + source.substring(source.lastIndexOf(File.separatorChar));
+                long fileSize = removeItem(source);
+                add(destPath, fileSize);
+            }
+        });
+    }
+
+    /**
      * Queries the backend for files.
      *
      * @param query  the string with which to search the backend
@@ -405,8 +423,8 @@ public final class PostingList implements Backend {
                            .parallel()
                            .map(this::getStrings)
                            .reduce(RoaringBitmap.bitmapOfRange(0, strings.size()), (acc, item) -> RoaringBitmap.and(acc, item));
-
-            bitset.and(filteredBitset.join());
+            RoaringBitmap filtered = filteredBitset.join();
+            bitset.and(filtered);
         } else {
             // Splits the query string.
             bitset = Arrays.stream(splitQuery)
@@ -463,7 +481,7 @@ public final class PostingList implements Backend {
                 a = b;
                 b = c;
                 c = mapChar(query.charAt(i));
-                bitset.and(lists.get(mapTrigramToIndex(a, b, c)));
+                bitset = RoaringBitmap.and(bitset, lists.get(mapTrigramToIndex(a, b, c)));
             }
             //bitset.and(lists.get(mapTrigramToIndex(b, c, 60)));
             return bitset;
@@ -490,9 +508,8 @@ public final class PostingList implements Backend {
      */
     @Override
     public void renameFile(String oldPath, String newName) {
-        int index = removeItem(oldPath);
-        if (index >= 0) {
-            long fileSize = sizes.remove(index);
+        long fileSize = removeItem(oldPath);
+        if (fileSize >= 0) {
             add(Paths.get(oldPath).resolveSibling(newName).toString(), fileSize);
         }
     }

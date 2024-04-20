@@ -83,6 +83,10 @@ public class FileSource {
         });
     }
 
+    public void moveFile(Path source, Path destination) throws IOException {
+        Files.move(source, destination);
+    }
+
     public void openFile(Path path) throws IOException {
         if (!Desktop.isDesktopSupported()) {
             System.err.println("Desktop operations are not supported on this platform.");

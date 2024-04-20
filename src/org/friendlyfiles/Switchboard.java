@@ -1,10 +1,11 @@
 package org.friendlyfiles;
 
 import javafx.application.Platform;
+import javafx.collections.ObservableList;
 import org.friendlyfiles.ui.UIController;
 
 import java.io.IOException;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.util.stream.Stream;
 
 // Handles all coordination between the ui, backend, and file system.
@@ -59,6 +60,54 @@ public class Switchboard {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public void delete(ObservableList<String> selectedItems) {
+        selectedItems.forEach(item -> {
+            try {
+                fileSource.remove(Paths.get(item));
+                backend.remove(item);
+            } catch (NoSuchFileException e) {
+                controller.showErrorDialog(String.format("File `%s` does not exist.\n\nWe will remove it from the file view.", item));
+                backend.remove(item);
+            } catch (IOException e) {
+                controller.showErrorDialog(String.format("We were unable to delete file `%s` for unknown reasons.\n\n"
+                        + "Do you have permission to delete this file?", item));
+            }
+        });
+    }
+
+    public void rename(ObservableList<String> selectedItems, String newName) {
+        selectedItems.forEach(item -> {
+            try {
+                fileSource.renameFile(Paths.get(item), newName);
+                backend.renameFile(item, newName);
+            } catch (NoSuchFileException e) {
+                controller.showErrorDialog(String.format("File `%s` does not exist.\n\nWe will remove it from the file view.", item));
+                backend.remove(item);
+            } catch (IOException e) {
+                controller.showErrorDialog(String.format("We were unable to rename file `%s` for unknown reasons.\n\n"
+                                                                 + "Do you have permission to rename this file?", item));
+            }
+        });
+    }
+
+    public void move(ObservableList<String> selectedItems, String destination) {
+        selectedItems.forEach(item -> {
+            try {
+                Path itemPath = Paths.get(item);
+                String itemName = itemPath.getFileName().toString();
+                Path destPath = Paths.get(destination, itemName);
+                fileSource.moveFile(itemPath, destPath);
+                backend.moveFile(item, destination);
+            } catch (NoSuchFileException e) {
+                controller.showErrorDialog(String.format("File `%s` does not exist.\n\nWe will remove it from the file view.", item));
+                backend.remove(item);
+            } catch (IOException e) {
+                controller.showErrorDialog(String.format("We were unable to move file `%s` for unknown reasons.\n\n"
+                                                                 + "Do you have permission to move this file?", item));
+            }
+        });
     }
 }
 
