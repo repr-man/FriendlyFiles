@@ -131,27 +131,27 @@ import java.util.stream.*;
  * </ul>
  */
 public final class PostingList implements Backend {
-    private final String fileLocation;
+    private final String plFileLocation;
     private final List<RoaringBitmap> lists;
-    private ArrayList<String> strings;
+    private ArrayList<String> paths;
     private ArrayList<Long> sizes;
-    private long totalStringsSize = 0;
+    private long totalPathsSize = 0;
     private byte numHoles = 0;
 
     public PostingList(Path fileLocation) {
-        this.fileLocation = fileLocation.toString();
+        this.plFileLocation = fileLocation.toString();
         ArrayList<RoaringBitmap> tmpLists = new ArrayList<>(45760);
         for (int i = 0; i < 45760; i++) {
             tmpLists.add(new RoaringBitmap());
         }
         lists = Collections.unmodifiableList(tmpLists);
-        strings = new ArrayList<>();
+        paths = new ArrayList<>();
         sizes = new ArrayList<>();
     }
 
     @Override
     public void close() throws Exception {
-        serializeTo(fileLocation);
+        serializeTo(plFileLocation);
     }
 
     /**
@@ -182,14 +182,14 @@ public final class PostingList implements Backend {
                     //     slightly different size.  To prevent buffer overflows, we need to ask for a little more
                     //     memory than we actually need.  16 seems to be a good size that makes the function work
                     //     consistently.
-                    listsSerializedSize + (totalStringsSize + strings.size() * 4L) + (sizes.size() * 8L) + 4 + 1 + 16
+                    listsSerializedSize + (totalPathsSize + paths.size() * 4L) + (sizes.size() * 8L) + 4 + 1 + 16
             );
             lists.forEach(item -> {
                 item.serialize(mbb);
             });
-            mbb.putInt(strings.size());
+            mbb.putInt(paths.size());
             mbb.put(numHoles);
-            strings.forEach(item -> {
+            paths.forEach(item -> {
                 mbb.putInt(item.getBytes().length);
                 mbb.put(item.getBytes());
             });
@@ -218,18 +218,18 @@ public final class PostingList implements Backend {
                 mbb.position(mbb.position() + item.serializedSizeInBytes());
             }
             int numStrings = mbb.getInt();
-            pl.strings.ensureCapacity(numStrings);
+            pl.paths.ensureCapacity(numStrings);
             pl.sizes.ensureCapacity(numStrings);
             pl.numHoles = mbb.get();
             for (int i = 0; i < numStrings; ++i) {
                 int strSize = mbb.getInt();
                 if (strSize > 0) {
-                    pl.totalStringsSize += strSize;
+                    pl.totalPathsSize += strSize;
                     byte[] bytes = new byte[strSize];
                     mbb.get(bytes, 0, strSize);
-                    pl.strings.add(new String(bytes));
+                    pl.paths.add(new String(bytes));
                 } else {
-                    pl.strings.add("");
+                    pl.paths.add("");
                 }
             }
             for (int i = 0; i < numStrings; ++i) {
@@ -246,7 +246,7 @@ public final class PostingList implements Backend {
     @Override
     public void generateFromFilesystem(Switchboard switchboard) {
         Executors.newSingleThreadExecutor().submit(() -> {
-            PostingList pl = new PostingList(Paths.get(fileLocation));
+            PostingList pl = new PostingList(Paths.get(plFileLocation));
             ParallelFileTreeVisitor walker = pl::add;
             walker.walk(Paths.get(System.getProperty("user.dir")).getRoot());
             switchboard.swapInBackend(pl);
@@ -260,7 +260,7 @@ public final class PostingList implements Backend {
      */
     @Override
     public Stream<String> getAllFileNames() {
-        return strings.stream()
+        return paths.stream()
                 .filter(item -> !item.isEmpty())
                 .map(item -> Paths.get(item).getFileName().toString());
     }
@@ -286,9 +286,9 @@ public final class PostingList implements Backend {
     private void addString(String str) {
         if (str.isEmpty()) return;
 
-        int index = strings.size();
-        strings.add(str);
-        totalStringsSize += str.getBytes().length;
+        int index = paths.size();
+        paths.add(str);
+        totalPathsSize += str.getBytes().length;
 
         // If str.length() < 3, we are not able to search for them with trigrams, so we don't add them to the
         // posting list.
@@ -332,20 +332,20 @@ public final class PostingList implements Backend {
         sizes.set(idx, Long.MIN_VALUE);
         // Compact the haystack.
         if (numHoles > 127) {
-            strings = (ArrayList<String>) strings.parallelStream()
+            paths = (ArrayList<String>) paths.parallelStream()
                     .filter(String::isEmpty)
                     .collect(Collectors.toList());
             sizes = (ArrayList<Long>) sizes.parallelStream()
                     .filter(size -> size >= 0)
                     .collect(Collectors.toList());
             lists.parallelStream().forEach(RoaringBitmap::clear);
-            IntStream.range(0, strings.size()).parallel().forEach(i -> {
-                if (strings.get(i).length() >= 3) {
-                    int a, b = mapChar(strings.get(i).charAt(0)), c = mapChar(strings.get(i).charAt(1));
-                    for (int j = 2; j < strings.get(i).length(); ++j) {
+            IntStream.range(0, paths.size()).parallel().forEach(i -> {
+                if (paths.get(i).length() >= 3) {
+                    int a, b = mapChar(paths.get(i).charAt(0)), c = mapChar(paths.get(i).charAt(1));
+                    for (int j = 2; j < paths.get(i).length(); ++j) {
                         a = b;
                         b = c;
-                        c = mapChar(strings.get(i).charAt(i));
+                        c = mapChar(paths.get(i).charAt(i));
                         lists.get(mapTrigramToIndex(a, b, c)).add(i);
                     }
                     //lists.get(mapTrigramToIndex(b, c, 60)).add(i);
@@ -366,10 +366,10 @@ public final class PostingList implements Backend {
     private int removeString(String str) {
         if (str.isEmpty()) return -1;
 
-        int index = strings.indexOf(str);
+        int index = paths.indexOf(str);
         if (index == -1) return index;
-        strings.set(index, "");
-        totalStringsSize -= str.getBytes().length;
+        paths.set(index, "");
+        totalPathsSize -= str.getBytes().length;
         ++numHoles;
 
         // If str.length() < 3, it is not in the posting list.
@@ -394,7 +394,7 @@ public final class PostingList implements Backend {
      */
     @Override
     public void moveFile(String source, String destination) {
-        getStrings(source).stream().parallel().filter(i -> strings.get(i).equals(source)).findAny().ifPresent(srcIdx -> {
+        getStrings(source).stream().parallel().filter(i -> paths.get(i).equals(source)).findAny().ifPresent(srcIdx -> {
             if (srcIdx >= 0) {
                 String destPath = destination + source.substring(source.lastIndexOf(File.separatorChar));
                 long fileSize = removeItem(source);
@@ -422,7 +422,7 @@ public final class PostingList implements Backend {
             bitset = Arrays.stream(splitQuery)
                            .parallel()
                            .map(this::getStrings)
-                           .reduce(RoaringBitmap.bitmapOfRange(0, strings.size()), (acc, item) -> RoaringBitmap.and(acc, item));
+                           .reduce(RoaringBitmap.bitmapOfRange(0, paths.size()), (acc, item) -> RoaringBitmap.and(acc, item));
             RoaringBitmap filtered = filteredBitset.join();
             bitset.and(filtered);
         } else {
@@ -430,13 +430,13 @@ public final class PostingList implements Backend {
             bitset = Arrays.stream(splitQuery)
                            .parallel()
                            .map(this::getStrings)
-                           .reduce(RoaringBitmap.bitmapOfRange(0, strings.size()), (acc, item) -> RoaringBitmap.and(acc, item));
+                           .reduce(RoaringBitmap.bitmapOfRange(0, paths.size()), (acc, item) -> RoaringBitmap.and(acc, item));
         }
 
         return bitset.stream()
                      .parallel()
-                     .filter(i -> Arrays.stream(splitQuery).allMatch(strings.get(i)::contains))
-                     .mapToObj(i -> strings.get(i));
+                     .filter(i -> Arrays.stream(splitQuery).allMatch(paths.get(i)::contains))
+                     .mapToObj(i -> paths.get(i));
     }
 
     /**
@@ -460,7 +460,7 @@ public final class PostingList implements Backend {
     public Stream<String> get(QueryFilter filter) {
         return getFiltered(filter).stream()
                 .parallel()
-                .mapToObj(i -> strings.get(i));
+                .mapToObj(i -> paths.get(i));
     }
 
     /**
@@ -471,8 +471,8 @@ public final class PostingList implements Backend {
      */
     private RoaringBitmap getStrings(String query) {
         if (query.length() < 3) {
-            return IntStream.range(0, strings.size())
-                            .filter(i -> strings.get(i).contains(query))
+            return IntStream.range(0, paths.size())
+                            .filter(i -> paths.get(i).contains(query))
                             .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or);
         } else {
             int a = mapChar(query.charAt(0)), b = mapChar(query.charAt(1)), c = mapChar(query.charAt(2));
@@ -523,10 +523,10 @@ public final class PostingList implements Backend {
         }
         RoaringBitmap rootPaths = filter.getRoots().parallelStream()
                                           .map(this::getStrings)
-                                          .reduce(RoaringBitmap.bitmapOfRange(0, strings.size()), ParallelAggregation::or);
+                                          .reduce(RoaringBitmap.bitmapOfRange(0, paths.size()), ParallelAggregation::or);
         rootPaths.and(dirs);
         return rootPaths.stream().parallel()
-                       .mapToObj(strings::get)
+                       .mapToObj(paths::get)
                        .filter(s -> s.startsWith(filter.getRoots().get(0)));
         // @formatter:on
     }
