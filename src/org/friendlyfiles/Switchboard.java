@@ -63,17 +63,6 @@ public class Switchboard {
     }
 
     /**
-     * Queries the backend without a filter.
-     *
-     * @implNote This may be unused, so consider deleting it.
-     * @param query the search query
-     * @return the results of the query
-     */
-    public Stream<String> search(String query) {
-        return backend.get(query);
-    }
-
-    /**
      * Queries the backend with search string and a filter.
      *
      * @param query the search query
@@ -91,7 +80,7 @@ public class Switchboard {
      * @return the results of the query
      */
     public Stream<String> search(QueryFilter filter) {
-        return filter == null ? Stream.empty() : backend.get(filter);
+        return backend.get("/", filter);
     }
 
     /**

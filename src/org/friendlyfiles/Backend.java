@@ -11,14 +11,6 @@ import java.util.stream.Stream;
  * method throws an exception.
  */
 public interface Backend extends AutoCloseable {
-    ///**
-    // * Changes the name of a directory.
-    // *
-    // * @param oldPath the path to the directory to be renamed
-    // * @param newName the name to change the old name to
-    // * @throws Error if the directory is not registered or if the new path already exists
-    // */
-    //void renameDirectory(RealPath oldPath, String newName);
 
     /**
      * Changes the name of a file.
@@ -34,13 +26,6 @@ public interface Backend extends AutoCloseable {
      * and swaps out the old data with the new data when it is done.
      */
     void generateFromFilesystem(Switchboard switchboard);
-
-    /**
-     * Gets a list of files that the backend keeps track of.
-     *
-     * @return a stream of file models for the ui
-     */
-    Stream<String> getAllFileNames();
 
     /**
      * Registers a new file or directory at the given path.
@@ -85,14 +70,6 @@ public interface Backend extends AutoCloseable {
      * @return the result of the query
      */
     Stream<String> get(String query);
-
-    /**
-     * Queries the backend for files without a search string.
-     *
-     * @param filter filters the query results
-     * @return the result of the query
-     */
-    Stream<String> get(QueryFilter filter);
 
     /**
      * Gets a list of all the directories beneath all the roots specified in the filter.

@@ -444,8 +444,8 @@ public final class PostingList implements Backend {
 
         return bitset.stream()
                      .parallel()
-                     .filter(i -> Arrays.stream(splitQuery).allMatch(paths.get(i)::contains))
-                     .mapToObj(i -> paths.get(i));
+                     .mapToObj(i -> paths.get(i))
+                     .filter(str -> Arrays.stream(splitQuery).allMatch(str::contains));
     }
 
     /**
@@ -460,26 +460,13 @@ public final class PostingList implements Backend {
     }
 
     /**
-     * Queries the backend for files without a search string.
-     *
-     * @param filter filters the query results
-     * @return the result of the query
-     */
-    @Override
-    public Stream<String> get(QueryFilter filter) {
-        return getFiltered(filter).stream()
-                .parallel()
-                .mapToObj(i -> paths.get(i));
-    }
-
-    /**
      * Retrieves all the strings corresponding to a query string.
      *
      * @param query the string to search for
      * @return a bitset of indexes of strings containing the result of the query
      */
     private RoaringBitmap getStrings(String query) {
-        if (query.length() < 3) {
+        if (query.length() < 2) {
             return IntStream.range(0, paths.size())
                             .filter(i -> paths.get(i).contains(query))
                             .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or);
