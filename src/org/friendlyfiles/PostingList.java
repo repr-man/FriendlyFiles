@@ -262,18 +262,6 @@ public final class PostingList implements Backend {
     }
 
     /**
-     * Gets a list of files that the backend keeps track of.
-     *
-     * @return a stream of file models for the ui
-     */
-    @Override
-    public Stream<String> getAllFileNames() {
-        return paths.stream()
-                .filter(item -> !item.isEmpty())
-                .map(item -> Paths.get(item).getFileName().toString());
-    }
-
-    /**
      * Registers a new file or directory at the given path.
      *
      * @param path the path at which to add the new item
