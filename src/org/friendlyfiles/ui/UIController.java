@@ -26,15 +26,27 @@ public class UIController {
 
     @FXML
     private BorderPane bp_root;
+    
+    @FXML
+    private Button btn_addFolder;
 
     @FXML
     private Button btn_addFilter;
 
     @FXML
-    private Button btn_filterStackDown;
+    private Button btn_sortStackAdd;
 
     @FXML
-    private Button btn_filterStackUp;
+    private Button btn_sortStackRemove;
+    
+    @FXML
+    private Button btn_sortStackUp;
+    
+    @FXML
+    private Button btn_filterStackAdd;
+    
+    @FXML
+    private Button btn_filterStackRemove;
 
     @FXML
     private Button btn_search;
@@ -52,7 +64,7 @@ public class UIController {
     private ListView<String> lsv_filterStack;
 
     @FXML
-    private ListView<String> lv_fileDisplay;
+    private ListView<String> lsv_fileDisplay;
 
     @FXML
     private Tab tab_db;
@@ -65,12 +77,21 @@ public class UIController {
 
     @FXML
     private Tab tab_sort;
+    
+    @FXML
+    private Tab tab_home;
 
     @FXML
     private TextField tbx_search;
 
     @FXML
     private TreeView<String> tvw_dirTree;
+    
+    @FXML
+    void btn_addFolder_clicked(ActionEvent event) {
+    	
+    	// TODO: Open folder, select directory, have that directory be added into the program along with with the previously added directories
+    }
 
     @FXML
     public void btn_search_clicked(ActionEvent ignoredEvent) {
@@ -81,7 +102,7 @@ public class UIController {
 
     @FXML
     public void btn_delete_clicked(ActionEvent ignoredEvent) {
-        switchboard.delete(lv_fileDisplay.getSelectionModel().getSelectedItems());
+        switchboard.delete(lsv_fileDisplay.getSelectionModel().getSelectedItems());
         btn_search_clicked(ignoredEvent);
     }
 
@@ -91,7 +112,7 @@ public class UIController {
         inputDialog.setTitle("Enter new file name:");
         inputDialog.setHeaderText("Rename Files");
         inputDialog.showAndWait().ifPresent(newName -> {
-            switchboard.rename(lv_fileDisplay.getSelectionModel().getSelectedItems(), newName);
+            switchboard.rename(lsv_fileDisplay.getSelectionModel().getSelectedItems(), newName);
         });
         btn_search_clicked(ignoredEvent);
     }
@@ -101,7 +122,7 @@ public class UIController {
         DirectoryChooser chooser = new DirectoryChooser();
         chooser.setTitle("Choose directory to move files to:");
         String dest = chooser.showDialog(null).getAbsolutePath();
-        switchboard.move(lv_fileDisplay.getSelectionModel().getSelectedItems(), dest);
+        switchboard.move(lsv_fileDisplay.getSelectionModel().getSelectedItems(), dest);
         btn_search_clicked(ignoredEvent);
     }
 
@@ -112,39 +133,65 @@ public class UIController {
     }
     
     @FXML
-    void lv_fileDisplay_clicked(MouseEvent event) {
+    void btn_addSort_clicked(ActionEvent event) {
+    	
+    	// TODO: Create popup to allow a new sorting criteria to be configured and added to the sortList
+    }
+    
+    @FXML
+    void lsv_fileDisplay_clicked(MouseEvent event) {
     	
     	if (event.getClickCount() == 2 && event.getTarget().getClass() == LabeledText.class) {
     		
-            String filePath = lv_fileDisplay.getSelectionModel().getSelectedItem();
+            String filePath = lsv_fileDisplay.getSelectionModel().getSelectedItem();
             switchboard.openFile(filePath);
         }
     }
     
     @FXML
-    void btn_filterStackUp_clicked(ActionEvent event) {
+    void btn_filterStackAdd_clicked(ActionEvent event) {
+
+    }
+
+    @FXML
+    void btn_filterStackRemove_clicked(ActionEvent event) {
+
+    }
+    
+    @FXML
+    void btn_sortStackAdd_clicked(ActionEvent event) {
+
+    }
+
+    @FXML
+    void btn_sortStackRemove_clicked(ActionEvent event) {
+
+    }
+    
+    @FXML
+    void btn_sortStackUp_clicked(ActionEvent event) {
     	
     	// TODO: Implement actual code here (this code is completely untested and doesn't update the listview)
     	
     	// Demo
-//    	if (selectedFilterIndex > 0) {
+//    	if (selectedSortIndex > 0) {
 //    		
-//			filterList.remove(selectedFilterIndex);
-//			filterList.add(selectedFilterIndex - 1, selectedFilter);
+//			sortList.remove(selectedSortIndex);
+//			sortList.add(selectedSortIndex - 1, selectedSortIndex);
 //			
 //    	}
     }
     
     @FXML
-    void btn_filterStackDown_clicked(ActionEvent event) {
+    void btn_sortStackDown_clicked(ActionEvent event) {
     	
     	// TODO: Implement actual code here (this code is completely untested and doesn't update the listview)
     	
     	// Demo
-//    	if (selectedFilterIndex != -1 && selectedFilterIndex < filterList.size() - 1) {
+//    	if (selectedSortIndex != -1 && selectedSortIndex < sortList.size() - 1) {
 //    		
-//    		filterList.remove(selectedFilterIndex);
-//    		filterList.add(selectedFilterIndex + 1, selectedFilter);
+//    		sortList.remove(selectedSortIndex);
+//    		sortList.add(selectedSortIndex + 1, selectedSortIndex);
 //    		
 //    	}
     }
@@ -156,7 +203,7 @@ public class UIController {
 
     		// Get the index of the filter that was clicked
     		// We can then use the index to select the filter from the list of filters below this method
-//            selectedFilterIndex = lv_fileDisplay.getSelectionModel().getSelectedIndex();
+//            selectedFilterIndex = lsv_filterStack.getSelectionModel().getSelectedIndex();
 //            selectedFilter = filterList.get(selectedFilterIndex);
         }
     	else {
@@ -165,12 +212,31 @@ public class UIController {
     	}
     }
     
-    /** TODO: Custom filter objects to specify each individual filtering step. OurFilter is simply a placeholder name.
-     * (individual filters could be applied individually or read in by the master QueryFilter to compile and execute one large query?)
+    @FXML
+    void lsv_sortStack_clicked(MouseEvent event) {
+
+    	if (event.getClickCount() == 2 && event.getTarget().getClass() == LabeledText.class) {
+
+    		// Get the index of the sort criteria that was clicked
+    		// We can then use the index to select the individual sorting criteria from the list of criteria below this method
+//            selectedSortIndex = lsv_sortStack.getSelectionModel().getSelectedIndex();
+//            selectedSortCriteria = sortList.get(selectedSortIndex);
+        }
+    	else {
+
+    		// selectedSortIndex = -1;
+    	}
+    }
+    
+    /** TODO: Custom sorting/filtering objects to specify the layout/order in which to process filters and sorting steps.
+     * (individual sorts/filters could either be applied individually or read in by the master QueryFilter/Sorting algorithm to compile and execute one large query?)
      */
 //    private ObservableList<OurFilter> filterList = FXCollections.observableList(new ArrayList<OurFilter>());
 //    private OurFilter selectedFilter = null;
 //    private int selectedFilterIndex = -1;
+//  private ObservableList<OurSortCriteria> sortList = FXCollections.observableList(new ArrayList<OurSortCriteria>());
+//  private OurSortCriteria selectedSortCriteria = null;
+//  private int selectedSortIndex = -1;
 
     private Dialog<Object> waitingForSwapDialog = null;
 
@@ -185,11 +251,11 @@ public class UIController {
 
     public void initialize() {
         // Enable caching of the file display panel
-        lv_fileDisplay.setCache(true);
-        lv_fileDisplay.setCacheHint(CacheHint.SPEED);
+        lsv_fileDisplay.setCache(true);
+        lsv_fileDisplay.setCacheHint(CacheHint.SPEED);
         
         // Set up file listview selection
-        lv_fileDisplay.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        lsv_fileDisplay.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         
         // OnClick moved to FX event (above)
 
@@ -211,6 +277,27 @@ public class UIController {
 //        	
 //        	@Override
 //        	protected void updateItem(OurFilter item, boolean empty) {
+//        		super.updateItem(item, empty);
+//        		
+//        		if (item == null || empty) {
+//        			
+//        			setText(null);
+//        		}
+//        		else {
+//        			
+//        			setText(item.getName());
+//        		}
+//        	}
+//        });
+        
+        
+     // Set cell factory for the sort stack list view in order to show only the names of our custom sorting criteria
+        // TODO: Implement the sort item that will be added to this list
+        // Ensure the sort item has a getName() property or some other way to access text that identifies the sorting criteria to the user
+//        lsv_sortStack.setCellFactory(cell -> new ListCell<OurSortCriteria>() {
+//        	
+//        	@Override
+//        	protected void updateItem(OurSortCriteria item, boolean empty) {
 //        		super.updateItem(item, empty);
 //        		
 //        		if (item == null || empty) {
@@ -312,10 +399,10 @@ public class UIController {
     public void displayFiles() {
 
         // Clear previous file panes before filling in with new data
-        lv_fileDisplay.getItems().clear();
+        lsv_fileDisplay.getItems().clear();
 
         if (fileNames != null) {
-            lv_fileDisplay.getItems().addAll(fileNames.collect(Collectors.toList()));
+            lsv_fileDisplay.getItems().addAll(fileNames.collect(Collectors.toList()));
         }
     }
 
