@@ -89,8 +89,7 @@ public class UIController {
     
     @FXML
     void btn_addFolder_clicked(ActionEvent event) {
-    	
-    	// TODO: Open folder, select directory, have that directory be added into the program along with with the previously added directories
+        loadDirectory();
     }
 
     @FXML
@@ -325,10 +324,6 @@ public class UIController {
             switchboard = new Switchboard(this, new PostingList(dbPath), new FileSource());
             showWaitingForSwapDialog();
         }
-        
-        // Prompt the user to load a directory
-        // Possibly remove this from the initialize method and have the user manually click an "add folder" button each time?
-        loadDirectory();
     }
     
     /**

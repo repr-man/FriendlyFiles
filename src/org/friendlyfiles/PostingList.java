@@ -300,8 +300,9 @@ public final class PostingList implements Backend {
 
         // If str.length() < 3, we are not able to search for them with trigrams, so we don't add them to the
         // posting list.
-        if (str.length() >= 3) {
-            int a, b = mapChar(str.charAt(0)), c = mapChar(str.charAt(1));
+        if (str.length() >= 2) {
+            int a = 60, b = mapChar(str.charAt(0)), c = mapChar(str.charAt(1));
+            lists.get(mapTrigramToIndex(a, b, c)).add(index);
             for (int i = 2; i < str.length(); ++i) {
                 a = b;
                 b = c;
@@ -747,7 +748,7 @@ public final class PostingList implements Backend {
      * <p>
      * The mappings are as follows:
      * <ul>
-     * <li>ASCII control characters [0, 32) -> 61</li>
+     * <li>ASCII control characters [0, 9), (9, 32) -> 61</li>
      * <li>Punctuation characters and numbers [32, 38], [40, 64] -> Subtract 32</li>
      * <li>', ` -> " -> 2</li>
      * <li>Uppercase and lowercase letters -> [32, 58], respectively</li>
@@ -758,7 +759,7 @@ public final class PostingList implements Backend {
      * <li>~ -> 59</li>
      * <li>^ -> 62</li>
      * <li>_ -> 63</li>
-     * <li>Start/end of string character -> 60</li>
+     * <li>\t -> Start of string character -> 60</li>
      * <li>All other characters -> 61</li>
      * </ul>
      *
@@ -767,6 +768,7 @@ public final class PostingList implements Backend {
      */
     private static byte mapChar(char c) {
         switch (c) {
+            case 9:   return 60;
             case 32:  return 0;
             case 33:  return 1;
             case 34:  return 2;
@@ -935,8 +937,8 @@ public final class PostingList implements Backend {
             case 57: return 'y';
             case 58: return 'z';
             case 59: return '~';
-            case 60: return '[';  // Placeholder character
-            case 61: return '{';  // Placeholder character
+            case 60: return '\t';  // Placeholder character
+            case 61: return '{';   // Placeholder character
             case 62: return '^';
             case 63: return '_';
             default: throw new Error("Unrecognized encoded character!");
