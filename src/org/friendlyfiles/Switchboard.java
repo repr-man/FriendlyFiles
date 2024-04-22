@@ -6,6 +6,8 @@ import org.friendlyfiles.ui.UIController;
 
 import java.io.IOException;
 import java.nio.file.*;
+import java.text.*;
+import java.util.regex.*;
 import java.util.stream.Stream;
 
 /**
@@ -24,6 +26,7 @@ import java.util.stream.Stream;
  * </ol>
  */
 public class Switchboard {
+    static final Pattern sedSegmentPattern = Pattern.compile("(?<!\\\\)\\/");
     private final UIController controller;
     private Backend backend;
     private final FileSource fileSource;
@@ -123,7 +126,8 @@ public class Switchboard {
     }
 
     /**
-     * Renames each of the selected items in the file source and the backend.
+     * Renames each of the selected items in the file source and the backend.  It also allows one to use sed-like
+     * substitutions for bulk renaming files.
      *
      * @param selectedItems the items to rename
      * @param newName the new name to give the items
@@ -131,8 +135,24 @@ public class Switchboard {
     public void rename(ObservableList<String> selectedItems, String newName) {
         selectedItems.forEach(item -> {
             try {
-                fileSource.renameFile(Paths.get(item), newName);
-                backend.renameFile(item, newName);
+                String finalName;
+                Path itemPath = Paths.get(item);
+                if (newName.startsWith("s/")) {
+                    if (newName.length() < 4) {
+                        showErrorDialog("Invalid substitution");
+                        finalName = itemPath.getFileName().toString();
+                    } else {
+                        finalName = miniSed(item, newName.substring(2));
+                        if (finalName == null) {
+                            showErrorDialog("Invalid substitution");
+                            finalName = itemPath.getFileName().toString();
+                        }
+                    }
+                } else {
+                    finalName = newName;
+                }
+                fileSource.renameFile(itemPath, finalName);
+                backend.renameFile(item, finalName);
             } catch (NoSuchFileException e) {
                 controller.showErrorDialog(String.format("File `%s` does not exist.\n\nWe will remove it from the file view.", item));
                 backend.remove(item);
@@ -174,6 +194,56 @@ public class Switchboard {
      */
     public void showErrorDialog(String message) {
         controller.showErrorDialog(message);
+    }
+
+
+    /**
+     * Provides a simple sed-like regex-based substitution.  It is used for modifying large numbers of file names
+     * with a similar structure.  The string matching regex uses standard Java regex syntax.  The substitution
+     * section uses standard 1-indexed backreferences.  Backslashes in this section only escape integers used for
+     * backreferences.  They leave all other characters unchanged.  The only exception is for slashes and backslashes.
+     * These characters cause the function to fail, as it is invalid for a name to have a path separator character
+     * in it.  Flags (like the 'g' global flag) are not allowed.
+     *
+     * @param input the string to modify
+     * @param pattern a sed-like substitution command with the "s/" and suffix flags removed
+     * @return the updated string, or null if the pattern was invalid
+     */
+    private static String miniSed(String input, String pattern) {
+        String[] sedSegments = sedSegmentPattern.split(pattern, 3);
+        Matcher inputMatcher = Pattern.compile(sedSegments[0]).matcher(input);
+        if (!inputMatcher.find()) {
+            return null;
+        }
+
+        StringBuilder output = new StringBuilder();
+        // I spent 3 hours trying to write this with a regex.  Sometimes, the simpler solution is better.
+        StringCharacterIterator outputPattern = new StringCharacterIterator(sedSegments[1]);
+        while (outputPattern.current() != CharacterIterator.DONE) {
+            if (outputPattern.current() == '\\') {
+                if (outputPattern.next() != CharacterIterator.DONE && Character.isDigit(outputPattern.current())) {
+                    int start = outputPattern.getIndex();
+                    int end = outputPattern.getIndex();
+                    do {
+                        ++end;
+                    } while (outputPattern.next() != CharacterIterator.DONE && Character.isDigit(outputPattern.current()));
+                    int backref = Integer.parseInt(sedSegments[1].substring(start, end));
+                    try {
+                        output.append(inputMatcher.group(backref));
+                    } catch (IndexOutOfBoundsException ignored) {
+                        return null;
+                    }
+                } else if (outputPattern.current() == '\\') {
+                    return null;
+                }
+            } else if (outputPattern.current() == '/'){
+                return null;
+            } else {
+                output.append(outputPattern.current());
+                outputPattern.next();
+            }
+        }
+        return output.toString();
     }
 }
 
