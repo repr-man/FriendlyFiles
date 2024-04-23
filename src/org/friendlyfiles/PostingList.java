@@ -441,24 +441,28 @@ public final class PostingList implements Backend {
                            .reduce(RoaringBitmap.bitmapOfRange(0, paths.size()), (acc, item) -> RoaringBitmap.and(acc, item));
         }
 
-        return bitset.stream()
-                     .parallel()
-                     .mapToObj(i -> paths.get(i))
-                     .filter(str -> Arrays.stream(splitQuery).allMatch(str::contains));
+        //return bitset.stream()
+        //             .parallel()
+        //             .filter(i -> Arrays.stream(splitQuery).allMatch(paths.get(i)::contains))
+        //             .mapToObj(i -> paths.get(i));
+        assert filter != null;
+        filter.setVisibleItems(getPostprocessed(bitset, splitQuery));
+        return filter.getVisibleItems().stream().parallel().mapToObj(paths::get);
     }
 
     /**
      * Filters strings in a bit set using normal string searching.
      *
-     * @param bitset the set of items to postprocess
+     * @param bitset     the set of items to postprocess
      * @param splitQuery the strings to ensure exist in the output
      * @return a stream of file names corresponding to the results of the postprocessing
      */
-    private Stream<String> getPostprocessedStrings(RoaringBitmap bitset, String[] splitQuery) {
+    @Override
+    public RoaringBitmap getPostprocessed(RoaringBitmap bitset, String[] splitQuery) {
+        // This CANNOT be made parallel!
         return bitset.stream()
-                       .parallel()
-                       .mapToObj(i -> paths.get(i))
-                       .filter(str -> Arrays.stream(splitQuery).allMatch(str::contains));
+                .filter(i -> Arrays.stream(splitQuery).allMatch(paths.get(i)::contains))
+                .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or);
     }
 
     /**
@@ -498,7 +502,7 @@ public final class PostingList implements Backend {
                 .filter(i -> filter.isInFileSizeRange(sizes.get(i)))
                 .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or);
         RoaringBitmap rootBitset = filter.getRootsWithStartOfPath().parallelStream()
-                                                 .map(this::getStrings)
+                .map(this::getStrings)
                 .reduce(new RoaringBitmap(), ParallelAggregation::or);
         bitset.and(rootBitset);
         return bitset;

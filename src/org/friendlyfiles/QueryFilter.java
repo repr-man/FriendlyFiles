@@ -1,5 +1,7 @@
 package org.friendlyfiles;
 
+import org.roaringbitmap.RoaringBitmap;
+
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
@@ -7,8 +9,18 @@ import java.util.stream.Collectors;
  * Handles and passes all filters except the search query between the UI and the backend.
  */
 public final class QueryFilter {
+    // This contains more than the visible items because they are not postprocessed.
+    private RoaringBitmap visibleItems = new RoaringBitmap();
     private final ArrayList<String> roots = new ArrayList<>();
     private long fileSizeLower, fileSizeUpper = Long.MAX_VALUE;
+
+    public RoaringBitmap getVisibleItems() {
+        return visibleItems;
+    }
+
+    public void setVisibleItems(RoaringBitmap visibleItems) {
+        this.visibleItems = visibleItems;
+    }
 
     /**
      * @return the list of root directories without 'start of path' character
