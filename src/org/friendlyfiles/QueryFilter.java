@@ -1,6 +1,7 @@
 package org.friendlyfiles;
 
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 /**
  * Handles and passes all filters except the search query between the UI and the backend.
@@ -10,9 +11,19 @@ public final class QueryFilter {
     private long fileSizeLower, fileSizeUpper = Long.MAX_VALUE;
 
     /**
-     * @return the list of root directories
+     * @return the list of root directories without 'start of path' character
      */
     public ArrayList<String> getRoots() {
+        // Removes the 'start of path' character.
+        return (ArrayList<String>) roots.stream().map(item -> item.substring(1)).collect(Collectors.toList());
+    }
+
+    /**
+     * @return the list of root directories with 'start of path' character
+     */
+    public ArrayList<String> getRootsWithStartOfPath() {
+        // Removes the 'start of path' character.
+        //return (ArrayList<String>) roots.stream().map(item -> item.substring(1)).collect(Collectors.toList());
         return roots;
     }
 
