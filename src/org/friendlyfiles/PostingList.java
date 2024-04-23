@@ -401,17 +401,6 @@ public final class PostingList implements Backend {
     }
 
     /**
-     * Queries the backend for files without a filter.
-     *
-     * @param query the string with which to search the backend
-     * @return a stream of file names corresponding to the results of the query
-     */
-    @Override
-    public Stream<String> get(String query) {
-        return get(query, null);
-    }
-
-    /**
      * Queries the backend for files.
      *
      * @param query  the string with which to search the backend
@@ -422,30 +411,19 @@ public final class PostingList implements Backend {
     public Stream<String> get(String query, QueryFilter filter) {
         if (query.isEmpty()) return Stream.empty();
 
-        // This is awful, but it's simple.  We need to do it so we can join the `getFiltered` thread.
         RoaringBitmap bitset;
         String[] splitQuery = query.split("\\s");
-        if (filter != null) {
-            ForkJoinTask<RoaringBitmap> filteredBitset = ForkJoinPool.commonPool().submit(() -> getFiltered(filter));
-            bitset = Arrays.stream(splitQuery)
-                           .parallel()
-                           .map(this::getStrings)
-                           .reduce(RoaringBitmap.bitmapOfRange(0, paths.size()), (acc, item) -> RoaringBitmap.and(acc, item));
-            RoaringBitmap filtered = filteredBitset.join();
-            bitset.and(filtered);
-        } else {
-            // Splits the query string.
-            bitset = Arrays.stream(splitQuery)
-                           .parallel()
-                           .map(this::getStrings)
-                           .reduce(RoaringBitmap.bitmapOfRange(0, paths.size()), (acc, item) -> RoaringBitmap.and(acc, item));
-        }
+        ForkJoinTask<RoaringBitmap> filteredBitset = ForkJoinPool.commonPool().submit(() -> getFiltered(filter));
+        bitset = Arrays.stream(splitQuery).parallel()
+                         .map(this::getStrings)
+                         .reduce(RoaringBitmap.bitmapOfRange(0, paths.size()), (acc, item) -> RoaringBitmap.and(acc, item));
+        RoaringBitmap filtered = filteredBitset.join();
+        bitset.and(filtered);
 
         //return bitset.stream()
         //             .parallel()
         //             .filter(i -> Arrays.stream(splitQuery).allMatch(paths.get(i)::contains))
         //             .mapToObj(i -> paths.get(i));
-        assert filter != null;
         filter.setVisibleItems(getPostprocessed(bitset, splitQuery));
         return filter.getVisibleItems().stream().parallel().mapToObj(paths::get);
     }

@@ -65,14 +65,6 @@ public interface Backend extends AutoCloseable {
     Stream<String> get(String query, QueryFilter filter);
 
     /**
-     * Queries the backend for files without a filter.
-     *
-     * @param query the string with which to search the backend
-     * @return the result of the query
-     */
-    Stream<String> get(String query);
-
-    /**
      * Gets a list of all the directories beneath all the roots specified in the filter.
      *
      * @param filter the filter containing root directories
