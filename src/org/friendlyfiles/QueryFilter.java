@@ -32,10 +32,15 @@ public final class QueryFilter {
      *
      * @param rootPath the path of the directory to add
      */
-    public void addRoot(String rootPath) {
+    public String addRoot(String rootPath) {
+        // We don't want to add roots that we can already access.
+        if (roots.stream().anyMatch(('\t' + rootPath)::startsWith)) {
+            return rootPath;
+        }
         // We add the 'start of path' character to ensure that the allowed items start with the root.
         // For example, if the root is "/bin", we won't get files starting with "/usr/bin".
         roots.add('\t' + rootPath);
+        return null;
     }
 
     /**
