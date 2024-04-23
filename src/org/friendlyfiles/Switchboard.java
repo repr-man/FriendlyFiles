@@ -28,13 +28,13 @@ import java.util.stream.Stream;
 public class Switchboard {
     static final Pattern sedSegmentPattern = Pattern.compile("(?<!\\\\)\\/");
     private final UIController controller;
-    private Backend backend;
+    private PostingList backend;
     private final FileSource fileSource;
 
     /**
      * Creates a switchboard and starts the background process that re-indexes the file system.
      */
-    public Switchboard(UIController controller, Backend backend, FileSource fileSource) {
+    public Switchboard(UIController controller, PostingList backend, FileSource fileSource) {
         this.controller = controller;
         this.backend = backend;
         this.fileSource = fileSource;
@@ -60,7 +60,7 @@ public class Switchboard {
      * without this causes an exception.
      * @param backend the new backend to swap in
      */
-    public void swapInBackend(Backend backend) {
+    public void swapInBackend(PostingList backend) {
         this.backend = backend;
         Platform.runLater(controller::notifyBackendSwapCompleted);
     }

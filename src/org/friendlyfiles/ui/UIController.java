@@ -313,7 +313,7 @@ public class UIController {
         Path dbPath = Paths.get("FriendlyFilesDatabase");
         if (Files.exists(dbPath)) {
             try {
-                Backend backend = PostingList.deserializeFrom(dbPath);
+                PostingList backend = PostingList.deserializeFrom(dbPath);
                 switchboard = new Switchboard(this, backend, new FileSource());
             } catch (Exception e) {
                 // If we can't open the database file, we just start making a new one.
