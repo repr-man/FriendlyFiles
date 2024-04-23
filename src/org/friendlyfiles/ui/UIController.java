@@ -94,8 +94,8 @@ public class UIController {
 
     @FXML
     public void btn_search_clicked(ActionEvent ignoredEvent) {
-    	
-        fileNames = switchboard.search(tbx_search.getText(), filter);
+        String query = tbx_search.getText().isEmpty() ? "/" : tbx_search.getText();
+        fileNames = switchboard.search(query, filter);
         updateFiles();
     }
 
