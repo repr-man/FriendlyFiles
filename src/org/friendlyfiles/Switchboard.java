@@ -145,7 +145,7 @@ public class Switchboard {
                         finalName = miniSed(item, newName.substring(2));
                         if (finalName == null) {
                             showErrorDialog("Invalid substitution");
-                            finalName = itemPath.getFileName().toString();
+                            return;
                         }
                     }
                 } else {
@@ -211,7 +211,7 @@ public class Switchboard {
      */
     private static String miniSed(String input, String pattern) {
         String[] sedSegments = sedSegmentPattern.split(pattern, 3);
-        Matcher inputMatcher = Pattern.compile(sedSegments[0]).matcher(input);
+        Matcher inputMatcher = Pattern.compile(sedSegments[0]).matcher(input.substring(input.lastIndexOf(UIController.fileSeparator) + 1));
         if (!inputMatcher.find()) {
             return null;
         }
