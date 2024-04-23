@@ -49,16 +49,14 @@ public class DirectoryTreeItem extends CheckBoxTreeItem<String> {
         // Check all boxes and add them to the set initially
         selectedProperty().set(true);
 
-        selectedProperty().addListener((observable, oldValue, newValue) -> {
-            // Prevents any issues with the listener being triggered without any change occuring (should never happen)
-            //if (newValue != oldValue) {
-            //    if (newValue) {
-            //        // Add the directory item to the selected set
-            //    } else {
-            //        // Remove the directory item from the selected set
-            //    }
-            //}
-            //controller.toggleDirectoryInclusion(getFullDirectoryPath());
+        addEventHandler(DirectoryTreeItem.checkBoxSelectionChangedEvent(), event -> {
+            if (event.wasIndeterminateChanged() && !isIndeterminate() && !isSelected()) {
+                // Clear all the bits associated with this query
+                controller.allowAllFilesInDirectory(getFullDirectoryPath());
+            } else {
+                // XOR the bits
+                controller.toggleFilesInDirectory(getFullDirectoryPath());
+            }
         });
     }
 
@@ -75,7 +73,6 @@ public class DirectoryTreeItem extends CheckBoxTreeItem<String> {
         DirectoryTreeItem newItem = new DirectoryTreeItem(firstChild);
         int pos = getChildren().indexOf(newItem);
         if (pos < 0) {
-            newItem.setIndependent(true);
             newItem.addCheckListener(controller);
             retItem = newItem;
             getChildren().add(retItem);

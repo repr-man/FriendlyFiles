@@ -1,6 +1,8 @@
 package org.friendlyfiles;
 
 
+import org.roaringbitmap.RoaringBitmap;
+
 import java.util.stream.Stream;
 
 /**
@@ -11,7 +13,6 @@ import java.util.stream.Stream;
  * method throws an exception.
  */
 public interface Backend extends AutoCloseable {
-
     /**
      * Changes the name of a file.
      *
@@ -78,4 +79,13 @@ public interface Backend extends AutoCloseable {
      * @return the stream of directories
      */
     Stream<String> getDirectories(QueryFilter filter);
+
+    /**
+     * Filters strings in a bit set using normal string searching.
+     *
+     * @param bitset the set of items to postprocess
+     * @param splitQuery the strings to ensure exist in the output
+     * @return a stream of file names corresponding to the results of the postprocessing
+     */
+    RoaringBitmap getPostprocessed(RoaringBitmap bitset, String[] splitQuery);
 }

@@ -371,7 +371,6 @@ public class UIController {
 
         // Set the treeview's root directory to a new Directory item with no path
         DirectoryTreeItem treeRoot = new DirectoryTreeItem(null);
-        treeRoot.setIndependent(true);
         tvw_dirTree.setRoot(treeRoot);
 
         filter.getRoots().parallelStream().forEach(root -> {
@@ -435,6 +434,16 @@ public class UIController {
     public void showErrorDialog(String contentText) {
         Alert errorDialog = new Alert(Alert.AlertType.ERROR, contentText);
         errorDialog.showAndWait();
+    }
+
+    public void allowAllFilesInDirectory(String dirPath) {
+        fileNames = switchboard.allowFilesInDirectory(filter, dirPath);
+        updateFiles();
+    }
+
+    public void toggleFilesInDirectory(String dirPath) {
+        fileNames = switchboard.toggleVisibleFiles(filter, dirPath);
+        updateFiles();
     }
 
     /**

@@ -96,6 +96,15 @@ public class Switchboard {
         return backend.getDirectories(filter);
     }
 
+    public Stream<String> allowFilesInDirectory(QueryFilter filter, String dirPath) {
+
+        return null;
+    }
+
+    public Stream<String> toggleVisibleFiles(QueryFilter filter, String dirPath) {
+        return null;
+    }
+
     /**
      * Opens the file using the system's default program for the file's type.
      *
