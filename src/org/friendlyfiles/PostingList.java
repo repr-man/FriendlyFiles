@@ -401,6 +401,17 @@ public final class PostingList implements Backend {
     }
 
     /**
+     * Queries the backend for files without a filter.
+     *
+     * @param query the string with which to search the backend
+     * @return a stream of file names corresponding to the results of the query
+     */
+    @Override
+    public Stream<String> get(String query) {
+        return get(query, null);
+    }
+
+    /**
      * Queries the backend for files.
      *
      * @param query  the string with which to search the backend
@@ -437,14 +448,17 @@ public final class PostingList implements Backend {
     }
 
     /**
-     * Queries the backend for files without a filter.
+     * Filters strings in a bit set using normal string searching.
      *
-     * @param query the string with which to search the backend
-     * @return a stream of file names corresponding to the results of the query
+     * @param bitset the set of items to postprocess
+     * @param splitQuery the strings to ensure exist in the output
+     * @return a stream of file names corresponding to the results of the postprocessing
      */
-    @Override
-    public Stream<String> get(String query) {
-        return get(query, null);
+    private Stream<String> getPostprocessedStrings(RoaringBitmap bitset, String[] splitQuery) {
+        return bitset.stream()
+                       .parallel()
+                       .mapToObj(i -> paths.get(i))
+                       .filter(str -> Arrays.stream(splitQuery).allMatch(str::contains));
     }
 
     /**
