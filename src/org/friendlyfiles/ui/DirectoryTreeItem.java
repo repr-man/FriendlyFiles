@@ -1,12 +1,7 @@
 package org.friendlyfiles.ui;
 
-import javafx.beans.value.*;
-import javafx.collections.*;
 import javafx.scene.control.*;
-
 import java.io.File;
-import java.util.Objects;
-import java.util.stream.IntStream;
 
 // An extension of the CheckboxTreeItem, primarily to override the .equals() method
 public class DirectoryTreeItem extends CheckBoxTreeItem<String> {
@@ -36,31 +31,38 @@ public class DirectoryTreeItem extends CheckBoxTreeItem<String> {
                 && this.getValue().equals(((DirectoryTreeItem) o).getValue());
     }
 
+    private String getFullDirectoryPath() {
+        String ret;
+        if (getParent().getValue() == null) {
+            ret = getValue();
+            return ret;
+        }
+        ret = ((DirectoryTreeItem) getParent()).getFullDirectoryPath();
+        ret += UIController.fileSeparator + getValue();
+        return ret;
+    }
+
     /**
      * Adds a listener to the given item which will fire whenever the item is checked/unchecked.
      */
-    public void addCheckListener(ObservableSet<DirectoryTreeItem> checkedDirItems) {
+    public void addCheckListener(UIController controller) {
         // Check all boxes and add them to the set initially
         selectedProperty().set(true);
-        checkedDirItems.add(this);
 
         selectedProperty().addListener((observable, oldValue, newValue) -> {
             // Prevents any issues with the listener being triggered without any change occuring (should never happen)
-            if (newValue != oldValue) {
-                if (newValue) {
-                    // Add the directory item to the selected set
-                    checkedDirItems.add(this);
-                } else {
-                    // Remove the directory item from the selected set
-                    checkedDirItems.remove(this);
-                }
-            }
+            //if (newValue != oldValue) {
+            //    if (newValue) {
+            //        // Add the directory item to the selected set
+            //    } else {
+            //        // Remove the directory item from the selected set
+            //    }
+            //}
+            //controller.toggleDirectoryInclusion(getFullDirectoryPath());
         });
     }
 
-    public void addAllChildren(String childName, ObservableSet<DirectoryTreeItem> checkedDirItems) {
-        if (childName.isEmpty()) return;
-
+    public void addAllChildren(UIController controller, String childName) {
         int splitIdx = childName.indexOf(File.separatorChar, 1);
         String firstChild;
         if (splitIdx < 0) {
@@ -69,14 +71,19 @@ public class DirectoryTreeItem extends CheckBoxTreeItem<String> {
             firstChild = childName.substring(1, splitIdx);
         }
 
+        DirectoryTreeItem retItem;
         DirectoryTreeItem newItem = new DirectoryTreeItem(firstChild);
-        boolean hasNewItem = checkedDirItems.contains(newItem);
-        if (!hasNewItem) {
+        int pos = getChildren().indexOf(newItem);
+        if (pos < 0) {
             newItem.setIndependent(true);
-            newItem.addCheckListener(checkedDirItems);
+            newItem.addCheckListener(controller);
+            retItem = newItem;
+            getChildren().add(retItem);
+        } else {
+            retItem = (DirectoryTreeItem) getChildren().get(pos);
         }
         if (splitIdx >= 0) {
-            newItem.addAllChildren(childName.substring(splitIdx), checkedDirItems);
+            retItem.addAllChildren(controller, childName.substring(splitIdx));
         }
     }
 }

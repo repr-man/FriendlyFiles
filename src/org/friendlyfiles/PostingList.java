@@ -533,7 +533,7 @@ public final class PostingList implements Backend {
         }
         RoaringBitmap rootPaths = filter.getRoots().parallelStream()
                                           .map(this::getStrings)
-                                          .reduce(RoaringBitmap.bitmapOfRange(0, paths.size()), ParallelAggregation::or);
+                                          .reduce(RoaringBitmap.bitmapOf(), ParallelAggregation::or);
         rootPaths.and(dirs);
         return rootPaths.stream().parallel()
                        .mapToObj(paths::get)

@@ -363,7 +363,7 @@ public class UIController {
      * Note: This method can cause issues if called while the UI is still setting up; at the earliest it should be called towards the end of the initialize() method.
      */
     public void updateDirTree() {
-        List<String> directories = switchboard.getDirectories(filter).collect(Collectors.toList());
+        List<String> directories = switchboard.getDirectories(filter).sorted().collect(Collectors.toList());
 
         // Set the treeview's root directory to a new Directory item with no path
         DirectoryTreeItem treeRoot = new DirectoryTreeItem(null);
@@ -373,15 +373,15 @@ public class UIController {
         filter.getRoots().parallelStream().forEach(root -> {
             // Add the current root to the base of the treeview
             DirectoryTreeItem dirRootItem = new DirectoryTreeItem(root);
-            dirRootItem.setIndependent(true);
-            dirRootItem.addCheckListener(checkedDirItems);
+            //dirRootItem.setIndependent(true);
+            dirRootItem.addCheckListener(this);
             treeRoot.getChildren().add(dirRootItem);
 
-            directories.stream()
-                    .filter(dirName -> dirName.startsWith(root))
-                    .filter(dirName -> dirName.length() != root.length())
-                    .map(dirName -> dirName.substring(root.length()))
-                    .forEach(dirName -> dirRootItem.addAllChildren(dirName, checkedDirItems));
+            directories.stream()//.parallel()
+                    .filter(dirPath -> dirPath.startsWith(root))
+                    .filter(dirPath -> dirPath.length() != root.length())
+                    .map(dirPath -> dirPath.substring(root.length()))
+                    .forEach(dirPath -> dirRootItem.addAllChildren(this, dirPath));
         });
     }
 
