@@ -483,7 +483,7 @@ public final class PostingList implements Backend {
                 .range(0, sizes.size())
                 .filter(i -> filter.isInFileSizeRange(sizes.get(i)))
                 .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or);
-        RoaringBitmap rootBitset = filter.getRoots().parallelStream()
+        RoaringBitmap rootBitset = filter.getRootsWithStartOfPath().parallelStream()
                                                  .map(this::getStrings)
                 .reduce(new RoaringBitmap(), ParallelAggregation::or);
         bitset.and(rootBitset);
