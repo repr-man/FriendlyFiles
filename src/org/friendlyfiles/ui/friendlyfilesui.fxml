@@ -98,7 +98,7 @@
    <left>
       <VBox BorderPane.alignment="CENTER">
          <children>
-            <Label alignment="CENTER" maxHeight="-Infinity" maxWidth="1.7976931348623157E308" minHeight="-Infinity" prefHeight="18.0" text="Content View" textAlignment="CENTER">
+            <Label alignment="CENTER" maxHeight="-Infinity" maxWidth="1.7976931348623157E308" minHeight="-Infinity" prefHeight="18.0" text="Tree View" textAlignment="CENTER">
                <font>
                   <Font name="System Bold" size="12.0" />
                </font>
@@ -107,16 +107,7 @@
                <content>
                   <VBox>
                      <children>
-                        <Accordion>
-                          <panes>
-                            <TitledPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="200.0" text="Directory Tree">
-                                 <content>
-                                    <TreeView fx:id="tvw_dirTree" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="200.0" showRoot="false" />
-                                 </content>
-                            </TitledPane>
-                              <TitledPane expanded="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="200.0" text="untitled 1" />
-                          </panes>
-                        </Accordion>
+                        <TreeView fx:id="tvw_dirTree" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="200.0" showRoot="false" />
                      </children>
                   </VBox>
                </content>
