@@ -447,7 +447,7 @@ public final class PostingList implements Backend {
      * @return a bitset of indexes of strings containing the result of the query
      */
     private RoaringBitmap getStrings(String query) {
-        if (query.length() < 2) {
+        if (query.length() < 3) {
             return IntStream.range(0, paths.size())
                             .filter(i -> paths.get(i).contains(query))
                             .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or);
