@@ -5,7 +5,8 @@ import java.util.Comparator;
 
 public class MasterSort<T> implements Comparator<T> {
 	
-	// TODO: Create 
+	// TODO: Make this work with the SortStep and file objects
+	// Currently files are saved in the UI as strings, more data will be needed for sorting (or sort outside of the UIController where additional data can be accessed?)
 	
 	// The individual comparator objects to be applied
 	private Comparator<T>[] steps;
