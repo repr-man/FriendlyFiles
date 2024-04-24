@@ -169,6 +169,11 @@ public class UIController {
     			selectedFilterIndex--;
     		}
     	}
+    	
+    	if (filterList.size() == 0) {
+    		
+    		selectedFilterIndex = -1;
+    	}
     }
     
     @FXML
@@ -188,6 +193,11 @@ public class UIController {
         		
         		selectedSortIndex--;
         	}
+    	}
+    	
+    	if (sortList.size() == 0) {
+    		
+    		selectedSortIndex = -1;
     	}
     }
     
