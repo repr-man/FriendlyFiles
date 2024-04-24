@@ -679,8 +679,8 @@ public class UIController {
         errorDialog.showAndWait();
     }
 
-    public void allowAllFilesInDirectory(String dirPath) {
-        fileNames = switchboard.allowFilesInDirectory(filter, dirPath);
+    public void disallowAllFilesInDirectory(String dirPath) {
+        fileNames = switchboard.disallowFilesInDirectory(filter, dirPath);
         updateFiles();
     }
 

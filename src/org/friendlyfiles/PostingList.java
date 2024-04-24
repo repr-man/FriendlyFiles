@@ -1,5 +1,6 @@
 package org.friendlyfiles;
 
+import org.friendlyfiles.ui.UIController;
 import org.roaringbitmap.*;
 
 import java.io.*;
@@ -421,8 +422,8 @@ public final class PostingList implements Backend {
         //             .parallel()
         //             .filter(i -> Arrays.stream(splitQuery).allMatch(paths.get(i)::contains))
         //             .mapToObj(i -> paths.get(i));
-        filter.setVisibleItems(getPostprocessed(bitset, splitQuery));
-        return filter.getVisibleItems().stream().parallel().mapToObj(paths::get);
+        bitset = RoaringBitmap.and(getPostprocessed(bitset, splitQuery), filter.getVisibleItems());
+        return bitset.stream().parallel().mapToObj(paths::get);
     }
 
     /**
@@ -518,6 +519,36 @@ public final class PostingList implements Backend {
                        .mapToObj(paths::get)
                        .filter(s -> s.startsWith(filter.getRoots().get(0)));
         // @formatter:on
+    }
+
+    /**
+     * Gets the paths associated with the query, except for the ones starting with `dirPath`.
+     *
+     * @param filter the filter with the visible item bit set
+     * @param dirPath the path to disallow
+     * @return a stream of file names corresponding to the results of the operation
+     */
+    public Stream<String> disallowFilesInDirectory(QueryFilter filter, String dirPath) {
+        RoaringBitmap toggleBitset = getStrings('\t' + dirPath + UIController.fileSeparator).stream()
+                                             .filter(i -> paths.get(i).startsWith(dirPath + UIController.fileSeparator))
+                                             .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or);
+        filter.getVisibleItems().or(toggleBitset);
+        return get(filter);
+    }
+
+    /**
+     * Gets the paths associated with the query, toggling the visibility of the ones starting with `dirPath`.
+     *
+     * @param filter the filter with the visible item bit set
+     * @param dirPath the path to toggle
+     * @return a stream of file names corresponding to the results of the operation
+     */
+    public Stream<String> toggleVisibleFiles(QueryFilter filter, String dirPath) {
+        RoaringBitmap toggleBitset = getStrings('\t' + dirPath + UIController.fileSeparator).stream()
+                                             .filter(i -> paths.get(i).startsWith(dirPath + UIController.fileSeparator))
+                                             .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or);
+        filter.getVisibleItems().xor(toggleBitset);
+        return get(filter);
     }
 
     /**

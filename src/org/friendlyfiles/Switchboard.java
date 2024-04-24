@@ -85,13 +85,12 @@ public class Switchboard {
         return backend.getDirectories(filter);
     }
 
-    public Stream<String> allowFilesInDirectory(QueryFilter filter, String dirPath) {
-
-        return null;
+    public Stream<String> disallowFilesInDirectory(QueryFilter filter, String dirPath) {
+        return backend.disallowFilesInDirectory(filter, dirPath);
     }
 
     public Stream<String> toggleVisibleFiles(QueryFilter filter, String dirPath) {
-        return null;
+        return backend.toggleVisibleFiles(filter, dirPath);
     }
 
     /**

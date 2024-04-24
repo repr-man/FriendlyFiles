@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
  */
 public final class QueryFilter {
     // This contains more than the visible items because they are not postprocessed.
-    private RoaringBitmap visibleItems = new RoaringBitmap();
+    private RoaringBitmap visibleItems = RoaringBitmap.bitmapOfRange(0, 0x100000000L);
     private final ArrayList<String> roots = new ArrayList<>();
     private String query = "/";
     private long fileSizeLower, fileSizeUpper = Long.MAX_VALUE;
