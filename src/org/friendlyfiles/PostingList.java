@@ -403,16 +403,13 @@ public final class PostingList implements Backend {
     /**
      * Queries the backend for files.
      *
-     * @param query  the string with which to search the backend
      * @param filter filters the query results
      * @return a stream of file names corresponding to the results of the query
      */
     @Override
-    public Stream<String> get(String query, QueryFilter filter) {
-        if (query.isEmpty()) return Stream.empty();
-
+    public Stream<String> get(QueryFilter filter) {
         RoaringBitmap bitset;
-        String[] splitQuery = query.split("\\s");
+        String[] splitQuery = filter.getQuery().split("\\s");
         ForkJoinTask<RoaringBitmap> filteredBitset = ForkJoinPool.commonPool().submit(() -> getFiltered(filter));
         bitset = Arrays.stream(splitQuery).parallel()
                          .map(this::getStrings)

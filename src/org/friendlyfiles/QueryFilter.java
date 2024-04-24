@@ -12,6 +12,7 @@ public final class QueryFilter {
     // This contains more than the visible items because they are not postprocessed.
     private RoaringBitmap visibleItems = new RoaringBitmap();
     private final ArrayList<String> roots = new ArrayList<>();
+    private String query = "/";
     private long fileSizeLower, fileSizeUpper = Long.MAX_VALUE;
 
     public RoaringBitmap getVisibleItems() {
@@ -20,6 +21,14 @@ public final class QueryFilter {
 
     public void setVisibleItems(RoaringBitmap visibleItems) {
         this.visibleItems = visibleItems;
+    }
+
+    public String getQuery() {
+        return query;
+    }
+
+    public void setQuery(String query) {
+        this.query = query.isEmpty() ? "/" : query;;
     }
 
     /**

@@ -66,24 +66,13 @@ public class Switchboard {
     }
 
     /**
-     * Queries the backend with search string and a filter.
-     *
-     * @param query the search query
-     * @param filter the query filter
-     * @return the results of the query
-     */
-    public Stream<String> search(String query, QueryFilter filter) {
-        return backend.get(query, filter);
-    }
-
-    /**
      * Queries the backend with only a filter.
      *
      * @param filter the query filter
      * @return the results of the query
      */
     public Stream<String> search(QueryFilter filter) {
-        return backend.get("/", filter);
+        return backend.get(filter);
     }
 
     /**
