@@ -15,6 +15,7 @@ import org.friendlyfiles.*;
 
 import java.io.*;
 import java.nio.file.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.*;
 
@@ -61,7 +62,10 @@ public class UIController {
     private Button btn_move;
 
     @FXML
-    private ListView<String> lsv_filterStack;
+    private ListView<FilterStep> lsv_filterStack;
+    
+    @FXML
+    private ListView<SortStep> lsv_sortStack;
 
     @FXML
     private ListView<String> lsv_fileDisplay;
@@ -149,22 +153,42 @@ public class UIController {
     
     @FXML
     void btn_filterStackAdd_clicked(ActionEvent event) {
-
+    	
+    	filterList.add(new FilterStep("Filter" + lsv_filterStack.getItems().size(), FilterStep.FilterType.NAME));
     }
 
     @FXML
     void btn_filterStackRemove_clicked(ActionEvent event) {
-
+    	
+    	if (selectedFilterIndex != -1) {
+    		
+    		filterList.remove(selectedFilterIndex);
+    		
+    		if (selectedFilterIndex != 0) {
+    			
+    			selectedFilterIndex--;
+    		}
+    	}
     }
     
     @FXML
     void btn_sortStackAdd_clicked(ActionEvent event) {
-
+    	
+    	sortList.add(new SortStep("Filter" + lsv_sortStack.getItems().size(), SortStep.SortType.NAME));
     }
 
     @FXML
     void btn_sortStackRemove_clicked(ActionEvent event) {
-
+    	
+    	if (selectedSortIndex != -1) {
+    		
+    		sortList.remove(selectedSortIndex);
+    		
+    		if (selectedSortIndex != 0) {
+        		
+        		selectedSortIndex--;
+        	}
+    	}
     }
     
     @FXML
@@ -173,12 +197,14 @@ public class UIController {
     	// TODO: Implement actual code here (this code is completely untested and doesn't update the listview)
     	
     	// Demo
-//    	if (selectedSortIndex > 0) {
-//    		
-//			sortList.remove(selectedSortIndex);
-//			sortList.add(selectedSortIndex - 1, selectedSortIndex);
-//			
-//    	}
+    	if (selectedSortIndex > 0) {
+    		
+			sortList.remove(selectedSortIndex);
+			sortList.add(selectedSortIndex - 1, selectedSortCriteria);
+			
+			selectedSortIndex--;
+    		lsv_sortStack.getSelectionModel().clearAndSelect(selectedSortIndex);
+    	}
     }
     
     @FXML
@@ -187,55 +213,65 @@ public class UIController {
     	// TODO: Implement actual code here (this code is completely untested and doesn't update the listview)
     	
     	// Demo
-//    	if (selectedSortIndex != -1 && selectedSortIndex < sortList.size() - 1) {
-//    		
-//    		sortList.remove(selectedSortIndex);
-//    		sortList.add(selectedSortIndex + 1, selectedSortIndex);
-//    		
-//    	}
+    	if (selectedSortIndex != -1 && selectedSortIndex < sortList.size() - 1) {
+    		
+    		sortList.remove(selectedSortIndex);
+    		sortList.add(selectedSortIndex + 1, selectedSortCriteria);
+    		
+    		selectedSortIndex++;
+    		lsv_sortStack.getSelectionModel().clearAndSelect(selectedSortIndex);
+    	}
     }
 
     @FXML
     void lsv_filterStack_clicked(MouseEvent event) {
-
-    	if (event.getClickCount() == 2 && event.getTarget().getClass() == LabeledText.class) {
-
-    		// Get the index of the filter that was clicked
-    		// We can then use the index to select the filter from the list of filters below this method
-//            selectedFilterIndex = lsv_filterStack.getSelectionModel().getSelectedIndex();
-//            selectedFilter = filterList.get(selectedFilterIndex);
-        }
-    	else {
-
-    		// selectedFilterIndex = -1;
+    	
+    	if (lsv_filterStack.getSelectionModel().getSelectedIndex() == -1) {
+    		
+    		// If getSelectedIndex returns -1, no item is selected
+    		return;
     	}
+    	
+    	// Get the index of the filter that was clicked
+		// We can then use the index to select the filter from the list of filters below this method
+        selectedFilterIndex = lsv_filterStack.getSelectionModel().getSelectedIndex();
+        selectedFilter = filterList.get(selectedFilterIndex);
+    	
+    	if (event.getClickCount() == 2) {
+
+    		// TODO: Double click to open edit window
+        }
     }
     
     @FXML
     void lsv_sortStack_clicked(MouseEvent event) {
+    	
+    	if (lsv_sortStack.getSelectionModel().getSelectedIndex() == -1) {
+    		
+    		// If getSelectedIndex returns -1, no item is selected
+    		return;
+    	}
+    		
+    	// Get the index of the sort criteria that was clicked
+		// We can then use the index to select the individual sorting criteria from the list of criteria below this method
+        selectedSortIndex = lsv_sortStack.getSelectionModel().getSelectedIndex();
+        selectedSortCriteria = sortList.get(selectedSortIndex);
 
     	if (event.getClickCount() == 2 && event.getTarget().getClass() == LabeledText.class) {
-
-    		// Get the index of the sort criteria that was clicked
-    		// We can then use the index to select the individual sorting criteria from the list of criteria below this method
-//            selectedSortIndex = lsv_sortStack.getSelectionModel().getSelectedIndex();
-//            selectedSortCriteria = sortList.get(selectedSortIndex);
+    		
+    		// TODO: Double click to open edit window
         }
-    	else {
-
-    		// selectedSortIndex = -1;
-    	}
     }
     
     /** TODO: Custom sorting/filtering objects to specify the layout/order in which to process filters and sorting steps.
      * (individual sorts/filters could either be applied individually or read in by the master QueryFilter/Sorting algorithm to compile and execute one large query?)
      */
-//    private ObservableList<OurFilter> filterList = FXCollections.observableList(new ArrayList<OurFilter>());
-//    private OurFilter selectedFilter = null;
-//    private int selectedFilterIndex = -1;
-//  private ObservableList<OurSortCriteria> sortList = FXCollections.observableList(new ArrayList<OurSortCriteria>());
-//  private OurSortCriteria selectedSortCriteria = null;
-//  private int selectedSortIndex = -1;
+    private ObservableList<FilterStep> filterList;
+    private FilterStep selectedFilter = null;
+    private int selectedFilterIndex = -1;
+    private ObservableList<SortStep> sortList;
+    private SortStep selectedSortCriteria = null;
+    private int selectedSortIndex = -1;
 
     private Dialog<Object> waitingForSwapDialog = null;
 
@@ -256,6 +292,12 @@ public class UIController {
         // Set up file listview selection
         lsv_fileDisplay.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         
+        filterList = FXCollections.observableList(new ArrayList<FilterStep>());
+        sortList = FXCollections.observableArrayList(new ArrayList<SortStep>());
+        
+        lsv_filterStack.setItems(filterList);
+        lsv_sortStack.setItems(sortList);
+        
         // OnClick moved to FX event (above)
 
         // For future reference, much of the following cellfactory instantiation code was based off of the following resource:
@@ -272,43 +314,43 @@ public class UIController {
         // Set cell factory for the filter stack list view in order to show only the names of our custom filters
         // TODO: Implement the filter item that will be added to this list
         // Ensure the filter item has a getName() property or some other way to access text that identifies the filter to the user
-//        lsv_filterStack.setCellFactory(cell -> new ListCell<OurFilter>() {
-//        	
-//        	@Override
-//        	protected void updateItem(OurFilter item, boolean empty) {
-//        		super.updateItem(item, empty);
-//        		
-//        		if (item == null || empty) {
-//        			
-//        			setText(null);
-//        		}
-//        		else {
-//        			
-//        			setText(item.getName());
-//        		}
-//        	}
-//        });
+        lsv_filterStack.setCellFactory(cell -> new ListCell<FilterStep>() {
+        	
+        	@Override
+        	protected void updateItem(FilterStep item, boolean empty) {
+        		super.updateItem(item, empty);
+        		
+        		if (item == null || empty) {
+        			
+        			setText(null);
+        		}
+        		else {
+        			
+        			setText(item.getName());
+        		}
+        	}
+        });
         
         
-     // Set cell factory for the sort stack list view in order to show only the names of our custom sorting criteria
+        // Set cell factory for the sort stack list view in order to show only the names of our custom sorting criteria
         // TODO: Implement the sort item that will be added to this list
         // Ensure the sort item has a getName() property or some other way to access text that identifies the sorting criteria to the user
-//        lsv_sortStack.setCellFactory(cell -> new ListCell<OurSortCriteria>() {
-//        	
-//        	@Override
-//        	protected void updateItem(OurSortCriteria item, boolean empty) {
-//        		super.updateItem(item, empty);
-//        		
-//        		if (item == null || empty) {
-//        			
-//        			setText(null);
-//        		}
-//        		else {
-//        			
-//        			setText(item.getName());
-//        		}
-//        	}
-//        });
+        lsv_sortStack.setCellFactory(cell -> new ListCell<SortStep>() {
+        	
+        	@Override
+        	protected void updateItem(SortStep item, boolean empty) {
+        		super.updateItem(item, empty);
+        		
+        		if (item == null || empty) {
+        			
+        			setText(null);
+        		}
+        		else {
+        			
+        			setText(item.getName());
+        		}
+        	}
+        });
 
         Path dbPath = Paths.get("FriendlyFilesDatabase");
         if (Files.exists(dbPath)) {
