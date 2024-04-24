@@ -418,7 +418,7 @@ public class UIController {
         filter.getRoots().parallelStream().forEach(root -> {
             // Add the current root to the base of the treeview
             DirectoryTreeItem dirRootItem = new DirectoryTreeItem(root);
-            //dirRootItem.setIndependent(true);
+            dirRootItem.setIndependent(true);
             dirRootItem.addCheckListener(this);
             treeRoot.getChildren().add(dirRootItem);
 

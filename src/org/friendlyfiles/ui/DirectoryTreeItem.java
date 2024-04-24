@@ -48,19 +48,23 @@ public class DirectoryTreeItem extends CheckBoxTreeItem<String> {
     public void addCheckListener(UIController controller) {
         // Check all boxes and add them to the set initially
         selectedProperty().set(true);
+        setIndependent(true);
 
         addEventHandler(DirectoryTreeItem.checkBoxSelectionChangedEvent(), event -> {
-            if (event.wasIndeterminateChanged() && !isIndeterminate() && !isSelected()) {
-                // Clear all the bits associated with this query
-                controller.allowAllFilesInDirectory(getFullDirectoryPath());
-            } else {
-                // XOR the bits
-                controller.toggleFilesInDirectory(getFullDirectoryPath());
+            if (event.getTarget() == this) {
+                if (event.wasIndeterminateChanged() && !isIndeterminate() && !isSelected()) {
+                    // Clear all the bits associated with this query
+                    controller.allowAllFilesInDirectory(getFullDirectoryPath());
+                } else {
+                    // XOR the bits
+                    controller.toggleFilesInDirectory(getFullDirectoryPath());
+                }
             }
         });
     }
 
     public void addAllChildren(UIController controller, String childName) {
+        setIndependent(true);
         int splitIdx = childName.indexOf(File.separatorChar, 1);
         String firstChild;
         if (splitIdx < 0) {
