@@ -68,9 +68,9 @@ public class DirectoryTreeItem extends CheckBoxTreeItem<String> {
         int splitIdx = childName.indexOf(File.separatorChar, 1);
         String firstChild;
         if (splitIdx < 0) {
-            firstChild = childName.substring(1);
+            firstChild = childName.startsWith(File.separator) ? childName.substring(1) : childName;
         } else {
-            firstChild = childName.substring(1, splitIdx);
+            firstChild = childName.startsWith(File.separator) ? childName.substring(1, splitIdx) : childName.substring(0, splitIdx);
         }
 
         DirectoryTreeItem retItem;
