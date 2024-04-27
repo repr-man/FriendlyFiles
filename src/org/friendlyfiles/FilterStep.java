@@ -5,6 +5,7 @@ public class FilterStep {
 	private String displayName;
 	
 	public enum FilterType {NAME, EXTENSION, DATE_EDITED, FILESIZE}
+	private static String[] filterNames = {"Name", "File Extension", "Date Edited", "File Size"};
 	private FilterType type;
 	
 	public FilterStep(String displayName, FilterType type) {
@@ -12,8 +13,6 @@ public class FilterStep {
 		this.displayName = displayName;
 		this.type = type;
 	}
-	
-	
 
 	public String getName() {
 		return displayName;
@@ -31,5 +30,10 @@ public class FilterStep {
 	public void setType(FilterType type) {
 		
 		this.type = type;
+	}
+	
+	public static String[] getTypeNames() {
+		
+		return filterNames;
 	}
 }

@@ -137,7 +137,7 @@ public class UIController {
     @FXML
     void btn_addFilter_clicked(ActionEvent event) {
     	
-    	// TODO: Create popup to allow a new filter to be configured and added to the filterList
+    	displayFilterCreateDialog();
     }
     
     @FXML
@@ -159,7 +159,7 @@ public class UIController {
     @FXML
     void btn_filterStackAdd_clicked(ActionEvent event) {
     	
-    	filterList.add(new FilterStep("Filter" + lsv_filterStack.getItems().size(), FilterStep.FilterType.NAME));
+    	displayFilterCreateDialog();
     }
 
     @FXML
@@ -187,6 +187,25 @@ public class UIController {
     	displaySortCreateDialog();
     }
     
+    @FXML
+    void btn_sortStackRemove_clicked(ActionEvent event) {
+    	
+    	if (selectedSortIndex != -1) {
+    		
+    		sortList.remove(selectedSortIndex);
+    		
+    		if (selectedSortIndex != 0) {
+        		
+        		selectedSortIndex--;
+        	}
+    	}
+    	
+    	if (sortList.size() == 0) {
+    		
+    		selectedSortIndex = -1;
+    	}
+    }
+    
     private void displaySortCreateDialog() {
     	
     	SortDialog sortDialog = new SortDialog();
@@ -212,24 +231,30 @@ public class UIController {
     	
     	lsv_sortStack.getSelectionModel().clearAndSelect(index);
     }
-
-    @FXML
-    void btn_sortStackRemove_clicked(ActionEvent event) {
+    
+    private void displayFilterCreateDialog() {
     	
-    	if (selectedSortIndex != -1) {
-    		
-    		sortList.remove(selectedSortIndex);
-    		
-    		if (selectedSortIndex != 0) {
-        		
-        		selectedSortIndex--;
-        	}
-    	}
+    	FilterDialog filterDialog = new FilterDialog();
+    	filterDialog.displayCreateDialog(this);
+    }
+    
+    private void displayFilterEditDialog(int stepIndex) {
     	
-    	if (sortList.size() == 0) {
-    		
-    		selectedSortIndex = -1;
-    	}
+    	FilterDialog filterDialog = new FilterDialog();
+    	filterDialog.displayEditDialog(this, filterList, selectedFilterIndex);
+    }
+    
+    public void onFilterAdd(FilterStep filter) {
+    	
+    	filterList.add(filter);
+    }
+    
+    public void onFilterEdit(int index, FilterStep edited) {
+    	
+    	filterList.remove(index);
+    	filterList.add(index, edited);
+    	
+    	lsv_filterStack.getSelectionModel().clearAndSelect(index);
     }
     
     @FXML
@@ -277,7 +302,7 @@ public class UIController {
     	
     	if (event.getClickCount() == 2) {
 
-    		// TODO: Double click to open edit window
+    		displayFilterEditDialog(selectedFilterIndex);
         }
     }
     
