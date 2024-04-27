@@ -477,7 +477,7 @@ public final class PostingList implements Backend {
                 .range(0, sizes.size())
                 .filter(i -> filter.isInFileSizeRange(sizes.get(i)))
                 .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or);
-        RoaringBitmap rootBitset = filter.getRootsWithStartOfPath().parallelStream()
+        RoaringBitmap rootBitset = filter.getRoots().parallelStream()
                 .map(this::getStrings)
                 .reduce(new RoaringBitmap(), ParallelAggregation::or);
         bitset.and(rootBitset);
@@ -529,7 +529,7 @@ public final class PostingList implements Backend {
      * @return a stream of file names corresponding to the results of the operation
      */
     public Stream<String> disallowFilesInDirectory(QueryFilter filter, String dirPath) {
-        RoaringBitmap toggleBitset = getStrings('\t' + dirPath + UIController.fileSeparator).stream()
+        RoaringBitmap toggleBitset = getStrings(dirPath + UIController.fileSeparator).stream()
                                              .filter(i -> paths.get(i).startsWith(dirPath + UIController.fileSeparator))
                                              .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or);
         toggleBitset.flip(0, 0x100000000L);
@@ -545,11 +545,18 @@ public final class PostingList implements Backend {
      * @return a stream of file names corresponding to the results of the operation
      */
     public Stream<String> toggleVisibleFiles(QueryFilter filter, String dirPath) {
-        RoaringBitmap toggleBitset = getStrings('\t' + dirPath + UIController.fileSeparator).stream()
+        RoaringBitmap toggleBitset = getStrings(dirPath + UIController.fileSeparator).stream()
                                              .filter(i -> paths.get(i).startsWith(dirPath + UIController.fileSeparator))
                                              .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or);
         filter.getVisibleItems().xor(toggleBitset);
         return get(filter);
+    }
+
+    public void addRootToFilter(String topDirectory, QueryFilter filter) {
+        RoaringBitmap newFiles = getStrings(topDirectory + UIController.fileSeparator).stream().parallel()
+                                         .filter(i -> paths.get(i).startsWith(topDirectory + UIController.fileSeparator))
+                                         .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or);
+        filter.getVisibleItems().or(newFiles);
     }
 
     /**

@@ -439,11 +439,9 @@ public class UIController {
         chooser.setTitle("Add search root:");
         try {
             String topDirectory = chooser.showDialog(null).getAbsolutePath();
-            String result = filter.addRoot(topDirectory);
-            if (result != null) {
-                showErrorDialog(String.format("Already able to access directory `%s` through another root.", result));
-                return;
-            }
+            boolean directoryAlreadyAccessible = switchboard.addRootToFilter(topDirectory, filter);
+            if (directoryAlreadyAccessible) return;
+
             fileNames = switchboard.search(filter);
             updateFiles();
             updateDirTree();

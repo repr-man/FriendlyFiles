@@ -44,19 +44,9 @@ public final class QueryFilter {
     }
 
     /**
-     * @return the list of root directories without 'start of path' character
+     * @return the list of root directories
      */
     public ArrayList<String> getRoots() {
-        // Removes the 'start of path' character.
-        return (ArrayList<String>) roots.stream().map(item -> item.substring(1)).collect(Collectors.toList());
-    }
-
-    /**
-     * @return the list of root directories with 'start of path' character
-     */
-    public ArrayList<String> getRootsWithStartOfPath() {
-        // Removes the 'start of path' character.
-        //return (ArrayList<String>) roots.stream().map(item -> item.substring(1)).collect(Collectors.toList());
         return roots;
     }
 
@@ -64,16 +54,15 @@ public final class QueryFilter {
      * Adds a root directory to the filter.
      *
      * @param rootPath the path of the directory to add
+     * @return true if `rootPath` is already accessible
      */
-    public String addRoot(String rootPath) {
+    public boolean addRoot(String rootPath) {
         // We don't want to add roots that we can already access.
-        if (roots.stream().anyMatch(('\t' + rootPath)::startsWith)) {
-            return rootPath;
+        if (roots.stream().anyMatch(rootPath::startsWith)) {
+            return true;
         }
-        // We add the 'start of path' character to ensure that the allowed items start with the root.
-        // For example, if the root is "/bin", we won't get files starting with "/usr/bin".
-        roots.add('\t' + rootPath);
-        return null;
+        roots.add(rootPath);
+        return false;
     }
 
     /**

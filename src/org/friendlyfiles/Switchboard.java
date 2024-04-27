@@ -93,6 +93,15 @@ public class Switchboard {
         return backend.toggleVisibleFiles(filter, dirPath);
     }
 
+    public boolean addRootToFilter(String topDirectory, QueryFilter filter) {
+        boolean directoryAlreadyAccessible = filter.addRoot(topDirectory);
+        if (directoryAlreadyAccessible) {
+            showErrorDialog(String.format("`%s` already accessible from another directory.", topDirectory));
+        }
+        backend.addRootToFilter(topDirectory, filter);
+        return false;
+    }
+
     /**
      * Opens the file using the system's default program for the file's type.
      *
