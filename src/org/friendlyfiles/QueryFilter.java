@@ -1,5 +1,6 @@
 package org.friendlyfiles;
 
+import org.friendlyfiles.ui.UIController;
 import org.roaringbitmap.RoaringBitmap;
 
 import java.util.ArrayList;
@@ -12,7 +13,7 @@ public final class QueryFilter {
     // This contains more than the visible items because they are not postprocessed.
     private RoaringBitmap visibleItems = RoaringBitmap.bitmapOfRange(0, 0x100000000L);
     private final ArrayList<String> roots = new ArrayList<>();
-    private String query = "/";
+    private String query = UIController.fileSeparator;
     private long fileSizeLower, fileSizeUpper = Long.MAX_VALUE;
 
     public RoaringBitmap getVisibleItems() {
@@ -28,7 +29,7 @@ public final class QueryFilter {
     }
 
     public void setQuery(String query) {
-        this.query = query.isEmpty() ? "/" : query;;
+        this.query = query.isEmpty() ? UIController.fileSeparator : query;
     }
 
     /**

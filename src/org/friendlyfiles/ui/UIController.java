@@ -36,7 +36,7 @@ import java.util.stream.*;
  * Handles everything associated with the UI.
  */
 public class UIController {
-    public static final String fileSeparator = File.separatorChar == '\\' ? "\\\\" : "/";
+    public static final String fileSeparator = File.separator;
 
     @FXML
     private BorderPane bp_root;
