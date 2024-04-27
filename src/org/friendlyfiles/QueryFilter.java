@@ -4,6 +4,9 @@ import org.friendlyfiles.ui.UIController;
 import org.roaringbitmap.RoaringBitmap;
 
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 /**
@@ -16,6 +19,13 @@ public final class QueryFilter {
     private String query = UIController.fileSeparator;
     private long fileSizeLower, fileSizeUpper = Long.MAX_VALUE;
     private long dateTimeStart, dateTimeEnd = Long.MAX_VALUE;
+    
+    private ArrayList<String> textSearchTerms = new ArrayList<String>();
+    private Pattern textBuildPattern;
+    
+    private ArrayList<String> extSearchTerms = new ArrayList<String>();
+    private Pattern extBuildPattern;
+    
 
     public RoaringBitmap getVisibleItems() {
         return visibleItems;
@@ -74,6 +84,38 @@ public final class QueryFilter {
     public void removeRoot(String rootPath) {
         roots.remove(rootPath);
     }
+    
+    public void addTextFilter(String text) {
+    	
+    	assert(text.trim() != "");
+    	
+    	textSearchTerms.add(text);
+    	textBuildPattern = Pattern.compile(String.join("|", textSearchTerms));
+    }
+    
+    public void removeTextFilter(String text) {
+    	
+    	assert(text.trim() != "");
+    	
+    	textSearchTerms.remove(text);
+    	textBuildPattern = Pattern.compile(String.join("|", textSearchTerms));
+    }
+    
+    public void addExtFilter(String ext) {
+    	
+    	assert(ext.length() > 1 && ext.startsWith("."));
+    	
+    	extSearchTerms.add(ext);
+    	extBuildPattern = Pattern.compile(String.join("|", extSearchTerms));
+    }
+    
+    public void removeExtFilter(String ext) {
+    	
+    	assert(ext.length() > 1 && ext.startsWith("."));
+    	
+    	extSearchTerms.remove(ext);
+    	extBuildPattern = Pattern.compile(String.join("|", extSearchTerms));
+    }
 
     /**
      * Shrinks the file size range allowed by the filter.
@@ -110,7 +152,7 @@ public final class QueryFilter {
      * @param end update the end date of the filter, or -1 if there is no end cutoff.
      * @return
      */
-    public QueryFilter setDateRange(long start, long end) {
+    public QueryFilter setFileDateRange(long start, long end) {
     	assert (end <= start);
     	if (start > dateTimeStart && start <= dateTimeEnd) {
     		
