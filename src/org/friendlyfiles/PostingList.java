@@ -532,7 +532,8 @@ public final class PostingList implements Backend {
         RoaringBitmap toggleBitset = getStrings('\t' + dirPath + UIController.fileSeparator).stream()
                                              .filter(i -> paths.get(i).startsWith(dirPath + UIController.fileSeparator))
                                              .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or);
-        filter.getVisibleItems().or(toggleBitset);
+        toggleBitset.flip(0, 0x100000000L);
+        filter.getVisibleItems().and(toggleBitset);
         return get(filter);
     }
 
