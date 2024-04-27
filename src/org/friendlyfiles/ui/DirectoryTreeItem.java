@@ -1,10 +1,13 @@
 package org.friendlyfiles.ui;
 
+import javafx.collections.ObservableList;
 import javafx.scene.control.*;
 import java.io.File;
 
 // An extension of the CheckboxTreeItem, primarily to override the .equals() method
 public class DirectoryTreeItem extends CheckBoxTreeItem<String> {
+    // Boolean to determine whether or not the checkbox was clicked by a user
+    private static boolean isClicked = true;
 
     public DirectoryTreeItem(String name) {
 
@@ -42,6 +45,65 @@ public class DirectoryTreeItem extends CheckBoxTreeItem<String> {
         return ret;
     }
 
+    // This conversion is safe because all children are DirectoryTreeItems
+    private ObservableList<DirectoryTreeItem> retrieveChildren() {
+        return (ObservableList<DirectoryTreeItem>) (Object) getChildren();
+    }
+
+    // Check each child object, either selecting or unselecting based on the value of the clicked checkbox
+    public void checkChildren(DirectoryTreeItem node) {
+        if (isIndeterminate()) {
+            node.setSelected(false);
+        } else {
+            node.setSelected(isSelected());
+        }
+        node.setIndeterminate(false);
+
+        // Recursively dig down into child nodes to continue the selection/unselection
+        for (DirectoryTreeItem child : node.retrieveChildren()) {
+            checkChildren(child);
+        }
+    }
+
+    // Determine whether parent checkboxes of the given node need to be selected or marked as indeterminate
+    public void determineParents(DirectoryTreeItem node) {
+        // Get the parent of the current node
+        DirectoryTreeItem parent = (DirectoryTreeItem)node.getParent();
+
+        // If that parent's parent is null, that would mean it is the root node, which we do not want to edit
+        if (parent.getParent() != null) {
+
+            // Boolean to determine if action is needed upon the parent's checkbox
+            boolean pass = true;
+            int unselectedCount = 0;
+
+            // Loop through the parent's children; if any are unselected or indeterminate, switch the boolean
+            for (DirectoryTreeItem child : parent.retrieveChildren()) {
+                if (!child.isSelected() || child.isIndeterminate()) {
+                    ++unselectedCount;
+                    pass = false;
+                }
+            }
+
+            // If any of the children were unselected or indeterminate, set the parent to indeterminate
+            if (!pass) {
+                if (unselectedCount == parent.retrieveChildren().size()) {
+                    parent.setIndeterminate(false);
+                    parent.setSelected(false);
+                } else {
+                    parent.setIndeterminate(true);
+                }
+                determineParents(parent);
+            }
+            // Otherwise, set the parent to selected and "determinate" (not indeterminate)
+            else {
+                parent.setIndeterminate(false);
+                parent.setSelected(true);
+                determineParents(parent);
+            }
+        }
+    }
+
     /**
      * Adds a listener to the given item which will fire whenever the item is checked/unchecked.
      */
@@ -50,15 +112,28 @@ public class DirectoryTreeItem extends CheckBoxTreeItem<String> {
         selectedProperty().set(true);
         setIndependent(true);
 
-        addEventHandler(DirectoryTreeItem.checkBoxSelectionChangedEvent(), event -> {
-            if (event.getTarget() == this) {
-                if (event.wasIndeterminateChanged() && !isIndeterminate() && !isSelected()) {
-                    // Clear all the bits associated with this query
-                    controller.allowAllFilesInDirectory(getFullDirectoryPath());
+        selectedProperty().addListener((observable, oldValue, newValue) -> {
+            // If the isClicked boolean is true, this means the current checkbox is the one that was clicked
+            if (isClicked) {
+
+                // Immediately set the boolean to false to prevent other checkboxes from acting on their listeners
+                isClicked = false;
+
+                // Update the file list
+                if (isIndeterminate()) {
+                    controller.disallowAllFilesInDirectory(getFullDirectoryPath());
                 } else {
-                    // XOR the bits
                     controller.toggleFilesInDirectory(getFullDirectoryPath());
                 }
+
+                // Check all children of the selected checkbox, either selecting or unselecting
+                checkChildren(this);
+
+                // Determine whether the parent checkboxes need to be checked or set as indeterminate
+                determineParents(this);
+
+                // Set the boolean back to true once all logic is complete
+                isClicked = true;
             }
         });
     }
