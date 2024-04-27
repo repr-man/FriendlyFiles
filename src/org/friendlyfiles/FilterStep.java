@@ -4,7 +4,7 @@ public class FilterStep {
 	
 	private String displayName;
 	
-	public enum FilterType {NAME, EXTENSION, DATE_CREATED, DATE_EDITED, FILESIZE}
+	public enum FilterType {NAME, EXTENSION, DATE_EDITED, FILESIZE}
 	private FilterType type;
 	
 	public FilterStep(String displayName, FilterType type) {

@@ -3,32 +3,19 @@ package org.friendlyfiles.ui;
 import com.sun.javafx.scene.control.skin.LabeledText;
 import javafx.collections.*;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.CacheHint;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.cell.CheckBoxTreeCell;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
-import javafx.scene.text.Text;
 import javafx.stage.DirectoryChooser;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
 import javafx.util.Callback;
 import org.friendlyfiles.*;
-import org.friendlyfiles.SortStep.OrderType;
-import org.friendlyfiles.SortStep.SortType;
 
 import java.io.*;
 import java.nio.file.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.*;
 
@@ -103,6 +90,11 @@ public class UIController {
 
     @FXML
     private TreeView<String> tvw_dirTree;
+    
+    public BorderPane getRoot() {
+    	
+    	return bp_root;
+    }
     
     @FXML
     void btn_addFolder_clicked(ActionEvent event) {
@@ -197,178 +189,23 @@ public class UIController {
     
     private void displaySortCreateDialog() {
     	
-    	// Creata a new stage with the primary stage as the owner
-    	final Stage sortDialog = new Stage();
-    	sortDialog.setTitle("Sort Builder");
-    	sortDialog.initModality(Modality.APPLICATION_MODAL);
-    	sortDialog.initOwner(bp_root.getScene().getWindow());
+    	SortDialog sortDialog = new SortDialog();
+    	sortDialog.displayCreateDialog(this);
     	
-    	// Create VBox for the root element of the scene
-    	VBox sortScreen = new VBox(8);
-    	sortScreen.setAlignment(Pos.TOP_CENTER);
-    	
-    	// Add name field
-    	sortScreen.getChildren().add(new Text("Name"));
-    	TextField txt_sortName = new TextField();
-    	txt_sortName.setMaxWidth(150);;
-    	sortScreen.getChildren().add(txt_sortName);
-    	
-    	// Add selection drop downs
-    	sortScreen.getChildren().add(new Text("Sorting Type"));
-    	ArrayList<String> sortOptions = new ArrayList<String>(Arrays.asList(SortStep.getTypeNames()));
-    	ComboBox<String> cbx_sortTypes = new ComboBox<String>((FXCollections.observableArrayList(sortOptions)));
-    	sortScreen.getChildren().add(cbx_sortTypes);
-    	
-    	sortScreen.getChildren().add(new Text("Sort Order"));
-    	ArrayList<String> orderOptions = new ArrayList<String>(Arrays.asList(SortStep.getOrderNames()));
-    	ComboBox<String> cbx_order = new ComboBox<String>((FXCollections.observableArrayList(orderOptions)));
-    	sortScreen.getChildren().add(cbx_order);
-    	
-    	// Add buttons
-    	Button createButton = new Button("Add");
-    	Button exitButton = new Button("Cancel");
-    	HBox buttons = new HBox(20);
-    	VBox.setMargin(buttons, new Insets(50, 0, 0, 0));
-    	buttons.setAlignment(Pos.TOP_CENTER);
-    	buttons.getChildren().addAll(createButton, exitButton);
-    	sortScreen.getChildren().add(buttons);
-    	
-    	// Set up button actions
-    	createButton.setOnAction(new EventHandler<ActionEvent>() {
-			
-			@Override
-			public void handle(ActionEvent event) {
-				
-				String name = txt_sortName.getText();
-				int typeIndex = cbx_sortTypes.getSelectionModel().getSelectedIndex();
-				int orderIndex = cbx_order.getSelectionModel().getSelectedIndex();
-				
-				if (name.trim() != "" && typeIndex >= 0 && orderIndex >= 0) {
-					
-					SortStep step = new SortStep(name, SortType.values()[typeIndex], OrderType.values()[orderIndex]);
-					onSortAdd(step);
-					
-					sortDialog.close();
-				}
-				else {
-					
-					Alert alert = new Alert(AlertType.INFORMATION);
-					alert.setHeaderText("The provided sort could not be added.");
-					alert.setContentText("Please ensure all sorting information is set correctly, or press cancel");
-					
-					alert.showAndWait();
-				}
-			}
-		});
-    	
-    	exitButton.setOnAction(new EventHandler<ActionEvent>() {
-			
-			@Override
-			public void handle(ActionEvent event) {
-				
-				sortDialog.close();
-			}
-		});
-    	
-    	
-    	// Create a scene using the VBox and set it as the root element
-    	Scene sortDialogScene = new Scene(sortScreen, 300, 260);
-    	sortDialog.setScene(sortDialogScene);
-    	sortDialog.show();
     }
     
     private void displaySortEditDialog(int stepIndex) {
     	
-    	SortStep step = sortList.get(selectedSortIndex);
-    	
-    	// Creata a new stage with the primary stage as the owner
-    	final Stage sortDialog = new Stage();
-    	sortDialog.setTitle("Sort Editor");
-    	sortDialog.initModality(Modality.APPLICATION_MODAL);
-    	sortDialog.initOwner(bp_root.getScene().getWindow());
-    	
-    	// Create VBox for the root element of the scene
-    	VBox sortScreen = new VBox(8);
-    	sortScreen.setAlignment(Pos.TOP_CENTER);
-    	
-    	// Add name field
-    	sortScreen.getChildren().add(new Text("Name"));
-    	TextField txt_sortName = new TextField(step.getName());
-    	txt_sortName.setMaxWidth(150);;
-    	sortScreen.getChildren().add(txt_sortName);
-    	
-    	// Add selection drop downs
-    	sortScreen.getChildren().add(new Text("Sorting Type"));
-    	ArrayList<String> sortOptions = new ArrayList<String>(Arrays.asList(SortStep.getTypeNames()));
-    	ComboBox<String> cbx_sortTypes = new ComboBox<String>((FXCollections.observableArrayList(sortOptions)));
-    	cbx_sortTypes.getSelectionModel().clearAndSelect(step.getType().ordinal());
-    	sortScreen.getChildren().add(cbx_sortTypes);
-    	
-    	sortScreen.getChildren().add(new Text("Sort Order"));
-    	ArrayList<String> orderOptions = new ArrayList<String>(Arrays.asList(SortStep.getOrderNames()));
-    	ComboBox<String> cbx_order = new ComboBox<String>((FXCollections.observableArrayList(orderOptions)));
-    	cbx_order.getSelectionModel().clearAndSelect(step.getOrder().ordinal());
-    	sortScreen.getChildren().add(cbx_order);
-    	
-    	// Add buttons
-    	Button createButton = new Button("Apply Changes");
-    	Button exitButton = new Button("Cancel");
-    	HBox buttons = new HBox(20);
-    	VBox.setMargin(buttons, new Insets(50, 0, 0, 0));
-    	buttons.setAlignment(Pos.TOP_CENTER);
-    	buttons.getChildren().addAll(createButton, exitButton);
-    	sortScreen.getChildren().add(buttons);
-    	
-    	// Set up button actions
-    	createButton.setOnAction(new EventHandler<ActionEvent>() {
-			
-			@Override
-			public void handle(ActionEvent event) {
-				
-				String name = txt_sortName.getText();
-				int typeIndex = cbx_sortTypes.getSelectionModel().getSelectedIndex();
-				int orderIndex = cbx_order.getSelectionModel().getSelectedIndex();
-				
-				if (name.trim() != "" && typeIndex >= 0 && orderIndex >= 0) {
-					
-					SortStep step = new SortStep(name, SortType.values()[typeIndex], OrderType.values()[orderIndex]);
-					onSortEdit(selectedSortIndex, step);
-					
-					sortDialog.close();
-				}
-				else {
-					
-					Alert alert = new Alert(AlertType.INFORMATION);
-					alert.setHeaderText("The edits could not be applied.");
-					alert.setContentText("Please ensure all sorting information is set correctly, or press cancel");
-					
-					alert.showAndWait();
-				}
-			}
-		});
-    	
-    	exitButton.setOnAction(new EventHandler<ActionEvent>() {
-			
-			@Override
-			public void handle(ActionEvent event) {
-				
-				sortDialog.close();
-			}
-		});
-    	
-    	
-    	// Create a scene using the VBox and set it as the root element
-    	Scene sortDialogScene = new Scene(sortScreen, 300, 260);
-    	sortDialog.setScene(sortDialogScene);
-    	sortDialog.show();
+    	SortDialog sortDialog = new SortDialog();
+    	sortDialog.displayEditDialog(this, sortList, selectedSortIndex);
     }
     
-    private void onSortAdd(SortStep sort) {
+    public void onSortAdd(SortStep sort) {
     	
     	sortList.add(sort);
     }
     
-    private void onSortEdit(int index, SortStep edited) {
+    public void onSortEdit(int index, SortStep edited) {
     	
     	sortList.remove(index);
     	sortList.add(index, edited);

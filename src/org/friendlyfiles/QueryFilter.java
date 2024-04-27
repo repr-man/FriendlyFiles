@@ -15,6 +15,7 @@ public final class QueryFilter {
     private final ArrayList<String> roots = new ArrayList<>();
     private String query = UIController.fileSeparator;
     private long fileSizeLower, fileSizeUpper = Long.MAX_VALUE;
+    private long dateTimeStart, dateTimeEnd = Long.MAX_VALUE;
 
     public RoaringBitmap getVisibleItems() {
         return visibleItems;
@@ -100,5 +101,35 @@ public final class QueryFilter {
      */
     public boolean isInFileSizeRange(long fileSize) {
         return fileSize >= fileSizeLower && fileSize <= fileSizeUpper;
+    }
+    
+    /**
+     * Shrinks the date range allowed by the filter.
+     * 
+     * @param start update the start date of the filter, or -1 if there is no start cutoff.
+     * @param end update the end date of the filter, or -1 if there is no end cutoff.
+     * @return
+     */
+    public QueryFilter setDateRange(long start, long end) {
+    	assert (end <= start);
+    	if (start > dateTimeStart && start <= dateTimeEnd) {
+    		
+    		dateTimeStart = start;
+    	}
+    	if (end >= dateTimeStart && start < dateTimeEnd) {
+    		
+    		dateTimeEnd = end;
+    	}
+    	return this;
+    }
+    
+    /**
+     * Checks if a file date is in the range allowed by the filter.
+     *
+     * @param fileDate the file date to check
+     * @return whether the file date is in the allowed range
+     */
+    public boolean isInFileDateRange(long fileDate) {
+        return fileDate >= dateTimeStart && fileDate <= dateTimeEnd;
     }
 }
