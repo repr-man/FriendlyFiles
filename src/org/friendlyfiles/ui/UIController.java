@@ -337,6 +337,7 @@ public class UIController {
     private int selectedSortIndex = -1;
 
     private Dialog<Object> waitingForSwapDialog = null;
+    private boolean waitingForSwap = true;
 
     private Switchboard switchboard;
 
@@ -511,11 +512,14 @@ public class UIController {
      * Closes the waiting dialog and populates the main window with files.
      */
     public void notifyBackendSwapCompleted() {
-        if (waitingForSwapDialog != null) {
+        if (!waitingForSwap) {
             fileNames = switchboard.search(filter);
             updateFiles();
+        }
+        if (waitingForSwapDialog != null) {
             waitingForSwapDialog.close();
             waitingForSwapDialog.getDialogPane().getScene().getWindow().hide();
+            waitingForSwap = false;
         }
     }
 
