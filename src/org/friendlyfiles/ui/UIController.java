@@ -143,7 +143,7 @@ public class UIController {
     private void displaySortCreateDialog() {
     	
     	SortDialog sortDialog = new SortDialog(this);
-    	sortDialog.displayCreateDialog();
+    	sortDialog.displayCreateDialog(sortList);
     	
     }
     

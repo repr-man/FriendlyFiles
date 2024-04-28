@@ -20,8 +20,10 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
@@ -37,7 +39,7 @@ public class SortDialog extends Stage {
 		this.parent = parent;
 	}
 	
-	public void displayCreateDialog() {
+	public void displayCreateDialog(ObservableList<SortStep> stepList) {
 		
 		setTitle("Sort Builder");
     	initModality(Modality.APPLICATION_MODAL);
@@ -59,10 +61,10 @@ public class SortDialog extends Stage {
     	ComboBox<String> cbx_sortTypes = new ComboBox<String>((FXCollections.observableArrayList(sortOptions)));
     	sortScreen.getChildren().add(cbx_sortTypes);
     	
-    	sortScreen.getChildren().add(new Text("Sort Order"));
-    	ArrayList<String> orderOptions = new ArrayList<String>(Arrays.asList(SortStep.getOrderNames()));
-    	ComboBox<String> cbx_order = new ComboBox<String>((FXCollections.observableArrayList(orderOptions)));
-    	sortScreen.getChildren().add(cbx_order);
+    	StackPane dynamicContentPane = new StackPane();
+    	dynamicContentPane.setAlignment(Pos.TOP_CENTER);
+    	
+    	sortScreen.getChildren().add(dynamicContentPane);
     	
     	// Add buttons
     	Button createButton = new Button("Add");
@@ -73,31 +75,95 @@ public class SortDialog extends Stage {
     	buttons.getChildren().addAll(createButton, exitButton);
     	sortScreen.getChildren().add(buttons);
     	
-    	// Set up button actions
+    	cbx_sortTypes.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+    		
+    		dynamicContentPane.getChildren().clear();
+    		
+    		boolean sortExists = false;
+    		SortStep existingSort = null;
+    		
+    		// Check if the selected sort already exists
+    		for (SortStep s : stepList) {
+    			
+    			if (s.getType().equals(SortStep.SortType.values()[cbx_sortTypes.getSelectionModel().getSelectedIndex()])) {
+    				
+    				sortExists = true;
+    				existingSort = s;
+    				break;
+    			}
+    		}
+    		
+    		// If the selected type of sort doesn't already exist, the user can continue
+    		if (!sortExists) {
+    			
+    			dynamicContentPane.getChildren().add(new Text("Sort Order"));
+	        	ArrayList<String> orderOptions = new ArrayList<String>(Arrays.asList(SortStep.getOrderNames()));
+	        	ComboBox<String> cbx_order = new ComboBox<String>((FXCollections.observableArrayList(orderOptions)));
+	        	cbx_order.getSelectionModel().clearAndSelect(0);
+	        	dynamicContentPane.getChildren().add(cbx_order);
+	        	
+	        	// Set up button actions if the sort is good to go
+	        	createButton.setOnAction(new EventHandler<ActionEvent>() {
+	    			
+	    			@Override
+	    			public void handle(ActionEvent event) {
+	    				
+	    				String name = txt_sortName.getText();
+	    				int typeIndex = cbx_sortTypes.getSelectionModel().getSelectedIndex();
+	    				int orderIndex = cbx_order.getSelectionModel().getSelectedIndex();
+	    				
+	    				if (!name.trim().equals("") && typeIndex >= 0 && orderIndex >= 0) {
+	    					
+	    					SortStep step = new SortStep(name, SortType.values()[typeIndex], OrderType.values()[orderIndex]);
+	    					parent.onSortAdd(step);
+	    					
+	    					close();
+	    				}
+	    				else {
+	    					
+	    					Alert alert = new Alert(AlertType.INFORMATION);
+	    					alert.setHeaderText("The provided sort could not be added.");
+	    					alert.setContentText("Please ensure all sorting information is set correctly, or press cancel");
+	    					
+	    					alert.showAndWait();
+	    				}
+	    			}
+	    		});
+    		}
+    		// Set up button actions if the sort is not good to go
+    		else {
+    			
+    			Text info = new Text("A sort of this type already exists: " + existingSort.getName());
+				info.setTextAlignment(TextAlignment.CENTER);
+				dynamicContentPane.getChildren().add(info);
+    			
+    			createButton.setOnAction(new EventHandler<ActionEvent>() {
+    				
+    				@Override
+    				public void handle(ActionEvent event) {
+    					
+    					Alert alert = new Alert(AlertType.INFORMATION);
+    					alert.setHeaderText("The provided sort could not be added.");
+    					alert.setContentText("Please ensure all sorting information is set correctly, or press cancel");
+    					
+    					alert.showAndWait();
+    				}
+    			});
+    		}
+    		
+    	});
+    	
+    	// Set up button actions on initial loading of the screen
     	createButton.setOnAction(new EventHandler<ActionEvent>() {
 			
 			@Override
 			public void handle(ActionEvent event) {
 				
-				String name = txt_sortName.getText();
-				int typeIndex = cbx_sortTypes.getSelectionModel().getSelectedIndex();
-				int orderIndex = cbx_order.getSelectionModel().getSelectedIndex();
+				Alert alert = new Alert(AlertType.INFORMATION);
+				alert.setHeaderText("The provided sort could not be added.");
+				alert.setContentText("Please ensure all sorting information is set correctly, or press cancel");
 				
-				if (!name.trim().equals("") && typeIndex >= 0 && orderIndex >= 0) {
-					
-					SortStep step = new SortStep(name, SortType.values()[typeIndex], OrderType.values()[orderIndex]);
-					parent.onSortAdd(step);
-					
-					close();
-				}
-				else {
-					
-					Alert alert = new Alert(AlertType.INFORMATION);
-					alert.setHeaderText("The provided sort could not be added.");
-					alert.setContentText("Please ensure all sorting information is set correctly, or press cancel");
-					
-					alert.showAndWait();
-				}
+				alert.showAndWait();
 			}
 		});
     	
@@ -119,7 +185,7 @@ public class SortDialog extends Stage {
 	
 	public void displayEditDialog(ObservableList<SortStep> stepList, int selectedIndex) {
 		
-		SortStep step = stepList.get(selectedIndex);
+		SortStep oldStep = stepList.get(selectedIndex);
 		
     	setTitle("Sort Editor");
     	initModality(Modality.APPLICATION_MODAL);
@@ -131,21 +197,21 @@ public class SortDialog extends Stage {
     	
     	// Add name field
     	sortScreen.getChildren().add(new Text("Name"));
-    	TextField txt_sortName = new TextField(step.getName());
+    	TextField txt_sortName = new TextField(oldStep.getName());
     	txt_sortName.setMaxWidth(150);;
     	sortScreen.getChildren().add(txt_sortName);
     	
     	// Add selection drop downs
     	sortScreen.getChildren().add(new Text("Sorting Type"));
-    	ArrayList<String> sortOptions = new ArrayList<String>(Arrays.asList(SortStep.getTypeNames()));
-    	ComboBox<String> cbx_sortTypes = new ComboBox<String>((FXCollections.observableArrayList(sortOptions)));
-    	cbx_sortTypes.getSelectionModel().clearAndSelect(step.getType().ordinal());
+    	ComboBox<String> cbx_sortTypes = new ComboBox<String>(
+    			FXCollections.observableArrayList(SortStep.getTypeNames()[oldStep.getType().ordinal()]));
+    	cbx_sortTypes.getSelectionModel().clearAndSelect(0);
     	sortScreen.getChildren().add(cbx_sortTypes);
     	
     	sortScreen.getChildren().add(new Text("Sort Order"));
     	ArrayList<String> orderOptions = new ArrayList<String>(Arrays.asList(SortStep.getOrderNames()));
     	ComboBox<String> cbx_order = new ComboBox<String>((FXCollections.observableArrayList(orderOptions)));
-    	cbx_order.getSelectionModel().clearAndSelect(step.getOrder().ordinal());
+    	cbx_order.getSelectionModel().clearAndSelect(oldStep.getOrder().ordinal());
     	sortScreen.getChildren().add(cbx_order);
     	
     	// Add buttons
@@ -169,7 +235,7 @@ public class SortDialog extends Stage {
 				
 				if (!name.trim().equals("") && typeIndex >= 0 && orderIndex >= 0) {
 					
-					SortStep step = new SortStep(name, SortType.values()[typeIndex], OrderType.values()[orderIndex]);
+					SortStep step = new SortStep(name, oldStep.getType(), OrderType.values()[orderIndex]);
 					parent.onSortEdit(selectedIndex, step);
 					
 					close();

@@ -82,8 +82,9 @@ public class FilterDialog extends Stage {
 
 			dynamicContentPane.getChildren().clear();
 			
-			// Boolean to check if the filter already exists, for the data and size filters
+			// Boolean and value to handle if the filter already exists (only for the data and size filters)
 			boolean filterExists = false;
+			FilterStep existingFilter = null;
 
 			switch (cbx_filterTypes.getSelectionModel().getSelectedIndex()) {
 			
@@ -109,6 +110,7 @@ public class FilterDialog extends Stage {
 						
 						// If a date filter already exists, do not allow the user to select
 						filterExists = true;
+						existingFilter = f;
 						break;
 					}
 				}
@@ -119,13 +121,18 @@ public class FilterDialog extends Stage {
 				}
 				else {
 					
-					dynamicContentPane.getChildren().add(new Text("Error: You have already added an access date filter. Only one date filter can exist at a time."));
+					Text info = new Text("Error: You have already added an access date filter: " + existingFilter.getName()
+					+ "\nOnly one date filter can exist at a time.");
+					info.setTextAlignment(TextAlignment.CENTER);
+					dynamicContentPane.getChildren().add(info);
 				}
 				
 				break;
 			
 			// File size filter
 			case 3:
+				
+				
 				
 				// We only allow one size filter at a time
 				for (FilterStep f : stepList) {
@@ -134,6 +141,7 @@ public class FilterDialog extends Stage {
 						
 						// If a size filter already exists, do not allow the user to select
 						filterExists = true;
+						existingFilter = f;
 						break;
 					}
 				}
@@ -144,7 +152,10 @@ public class FilterDialog extends Stage {
 				}
 				else {
 					
-					dynamicContentPane.getChildren().add(new Text("You have already added a file size filter. Only one file size filter can exist at a time."));
+					Text info = new Text("You have already added a file size filter: " + existingFilter.getName()
+					+ "\nOnly one file size filter can exist at a time.");
+					info.setTextAlignment(TextAlignment.CENTER);
+					dynamicContentPane.getChildren().add(info);
 				}
 				
 				break;
@@ -203,8 +214,9 @@ public class FilterDialog extends Stage {
 		// Add selection drop down
 		filterScreen.getChildren().add(new Text("Filter Type"));
 		ComboBox<String> cbx_filterType = new ComboBox<String>(
-				(FXCollections.observableArrayList(FilterStep.getTypeNames()[step.getType().ordinal()])));
+				FXCollections.observableArrayList(FilterStep.getTypeNames()[step.getType().ordinal()]));
 		cbx_filterType.getSelectionModel().clearAndSelect(0);
+		
 		filterScreen.getChildren().add(cbx_filterType);
 
 		StackPane dynamicContentPane = new StackPane();
