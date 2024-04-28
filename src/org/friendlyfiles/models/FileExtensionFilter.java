@@ -1,5 +1,7 @@
 package org.friendlyfiles.models;
 
+import org.friendlyfiles.QueryFilter;
+
 public class FileExtensionFilter extends FilterStep {
 	
 	private String extension;
@@ -16,5 +18,10 @@ public class FileExtensionFilter extends FilterStep {
 
 	public void setExtension(String extension) {
 		this.extension = extension;
+	}
+
+	@Override
+	public void addToQueryFilter(QueryFilter filter) {
+		filter.addExtFilter(extension);
 	}
 }

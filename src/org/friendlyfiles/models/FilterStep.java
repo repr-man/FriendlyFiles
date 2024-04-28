@@ -1,9 +1,11 @@
 package org.friendlyfiles.models;
 
+import org.friendlyfiles.QueryFilter;
+
 public abstract class FilterStep {
 	
 	private String displayName;
-	
+
 	public enum FilterType {TEXT, EXTENSION, DATE_EDITED, FILESIZE}
 	private static String[] filterNames = {"Text", "File Extension", "Date Edited", "File Size"};
 	private FilterType type;
@@ -13,6 +15,8 @@ public abstract class FilterStep {
 		this.displayName = displayName;
 		this.type = type;
 	}
+
+	public abstract void addToQueryFilter(QueryFilter filter);
 
 	public String getName() {
 		return displayName;

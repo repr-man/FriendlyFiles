@@ -1,5 +1,7 @@
 package org.friendlyfiles.models;
 
+import org.friendlyfiles.QueryFilter;
+
 public class FileTextFilter extends FilterStep {
 	
 	private String text;
@@ -16,5 +18,10 @@ public class FileTextFilter extends FilterStep {
 
 	public void setText(String text) {
 		this.text = text;
+	}
+
+	@Override
+	public void addToQueryFilter(QueryFilter filter) {
+		filter.addTextFilter(text);
 	}
 }

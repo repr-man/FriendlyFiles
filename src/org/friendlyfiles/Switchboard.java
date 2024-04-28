@@ -17,7 +17,7 @@ import java.util.stream.Stream;
  * Because the backend swap involves a number of threads, the process is a little convoluted:
  * <ol>
  * <li> {@link UIController#initialize} creates a PostingList and constructs a new Switchboard. </li>
- * <li> {@link Switchboard#Switchboard} calls {@link Backend#generateFromFilesystem} to start the indexing. </li>
+ * <li> {@link Switchboard#Switchboard} calls {@link PostingList#generateFromFilesystem} to start the indexing. </li>
  * <li> {@link PostingList#generateFromFilesystem} starts a new background thread for indexing. </li>
  * <li> When the background task is done indexing, it calls {@link Switchboard#swapInBackend} with the newly
  *      constructed PostingList. </li>

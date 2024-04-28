@@ -1,9 +1,11 @@
 package org.friendlyfiles.models;
 
+import org.friendlyfiles.QueryFilter;
+
 public class FileSizeFilter extends FilterStep {
 	
-	public static enum SizeUnit {B, KB, MB, GB, TB}
-	private static String[] unitNames = {"B", "KB", "MB", "GB", "TB"};
+	public enum SizeUnit {B, KB, MB, GB, TB}
+	private static final String[] unitNames = {"B", "KB", "MB", "GB", "TB"};
 	
 	private SizeUnit maxSizeUnit;
 	private long maxSize;
@@ -55,5 +57,10 @@ public class FileSizeFilter extends FilterStep {
 	public static String[] getUnitNames() {
 		
 		return unitNames;
+	}
+
+	@Override
+	public void addToQueryFilter(QueryFilter filter) {
+		filter.addFileSizeRange(minSize, maxSize);
 	}
 }

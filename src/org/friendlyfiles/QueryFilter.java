@@ -1,10 +1,11 @@
 package org.friendlyfiles;
 
+import javafx.collections.ObservableList;
+import org.friendlyfiles.models.FilterStep;
 import org.friendlyfiles.ui.UIController;
 import org.roaringbitmap.RoaringBitmap;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 /**
  * Handles and passes all filters except the search query between the UI and the backend.
@@ -16,13 +17,9 @@ public final class QueryFilter {
     private String query = UIController.fileSeparator;
     private long fileSizeLower, fileSizeUpper = Long.MAX_VALUE;
     private long dateTimeStart, dateTimeEnd = Long.MAX_VALUE;
-    
-    private ArrayList<String> textSearchTerms = new ArrayList<>();
-    private Pattern textBuildPattern;
-    
-    private ArrayList<String> extSearchTerms = new ArrayList<>();
-    private Pattern extBuildPattern;
-    
+    private final ArrayList<String> textSearchTerms = new ArrayList<>();
+    private final ArrayList<String> extSearchTerms = new ArrayList<>();
+
 
     public RoaringBitmap getVisibleItems() {
         return visibleItems;
@@ -58,42 +55,55 @@ public final class QueryFilter {
         return false;
     }
 
-    public void addTextFilter(String text) {
-    	
-    	assert(text.trim() != "");
-    	
-    	textSearchTerms.add(text);
-    	textBuildPattern = Pattern.compile(String.join("|", textSearchTerms));
-    }
-    
-    public void removeTextFilter(String text) {
-    	
-    	assert(text.trim() != "");
-    	
-    	textSearchTerms.remove(text);
-    	textBuildPattern = Pattern.compile(String.join("|", textSearchTerms));
+    /**
+     * Clears the current filter parameters and adds new ones from a list of filter steps in the UI.
+     * @param filterList the filter list from which to populate the QueryFilter
+     */
+    public void resetFilterSteps(ObservableList<FilterStep> filterList) {
+        textSearchTerms.clear();
+        extSearchTerms.clear();
+        fileSizeLower = 0;
+        fileSizeUpper = Long.MAX_VALUE;
+        dateTimeStart = 0;
+        dateTimeEnd = Long.MAX_VALUE;
+
+        filterList.forEach(f -> {
+            f.addToQueryFilter(this);
+        });
     }
 
+    /**
+     * Adds an additive query term.
+     * @param text the term to add
+     */
+    public void addTextFilter(String text) {
+    	
+    	assert(!text.trim().isEmpty());
+    	
+    	textSearchTerms.add(text);
+    }
+
+    /**
+     * @return the list of additive query terms
+     */
     public ArrayList<String> getTextSearchTerms() {
         return textSearchTerms;
     }
 
+    /**
+     * Adds an allowed file extension.
+     * @param ext the file extension to add
+     */
     public void addExtFilter(String ext) {
     	
     	assert(ext.length() > 1 && ext.startsWith("."));
     	
     	extSearchTerms.add(ext);
-    	extBuildPattern = Pattern.compile(String.join("|", extSearchTerms));
-    }
-    
-    public void removeExtFilter(String ext) {
-    	
-    	assert(ext.length() > 1 && ext.startsWith("."));
-    	
-    	extSearchTerms.remove(ext);
-    	extBuildPattern = Pattern.compile(String.join("|", extSearchTerms));
     }
 
+    /**
+     * @return the list of allowed file extensions
+     */
     public ArrayList<String> getExtSearchTerms() {
         return extSearchTerms;
     }
@@ -103,9 +113,8 @@ public final class QueryFilter {
      *
      * @param lower the potential new lower bound
      * @param upper the potential new upper bound
-     * @return this filter
      */
-    public QueryFilter addFileSizeRange(long lower, long upper) {
+    public void addFileSizeRange(long lower, long upper) {
         assert (lower <= upper);
         if (lower > fileSizeLower && lower <= fileSizeUpper) {
             fileSizeLower = lower;
@@ -113,7 +122,6 @@ public final class QueryFilter {
         if (upper >= fileSizeLower && upper < fileSizeUpper) {
             fileSizeUpper = upper;
         }
-        return this;
     }
 
     /**
@@ -128,12 +136,11 @@ public final class QueryFilter {
     
     /**
      * Shrinks the date range allowed by the filter.
-     * 
+     *
      * @param start update the start date of the filter, or -1 if there is no start cutoff.
-     * @param end update the end date of the filter, or -1 if there is no end cutoff.
-     * @return
+     * @param end   update the end date of the filter, or -1 if there is no end cutoff.
      */
-    public QueryFilter setFileDateRange(long start, long end) {
+    public void setFileDateRange(long start, long end) {
     	assert (end <= start);
     	if (start > dateTimeStart && start <= dateTimeEnd) {
     		
@@ -143,7 +150,6 @@ public final class QueryFilter {
     		
     		dateTimeEnd = end;
     	}
-    	return this;
     }
     
     /**

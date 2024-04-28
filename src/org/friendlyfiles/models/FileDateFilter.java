@@ -1,6 +1,8 @@
 package org.friendlyfiles.models;
 
-import java.time.LocalDateTime;
+import org.friendlyfiles.QueryFilter;
+
+import java.time.*;
 
 public class FileDateFilter extends FilterStep {
 	
@@ -31,12 +33,15 @@ public class FileDateFilter extends FilterStep {
 	}
 	
 	public long getStartEpoch() {
-		
-		return 0;
+		return startDate.toEpochSecond(ZonedDateTime.now().getOffset());
 	}
 	
 	public long getEndEpoch() {
-		
-		return 0;
+		return endDate.toEpochSecond(ZonedDateTime.now().getOffset());
+	}
+
+	@Override
+	public void addToQueryFilter(QueryFilter filter) {
+		filter.setFileDateRange(getStartEpoch(), getEndEpoch());
 	}
 }

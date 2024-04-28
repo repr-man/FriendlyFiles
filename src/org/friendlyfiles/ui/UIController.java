@@ -177,10 +177,13 @@ public class UIController {
     		}
     	}
     	
-    	if (filterList.size() == 0) {
+    	if (filterList.isEmpty()) {
     		
     		selectedFilterIndex = -1;
     	}
+
+        filter.resetFilterSteps(filterList);
+        btn_search_clicked(null);
     }
     
     @FXML
@@ -202,7 +205,7 @@ public class UIController {
         	}
     	}
     	
-    	if (sortList.size() == 0) {
+    	if (sortList.isEmpty()) {
     		
     		selectedSortIndex = -1;
     	}
@@ -246,9 +249,10 @@ public class UIController {
     	filterDialog.displayEditDialog(filterList, selectedFilterIndex);
     }
     
-    public void onFilterAdd(FilterStep filter) {
-    	
-    	filterList.add(filter);
+    public void onFilterAdd(FilterStep filterStep) {
+    	filterList.add(filterStep);
+        filter.resetFilterSteps(filterList);
+        btn_search_clicked(null);
     }
     
     public void onFilterEdit(int index, FilterStep edited) {
@@ -257,6 +261,9 @@ public class UIController {
     	filterList.add(index, edited);
     	
     	lsv_filterStack.getSelectionModel().clearAndSelect(index);
+
+        filter.resetFilterSteps(filterList);
+        btn_search_clicked(null);
     }
     
     @FXML
