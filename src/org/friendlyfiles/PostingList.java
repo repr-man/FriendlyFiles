@@ -131,12 +131,13 @@ import java.util.stream.*;
  *     </li>
  * </ul>
  */
-public final class PostingList implements Backend {
+public final class PostingList {
     private RoaringBitmap stage1Cache;
     private final String plFileLocation;
     private final List<RoaringBitmap> lists;
     private ArrayList<String> paths;
     private ArrayList<Long> sizes;
+    private ArrayList<Long> timestamps;
     private long totalPathsSize = 0;
     private byte numHoles = 0;
 
@@ -153,13 +154,13 @@ public final class PostingList implements Backend {
         lists = Collections.unmodifiableList(tmpLists);
         paths = new ArrayList<>();
         sizes = new ArrayList<>();
+        timestamps = new ArrayList<>();
     }
 
     /**
      * Serializes the posting list to the list's file location.
      * @throws Exception if it cannot write the file
      */
-    @Override
     public void close() throws Exception {
         serializeTo(plFileLocation);
     }
@@ -192,7 +193,7 @@ public final class PostingList implements Backend {
                     //     slightly different size.  To prevent buffer overflows, we need to ask for a little more
                     //     memory than we actually need.  16 seems to be a good size that makes the function work
                     //     consistently.
-                    listsSerializedSize + (totalPathsSize + paths.size() * 4L) + (sizes.size() * 8L) + 4 + 1 + 16
+                    listsSerializedSize + (totalPathsSize + paths.size() * 4L) + (sizes.size() * 8L) + (timestamps.size() * 8L) + 4 + 1 + 16
             );
             lists.forEach(item -> {
                 item.serialize(mbb);
@@ -204,6 +205,7 @@ public final class PostingList implements Backend {
                 mbb.put(item.getBytes());
             });
             sizes.forEach(mbb::putLong);
+            timestamps.forEach(mbb::putLong);
         }
     }
 
@@ -230,6 +232,7 @@ public final class PostingList implements Backend {
             int numStrings = mbb.getInt();
             pl.paths.ensureCapacity(numStrings);
             pl.sizes.ensureCapacity(numStrings);
+            pl.timestamps.ensureCapacity(numStrings);
             pl.numHoles = mbb.get();
             for (int i = 0; i < numStrings; ++i) {
                 int strSize = mbb.getInt();
@@ -245,6 +248,9 @@ public final class PostingList implements Backend {
             for (int i = 0; i < numStrings; ++i) {
                 pl.sizes.add(mbb.getLong());
             }
+            for (int i = 0; i < numStrings; ++i) {
+                pl.timestamps.add(mbb.getLong());
+            }
         }
         return pl;
     }
@@ -253,7 +259,6 @@ public final class PostingList implements Backend {
      * Reads necessary information from the filesystem into the backend in a background process
      * and swaps out the old data with the new data when it is done.
      */
-    @Override
     public void generateFromFilesystem(Switchboard switchboard) {
         Executors.newSingleThreadExecutor().submit(() -> {
             PostingList pl = new PostingList(Paths.get(plFileLocation));
@@ -269,10 +274,10 @@ public final class PostingList implements Backend {
      * @param path the path at which to add the new item
      * @param size the size of the item
      */
-    @Override
-    public void add(String path, long size) {
+    public void add(String path, long size, long timestamp) {
         addString(path);
         sizes.add(size);
+        timestamps.add(timestamp);
     }
 
     /**
@@ -312,9 +317,8 @@ public final class PostingList implements Backend {
      * @param path the path of the file to remove
      * @return true if str is not in the list; false if str was in the list and was removed
      */
-    @Override
     public boolean remove(String path) {
-        return removeItem(path) < 0;
+        return removeItem(path) == null;
     }
 
     /**
@@ -324,18 +328,23 @@ public final class PostingList implements Backend {
      * @param path the path of the file to remove
      * @return -1 if str is not in the list; otherwise, the size of the removed item
      */
-    private long removeItem(String path) {
+    private FileModel removeItem(String path) {
         int idx = removeString(path);
-        if (idx < 0) return idx;
-        long result = sizes.get(idx);
+        if (idx < 0) return null;
+        long sizeResult = sizes.get(idx);
         sizes.set(idx, Long.MIN_VALUE);
+        long timestampResult = sizes.get(idx);
+        timestamps.set(idx, Long.MIN_VALUE);
         // Compact the haystack.
         if (numHoles > 127) {
             paths = (ArrayList<String>) paths.parallelStream()
                     .filter(String::isEmpty)
                     .collect(Collectors.toList());
             sizes = (ArrayList<Long>) sizes.parallelStream()
-                    .filter(size -> size >= 0)
+                    .filter(size -> size > Long.MIN_VALUE)
+                    .collect(Collectors.toList());
+            timestamps = (ArrayList<Long>) timestamps.parallelStream()
+                    .filter(time -> time > Long.MIN_VALUE)
                     .collect(Collectors.toList());
             lists.parallelStream().forEach(RoaringBitmap::clear);
             IntStream.range(0, paths.size()).parallel().forEach(i -> {
@@ -353,7 +362,7 @@ public final class PostingList implements Backend {
             numHoles = 0;
         }
 
-        return result;
+        return new FileModel("", sizeResult, timestampResult);
     }
 
     /**
@@ -391,13 +400,13 @@ public final class PostingList implements Backend {
      * @param source the path of the file to move
      * @param destination the path of the directory to move `source` to
      */
-    @Override
     public void moveFile(String source, String destination) {
         getStrings(source).stream().parallel().filter(i -> paths.get(i).equals(source)).findAny().ifPresent(srcIdx -> {
             if (srcIdx >= 0) {
                 String destPath = destination + source.substring(source.lastIndexOf(File.separatorChar));
-                long fileSize = removeItem(source);
-                add(destPath, fileSize);
+                FileModel fileInfo = removeItem(source);
+                assert fileInfo != null;
+                add(destPath, fileInfo.size, fileInfo.timestamp);
             }
         });
     }
@@ -408,11 +417,14 @@ public final class PostingList implements Backend {
      * @param filter filters the query results
      * @return a stream of file names corresponding to the results of the query
      */
-    @Override
     public Stream<String> get(QueryFilter filter) {
         // Start searching numeric arrays.
-        ForkJoinTask<RoaringBitmap> fileSizeQueryTask = ForkJoinPool.commonPool().submit(() -> getFiltered(filter));
-        // TODO: Add date task.
+        ForkJoinTask<RoaringBitmap> fileSizeQueryTask = ForkJoinPool.commonPool().submit(() -> IntStream.range(0, sizes.size())
+                    .filter(i -> filter.isInFileSizeRange(sizes.get(i)))
+                    .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or));
+        ForkJoinTask<RoaringBitmap> dateQueryTask = ForkJoinPool.commonPool().submit(() -> IntStream.range(0, timestamps.size())
+                    .filter(i -> filter.isInFileDateRange(timestamps.get(i)))
+                    .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or));
 
         // Search text-related things.
         String[] splitQuery = filter.getQuery().split("\\s");
@@ -420,11 +432,15 @@ public final class PostingList implements Backend {
                     Arrays.stream(splitQuery).parallel()
                        .map(this::getStrings)
                        .reduce(RoaringBitmap.bitmapOfRange(0, paths.size()), (acc, item) -> RoaringBitmap.and(acc, item)));
+        ForkJoinTask<RoaringBitmap> rootsQueryTask = ForkJoinPool.commonPool().submit(() ->
+                    filter.getRoots().parallelStream()
+                            .map(this::getStrings)
+                            .reduce(new RoaringBitmap(), ParallelAggregation::or));
         ForkJoinTask<RoaringBitmap> additiveSearchQueryTask = ForkJoinPool.commonPool().submit(() -> {
             if (filter.getTextSearchTerms().isEmpty()) return RoaringBitmap.bitmapOfRange(0, 0x100000000L);
             return filter.getTextSearchTerms().parallelStream()
                     .map(this::getStrings)
-                    .reduce(RoaringBitmap.bitmapOfRange(0, paths.size()), (acc, item) -> RoaringBitmap.and(acc, item));
+                    .reduce(RoaringBitmap.bitmapOfRange(0, paths.size()), ParallelAggregation::or);
         });
         ForkJoinTask<RoaringBitmap> extensionQueryTask = ForkJoinPool.commonPool().submit(() -> {
             if (filter.getExtSearchTerms().isEmpty()) return RoaringBitmap.bitmapOfRange(0, 0x100000000L);
@@ -434,13 +450,13 @@ public final class PostingList implements Backend {
         });
 
         // Combine all the bitmaps.
-        // TODO: Finish these.
         stage1Cache = new RoaringBitmap(filter.getVisibleItems().toMutableRoaringBitmap());
         stage1Cache.and(searchQueryTask.join());
+        stage1Cache.and(rootsQueryTask.join());
         stage1Cache.and(additiveSearchQueryTask.join());
         stage1Cache.and(extensionQueryTask.join());
         stage1Cache.and(fileSizeQueryTask.join());
-        //stage1Cache.and(fileDateQueryTask.join());
+        stage1Cache.and(dateQueryTask.join());
 
         return getPostprocessed(filter, splitQuery);
     }
@@ -494,34 +510,15 @@ public final class PostingList implements Backend {
     }
 
     /**
-     * Creates a bitset of items that satisfy all the parameters of the given filter.
-     *
-     * @param filter the filter to use
-     * @return a bitset of the results
-     */
-    private RoaringBitmap getFiltered(QueryFilter filter) {
-        RoaringBitmap bitset = IntStream
-                .range(0, sizes.size())
-                .filter(i -> filter.isInFileSizeRange(sizes.get(i)))
-                .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or);
-        RoaringBitmap rootBitset = filter.getRoots().parallelStream()
-                .map(this::getStrings)
-                .reduce(new RoaringBitmap(), ParallelAggregation::or);
-        bitset.and(rootBitset);
-        return bitset;
-    }
-
-    /**
      * Changes the name of a file.
      *
      * @param oldPath the path to the file to be renamed
      * @param newName the name to change the old name to
      */
-    @Override
     public void renameFile(String oldPath, String newName) {
-        long fileSize = removeItem(oldPath);
-        if (fileSize >= 0) {
-            add(Paths.get(oldPath).resolveSibling(newName).toString(), fileSize);
+        FileModel fileInfo = removeItem(oldPath);
+        if (fileInfo != null) {
+            add(Paths.get(oldPath).resolveSibling(newName).toString(), fileInfo.size, fileInfo.timestamp);
         }
     }
 
@@ -531,7 +528,6 @@ public final class PostingList implements Backend {
      * @param filter the filter containing root directories
      * @return the stream of directories
      */
-    @Override
     public Stream<String> getDirectories(QueryFilter filter) {
         // @formatter:off
         RoaringBitmap dirs = new RoaringBitmap();

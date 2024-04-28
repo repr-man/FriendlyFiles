@@ -26,7 +26,7 @@ public interface ParallelFileTreeVisitor {
      * @param path the path of the file being visited
      * @param size the size of the file being visited
      */
-    void op(String path, long size);
+    void op(String path, long size, long timestamp);
 
     /**
      * Starts the walker after it has been defined.
@@ -35,13 +35,13 @@ public interface ParallelFileTreeVisitor {
      * @param topPath the path of the top of the file tree to walk
      */
     default void walk(Path topPath) {
-        LinkedTransferQueue<Pair<String, Long>> result = new LinkedTransferQueue<>();
+        LinkedTransferQueue<FileModel> result = new LinkedTransferQueue<>();
         walkUpperTree(result, topPath);
         try {
             while (true) {
-                Pair<String, Long> res = result.poll(10, TimeUnit.MILLISECONDS);
+                FileModel res = result.poll(10, TimeUnit.MILLISECONDS);
                 if (res == null) break;
-                op(res.getKey(), res.getValue());
+                op(res.path, res.size, res.timestamp);
             }
         } catch (InterruptedException e) {
             throw new Error(e);
@@ -54,7 +54,7 @@ public interface ParallelFileTreeVisitor {
      * @param result the queue into which to put each file's information
      * @param topPath the path of the top of the file tree to walk
      */
-    static void walkUpperTree(LinkedTransferQueue<Pair<String, Long>> result, Path topPath) {
+    static void walkUpperTree(LinkedTransferQueue<FileModel> result, Path topPath) {
         try (Stream<Path> paths = Files.list(topPath)) {
             Stream<Path> pathStream;
             // We don't want to index the running processes because they are volatile and not useful to the user.
@@ -65,15 +65,15 @@ public interface ParallelFileTreeVisitor {
             }
             // Assigns one thread to each direct child directory beneath `topPath`.
             pathStream.forEach(p -> {
-                if (Files.isDirectory(p) && !Files.isSymbolicLink(p)) {
-                    exec.submit(() -> walkLowerTree(result, p));
-                    result.add(new Pair<>(p.toString(), -1L));
-                } else {
-                    try {
-                        result.add(new Pair<>(p.toString(), Files.size(p)));
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
+                try {
+                    if (Files.isDirectory(p) && !Files.isSymbolicLink(p)) {
+                        exec.submit(() -> walkLowerTree(result, p));
+                        result.add(new FileModel(p.toString(), -1L, Files.getLastModifiedTime(p).toInstant().getEpochSecond()));
+                    } else {
+                        result.add(new FileModel(p.toString(), Files.size(p), Files.getLastModifiedTime(p).toInstant().getEpochSecond()));
                     }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
             });
         } catch (Exception e) {
@@ -87,7 +87,7 @@ public interface ParallelFileTreeVisitor {
      * @param result the queue into which to put each file's information
      * @param topPath the path of the top of the file tree to walk
      */
-    static void walkLowerTree(LinkedTransferQueue<Pair<String, Long>> result, Path topPath) {
+    static void walkLowerTree(LinkedTransferQueue<FileModel> result, Path topPath) {
         try {
             Files.walkFileTree(topPath, new SimpleFileVisitor<Path>() {
                 @Override
@@ -98,14 +98,22 @@ public interface ParallelFileTreeVisitor {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     if (attrs.isRegularFile()) {
-                        result.add(new Pair<>(file.toString(), attrs.size()));
+                        try {
+                            result.add(new FileModel(file.toString(), Files.size(file), Files.getLastModifiedTime(file).toInstant().getEpochSecond()));
+                        } catch (IOException e) {
+                            throw new Error(e);
+                        }
                     }
                     return FileVisitResult.CONTINUE;
                 }
 
                 @Override
                 public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
-                    result.add(new Pair<>(dir.toString(), -1L));
+                    try {
+                        result.add(new FileModel(dir.toString(), -1L, Files.getLastModifiedTime(dir).toInstant().getEpochSecond()));
+                    } catch (IOException e) {
+                        throw new Error(e);
+                    }
                     return FileVisitResult.CONTINUE;
                 }
 
