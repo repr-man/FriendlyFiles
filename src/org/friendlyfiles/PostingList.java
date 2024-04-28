@@ -464,12 +464,13 @@ public final class PostingList {
     private Stream<String> getPostprocessed(QueryFilter filter, String[] splitQuery) {
         Stream<String> outStream = stage1Cache.stream().parallel()
                 .filter(i -> {
-                    if (filter.getTextSearchTerms().isEmpty()) return true;
+                    if (filter.getExtSearchTerms().isEmpty()) return true;
                     for (String extension : filter.getExtSearchTerms()) {
                         if (paths.get(i).endsWith(extension)) return true;
                     }
                     return false;
                 })
+                .filter(i -> filter.getRoots().parallelStream().anyMatch(paths.get(i)::startsWith))
                 .filter(i -> Arrays.stream(splitQuery).parallel().allMatch(paths.get(i)::contains))
                 .filter(i -> {
                     if (filter.getTextSearchTerms().isEmpty()) return true;
@@ -529,7 +530,6 @@ public final class PostingList {
      * @return the stream of directories
      */
     public Stream<String> getDirectories(QueryFilter filter) {
-        // @formatter:off
         RoaringBitmap dirs = new RoaringBitmap();
         for (int i = 0; i < sizes.size(); ++i){
             if (sizes.get(i) == -1) dirs.add(i);
@@ -540,8 +540,7 @@ public final class PostingList {
         rootPaths.and(dirs);
         return rootPaths.stream().parallel()
                        .mapToObj(paths::get)
-                       .filter(s -> s.startsWith(filter.getRoots().get(0)));
-        // @formatter:on
+                       .filter(s -> filter.getRoots().stream().anyMatch(s::startsWith));
     }
 
     /**
@@ -582,6 +581,8 @@ public final class PostingList {
      * @param filter the filter to ad the root to
      */
     public void addRootToFilter(String topDirectory, QueryFilter filter) {
+        // It may seem like this is redundant because of the postprocessing step, but this is necessary for
+        // having multiple roots in the directory tree.
         RoaringBitmap newFiles = getStrings(topDirectory + UIController.fileSeparator).stream().parallel()
                                          .filter(i -> paths.get(i).startsWith(topDirectory + UIController.fileSeparator))
                                          .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or);
