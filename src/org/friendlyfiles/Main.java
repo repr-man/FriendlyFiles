@@ -1,4 +1,4 @@
-package org.friendlyfiles.testing;
+package org.friendlyfiles;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -6,7 +6,7 @@ import javafx.scene.*;
 import javafx.stage.Stage;
 import org.friendlyfiles.ui.UIController;
 
-public class UITest extends Application {
+public class Main extends Application {
 
     private UIController controller;
 
@@ -40,10 +40,6 @@ public class UITest extends Application {
 
         primaryStage.setScene(scene);
         primaryStage.show();
-
-        //BackendDemo demo = new BackendDemo();
-
-        //demo.setController(controller);
     }
 
     /**
