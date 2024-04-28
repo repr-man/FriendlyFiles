@@ -208,15 +208,15 @@ public class UIController {
     
     private void displaySortCreateDialog() {
     	
-    	SortDialog sortDialog = new SortDialog();
-    	sortDialog.displayCreateDialog(this);
+    	SortDialog sortDialog = new SortDialog(this);
+    	sortDialog.displayCreateDialog();
     	
     }
     
     private void displaySortEditDialog(int stepIndex) {
     	
-    	SortDialog sortDialog = new SortDialog();
-    	sortDialog.displayEditDialog(this, sortList, selectedSortIndex);
+    	SortDialog sortDialog = new SortDialog(this);
+    	sortDialog.displayEditDialog(sortList, selectedSortIndex);
     }
     
     public void onSortAdd(SortStep sort) {
@@ -234,14 +234,14 @@ public class UIController {
     
     private void displayFilterCreateDialog() {
     	
-    	FilterDialog filterDialog = new FilterDialog();
-    	filterDialog.displayCreateDialog(this);
+    	FilterDialog filterDialog = new FilterDialog(this);
+    	filterDialog.displayCreateDialog();
     }
     
     private void displayFilterEditDialog(int stepIndex) {
     	
-    	FilterDialog filterDialog = new FilterDialog();
-    	filterDialog.displayEditDialog(this, filterList, selectedFilterIndex);
+    	FilterDialog filterDialog = new FilterDialog(this);
+    	filterDialog.displayEditDialog(filterList, selectedFilterIndex);
     }
     
     public void onFilterAdd(FilterStep filter) {

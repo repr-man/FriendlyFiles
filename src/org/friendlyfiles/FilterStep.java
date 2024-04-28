@@ -4,8 +4,8 @@ public class FilterStep {
 	
 	private String displayName;
 	
-	public enum FilterType {NAME, EXTENSION, DATE_EDITED, FILESIZE}
-	private static String[] filterNames = {"Name", "File Extension", "Date Edited", "File Size"};
+	public enum FilterType {TEXT, EXTENSION, DATE_EDITED, FILESIZE}
+	private static String[] filterNames = {"Text", "File Extension", "Date Edited", "File Size"};
 	private FilterType type;
 	
 	public FilterStep(String displayName, FilterType type) {

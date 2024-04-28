@@ -27,11 +27,24 @@ import javafx.stage.Stage;
 
 public class SortDialog extends Stage {
 	
-	public void displayCreateDialog(UIController parent) {
+	private final int width = 500;
+	private final int height = 350;
+	
+	UIController parent;
+	
+	public SortDialog(UIController parent) {
+		
+		this.parent = parent;
+	}
+	
+	public void displayCreateDialog() {
 		
 		setTitle("Sort Builder");
     	initModality(Modality.APPLICATION_MODAL);
     	initOwner(parent.getRoot().getScene().getWindow());
+    	
+    	this.setWidth(width);
+    	this.setHeight(height);
     	
     	// Create VBox for the root element of the scene
     	VBox sortScreen = new VBox(8);
@@ -73,7 +86,7 @@ public class SortDialog extends Stage {
 				int typeIndex = cbx_sortTypes.getSelectionModel().getSelectedIndex();
 				int orderIndex = cbx_order.getSelectionModel().getSelectedIndex();
 				
-				if (name.trim() != "" && typeIndex >= 0 && orderIndex >= 0) {
+				if (!name.trim().equals("") && typeIndex >= 0 && orderIndex >= 0) {
 					
 					SortStep step = new SortStep(name, SortType.values()[typeIndex], OrderType.values()[orderIndex]);
 					parent.onSortAdd(step);
@@ -107,7 +120,7 @@ public class SortDialog extends Stage {
     	show();
 	}
 	
-	public void displayEditDialog(UIController parent, ObservableList<SortStep> stepList, int selectedIndex) {
+	public void displayEditDialog(ObservableList<SortStep> stepList, int selectedIndex) {
 		
 		SortStep step = stepList.get(selectedIndex);
 		
@@ -157,7 +170,7 @@ public class SortDialog extends Stage {
 				int typeIndex = cbx_sortTypes.getSelectionModel().getSelectedIndex();
 				int orderIndex = cbx_order.getSelectionModel().getSelectedIndex();
 				
-				if (name.trim() != "" && typeIndex >= 0 && orderIndex >= 0) {
+				if (!name.trim().equals("") && typeIndex >= 0 && orderIndex >= 0) {
 					
 					SortStep step = new SortStep(name, SortType.values()[typeIndex], OrderType.values()[orderIndex]);
 					parent.onSortEdit(selectedIndex, step);
