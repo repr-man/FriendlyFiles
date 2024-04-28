@@ -6,29 +6,27 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import org.friendlyfiles.FilterStep;
-import org.friendlyfiles.FilterStep.FilterType;
+import org.friendlyfiles.models.FileDateFilter;
+import org.friendlyfiles.models.FileExtensionFilter;
+import org.friendlyfiles.models.FileSizeFilter;
+import org.friendlyfiles.models.FileSizeFilter.SizeUnit;
+import org.friendlyfiles.models.FilterStep;
+import org.friendlyfiles.models.FilterStep.FilterType;
+import org.friendlyfiles.models.FileTextFilter;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.DatePicker;
-import javafx.scene.control.Spinner;
-import javafx.scene.control.TextField;
-import javafx.scene.control.Alert.AlertType;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
-import javafx.scene.text.Text;
+import javafx.geometry.*;
+import javafx.scene.*;
+import javafx.scene.control.*;
+import javafx.scene.control.Alert.*;
+import javafx.scene.layout.*;
+import javafx.scene.text.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+
 public class FilterDialog extends Stage {
 	
 	private final int width = 500;
@@ -37,7 +35,7 @@ public class FilterDialog extends Stage {
 	private UIController parent;
 	
 	private TextField tbx_filterName;
-	private Button createButton;
+	private Button editButton;
 	
 	public FilterDialog(UIController parent) {
 		
@@ -49,9 +47,6 @@ public class FilterDialog extends Stage {
 		setTitle("Filter Builder");
     	initModality(Modality.APPLICATION_MODAL);
     	initOwner(parent.getRoot().getScene().getWindow());
-    	
-    	this.setWidth(width);
-    	this.setHeight(height);
     	
     	// Create VBox for the root element of the scene
     	VBox filterScreen = new VBox(8);
@@ -74,47 +69,45 @@ public class FilterDialog extends Stage {
     	
     	filterScreen.getChildren().add(dynamicContentPane);
     	
+    	// Add buttons
+    	editButton = new Button("Add");
+    	Button exitButton = new Button("Cancel");
+    	HBox buttons = new HBox(20);
+    	VBox.setMargin(buttons, new Insets(50, 0, 0, 0));
+    	buttons.setAlignment(Pos.TOP_CENTER);
+    	buttons.getChildren().addAll(editButton, exitButton);
+    	filterScreen.getChildren().add(buttons);
+    	
     	cbx_filterTypes.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
     		
     		dynamicContentPane.getChildren().clear();
     		
     		switch (cbx_filterTypes.getSelectionModel().getSelectedIndex()) {
     			
-    		case 0:
-    			
-    			dynamicContentPane.getChildren().add(option_fileName());
-    			break;
-    			
-    		case 1:
-    			
-    			dynamicContentPane.getChildren().add(option_fileExtension());
-    			break;
-    			
-    		case 2:
-    			
-    			dynamicContentPane.getChildren().add(option_lastAccess());
-    			break;
-    			
-    		case 3:
-    			
-    			dynamicContentPane.getChildren().add(option_fileSize());
-    			break;
-    		}
+	    		case 0:
+	    			
+	    			dynamicContentPane.getChildren().add(option_fileName(null, null));
+	    			break;
+	    			
+	    		case 1:
+	    			
+	    			dynamicContentPane.getChildren().add(option_fileExtension(null, null));
+	    			break;
+	    			
+	    		case 2:
+	    			
+	    			dynamicContentPane.getChildren().add(option_lastAccess(null, null));
+	    			break;
+	    			
+	    		case 3:
+	    			
+	    			dynamicContentPane.getChildren().add(option_fileSize(null, null));
+	    			break;
+	    		}
     	});
     	
-    	
-    	
-    	// Add buttons
-    	createButton = new Button("Add");
-    	Button exitButton = new Button("Cancel");
-    	HBox buttons = new HBox(20);
-    	VBox.setMargin(buttons, new Insets(50, 0, 0, 0));
-    	buttons.setAlignment(Pos.TOP_CENTER);
-    	buttons.getChildren().addAll(createButton, exitButton);
-    	filterScreen.getChildren().add(buttons);
-    	
     	// Set up button actions
-    	createButton.setOnAction(new EventHandler<ActionEvent>() {
+    	editButton.setOnAction(new EventHandler<ActionEvent>() {
 			
 			@Override
 			public void handle(ActionEvent event) {
@@ -138,10 +131,9 @@ public class FilterDialog extends Stage {
     	
     	
     	// Create a scene using the VBox and set it as the root element
-    	Scene filterDialogScene = new Scene(filterScreen, 300, 260);
+    	Scene filterDialogScene = new Scene(filterScreen, width, height);
     	setScene(filterDialogScene);
     	show();
-    	
 	}
 	
 	public void displayEditDialog(ObservableList<FilterStep> stepList, int selectedIndex) {
@@ -158,52 +150,50 @@ public class FilterDialog extends Stage {
     	
     	// Add name field
     	filterScreen.getChildren().add(new Text("Name"));
-    	TextField tbx_filterName = new TextField(step.getName());
+    	tbx_filterName = new TextField();
     	tbx_filterName.setMaxWidth(150);
+    	tbx_filterName.setText(step.getName());
+    	
     	filterScreen.getChildren().add(tbx_filterName);
     	
-    	// Add selection drop downs
+    	// Add selection drop down
     	filterScreen.getChildren().add(new Text("Filter Type"));
-    	ArrayList<String> filterOptions = new ArrayList<String>(Arrays.asList(FilterStep.getTypeNames()));
-    	ComboBox<String> cbx_filterTypes = new ComboBox<String>((FXCollections.observableArrayList(filterOptions)));
-    	cbx_filterTypes.getSelectionModel().clearAndSelect(step.getType().ordinal());
-    	filterScreen.getChildren().add(cbx_filterTypes);
+    	ComboBox<String> cbx_filterType = new ComboBox<String>((FXCollections.observableArrayList(FilterStep.getTypeNames()[step.getType().ordinal()])));
+    	cbx_filterType.getSelectionModel().clearAndSelect(0);
+    	filterScreen.getChildren().add(cbx_filterType);
+    	
+    	StackPane dynamicContentPane = new StackPane();
+    	dynamicContentPane.setAlignment(Pos.TOP_CENTER);
+    	
+    	filterScreen.getChildren().add(dynamicContentPane);
     	
     	// Add buttons
-    	Button createButton = new Button("Apply Changes");
+    	editButton = new Button("Apply Changes");
     	Button exitButton = new Button("Cancel");
     	HBox buttons = new HBox(20);
     	VBox.setMargin(buttons, new Insets(50, 0, 0, 0));
     	buttons.setAlignment(Pos.TOP_CENTER);
-    	buttons.getChildren().addAll(createButton, exitButton);
+    	buttons.getChildren().addAll(editButton, exitButton);
     	filterScreen.getChildren().add(buttons);
     	
-    	// Set up button actions
-    	createButton.setOnAction(new EventHandler<ActionEvent>() {
-			
-			@Override
-			public void handle(ActionEvent event) {
+    	switch (step.getType()) {
+		
+			case TEXT:
+				dynamicContentPane.getChildren().add(option_fileName((FileTextFilter)step, selectedIndex));
+				break;
 				
-				String name = tbx_filterName.getText();
-				int typeIndex = cbx_filterTypes.getSelectionModel().getSelectedIndex();
+			case EXTENSION:
+				dynamicContentPane.getChildren().add(option_fileExtension((FileExtensionFilter)step, selectedIndex));
+				break;
 				
-				if (name.trim() != "" && typeIndex >= 0) {
-					
-					FilterStep step = new FilterStep(name, FilterType.values()[typeIndex]);
-					parent.onFilterEdit(selectedIndex, step);
-					
-					close();
-				}
-				else {
-					
-					Alert alert = new Alert(AlertType.INFORMATION);
-					alert.setHeaderText("The edits could not be applied.");
-					alert.setContentText("Please ensure all filter information is set correctly, or press cancel");
-					
-					alert.showAndWait();
-				}
-			}
-		});
+			case DATE_EDITED:
+				dynamicContentPane.getChildren().add(option_lastAccess((FileDateFilter)step, selectedIndex));
+				break;
+				
+			case FILESIZE:
+				dynamicContentPane.getChildren().add(option_fileSize((FileSizeFilter)step, selectedIndex));
+				break;
+		}
     	
     	exitButton.setOnAction(new EventHandler<ActionEvent>() {
 			
@@ -215,20 +205,13 @@ public class FilterDialog extends Stage {
 		});
     	
     	// Create a scene using the VBox and set it as the root element
-    	Scene filterDialogScene = new Scene(filterScreen, 300, 260);
+    	Scene filterDialogScene = new Scene(filterScreen, width, height);
     	setScene(filterDialogScene);
     	show();
 	}
 	
-	
-	
-	
-	
-	
-	
-	
 	// UI for adding a filename filter
-	private VBox option_fileName() {
+	private VBox option_fileName(FileTextFilter oldFilter, Integer indexAt) {
 		
 		VBox content = new VBox(8);
 		content.setAlignment(Pos.TOP_CENTER);
@@ -240,22 +223,30 @@ public class FilterDialog extends Stage {
 		tbx_input.setPromptText("Search for a File");
 		content.getChildren().add(tbx_input);
 		
+		// Fill data if an existing filter was provided
+		if (oldFilter != null) {
+			
+			tbx_input.setText(oldFilter.getText());
+		}
 		
 		// Set up button actions
-    	createButton.setOnAction(new EventHandler<ActionEvent>() {
+    	editButton.setOnAction(new EventHandler<ActionEvent>() {
 			
 			@Override
 			public void handle(ActionEvent event) {
 				
 				String filterName = tbx_filterName.getText();
-				String fileName = tbx_input.getText();
+				String searchText = tbx_input.getText();
 				
 				// If the filter name is given and the file name is valid, accept the input
-				if (!filterName.trim().equals("") && !fileName.trim().equals("")) {
+				if (!filterName.trim().equals("") && !searchText.trim().equals("")) {
 					
-					FilterStep filter = new FilterStep(filterName, FilterType.EXTENSION);
+					FileTextFilter filter = new FileTextFilter(filterName, FilterType.TEXT, searchText);
 					
-					parent.onFilterAdd(filter);
+					if (oldFilter == null)
+						parent.onFilterAdd(filter);
+					else
+						parent.onFilterEdit(indexAt, filter);
 					
 					close();
 				}
@@ -275,7 +266,7 @@ public class FilterDialog extends Stage {
 	
 	
 	// UI for adding a file extension filter
-	private VBox option_fileExtension() {
+	private VBox option_fileExtension(FileExtensionFilter oldFilter, Integer indexAt) {
 		
 		VBox content = new VBox(8);
 		content.setAlignment(Pos.TOP_CENTER);
@@ -287,9 +278,14 @@ public class FilterDialog extends Stage {
 		tbx_input.setPromptText("File extension (.*)");
 		content.getChildren().add(tbx_input);
 		
+		// Fill data if an existing filter was provided
+		if (oldFilter != null) {
+			
+			tbx_input.setText(oldFilter.getExtension());
+		}
 		
 		// Set up button actions
-    	createButton.setOnAction(new EventHandler<ActionEvent>() {
+    	editButton.setOnAction(new EventHandler<ActionEvent>() {
 			
 			@Override
 			public void handle(ActionEvent event) {
@@ -306,9 +302,12 @@ public class FilterDialog extends Stage {
 						extension = "." + extension;
 					}
 					
-					FilterStep filter = new FilterStep(filterName, FilterType.EXTENSION);
+					FileExtensionFilter filter = new FileExtensionFilter(filterName, FilterType.EXTENSION, extension);
 					
-					parent.onFilterAdd(filter);
+					if (oldFilter == null)
+						parent.onFilterAdd(filter);
+					else
+						parent.onFilterEdit(indexAt, filter);
 					
 					close();
 				}
@@ -327,7 +326,7 @@ public class FilterDialog extends Stage {
 	}
 	
 	// UI for adding a last accessed filter
-	private VBox option_lastAccess() {
+	private VBox option_lastAccess(FileDateFilter oldFilter, Integer indexAt) {
 		
 		VBox content = new VBox(8);
 		content.setAlignment(Pos.TOP_CENTER);
@@ -376,30 +375,72 @@ public class FilterDialog extends Stage {
 		
 		hbx_timeTo.getChildren().addAll(spn_hourTo, spn_minuteTo, cbx_periodTo);
 		
+		// Fill data if an existing filter was provided
+		if (oldFilter != null) {
+			
+			LocalDateTime startDateTime = oldFilter.getStartDate();
+			LocalDateTime endDateTime = oldFilter.getEndDate();
+			
+			dp_dateFrom.setValue(startDateTime.toLocalDate());
+			
+			int startHour = startDateTime.getHour() + 1;
+			
+			if (startHour > 12) {
+				
+				spn_hourFrom.getValueFactory().setValue(startHour - 12);
+				cbx_periodFrom.getSelectionModel().clearAndSelect(1);
+			}
+			else {
+				
+				spn_hourFrom.getValueFactory().setValue(startHour);
+				cbx_periodFrom.getSelectionModel().clearAndSelect(0);
+			}
+			
+			
+			spn_minuteFrom.getValueFactory().setValue(startDateTime.getMinute());
+			
+			dp_dateTo.setValue(endDateTime.toLocalDate());
+			
+			int endHour = endDateTime.getHour() + 1;
+			
+			if (endHour > 12) {
+				
+				spn_hourTo.getValueFactory().setValue(endHour - 12);
+				cbx_periodFrom.getSelectionModel().clearAndSelect(1);
+			}
+			else {
+				
+				spn_hourTo.getValueFactory().setValue(endHour);
+				cbx_periodFrom.getSelectionModel().clearAndSelect(0);
+			}
+			
+			spn_minuteTo.getValueFactory().setValue(endDateTime.getMinute());
+		}
 		
 		// Set up button actions
-    	createButton.setOnAction(new EventHandler<ActionEvent>() {
+    	editButton.setOnAction(new EventHandler<ActionEvent>() {
 			
 			@Override
 			public void handle(ActionEvent event) {
 				
 				String filterName = tbx_filterName.getText();
 				LocalDate startDate = dp_dateFrom.getValue();
-				LocalTime startTime = LocalTime.of(spn_hourFrom.getValue(), spn_minuteFrom.getValue());
+				LocalTime startTime = LocalTime.of(spn_hourFrom.getValue() - 1, spn_minuteFrom.getValue());
 				
 				LocalDate endDate = dp_dateTo.getValue();
-				LocalTime endTime = LocalTime.of(spn_hourTo.getValue(), spn_minuteTo.getValue());
+				LocalTime endTime = LocalTime.of(spn_hourTo.getValue() - 1, spn_minuteTo.getValue());
 				
-				LocalDateTime startDateTime;
-				LocalDateTime endDateTime;
+				// Default the time values to their minimum and maximum
+				LocalDateTime startDateTime = LocalDateTime.MIN;
+				LocalDateTime endDateTime = LocalDateTime.MAX;
 				
 				// If the filter name is provided, we can validate the dates
 				if (!filterName.trim().equals("")) {
 					
 					boolean datesValid = false;
 					
-					// This case only allows for two non-null dates, with the start occuring before the end
-					if (startDate != null && endDate != null && startDate.isBefore(endDate)) {
+					// This case only allows for two non-null dates, with the start occuring before or equal to the end
+					if (startDate != null && endDate != null && (startDate.isBefore(endDate) || startDate.isEqual(endDate))) {
 						
 						datesValid = true;
 						startDateTime = LocalDateTime.of(startDate, startTime);
@@ -410,14 +451,12 @@ public class FilterDialog extends Stage {
 						
 						datesValid = true;
 						startDateTime = LocalDateTime.of(startDate, startTime);
-						endDateTime = LocalDateTime.MAX;
 						
 					}
 					// This case only allows for a null start date and a non-null end date
 					else if (startDate == null && endDate != null) {
 						
 						datesValid = true;
-						startDateTime = LocalDateTime.MIN;
 						endDateTime = LocalDateTime.of(endDate, endTime);
 						
 					}
@@ -434,9 +473,12 @@ public class FilterDialog extends Stage {
 					// If the dates were valid, we can create the filter with the data and close
 					if (datesValid) {
 						
-						FilterStep filter = new FilterStep(filterName, FilterType.DATE_EDITED);
+						FileDateFilter filter = new FileDateFilter(filterName, FilterType.DATE_EDITED, startDateTime, endDateTime);
 						
-						parent.onFilterAdd(filter);
+						if (oldFilter == null)
+							parent.onFilterAdd(filter);
+						else
+							parent.onFilterEdit(indexAt, filter);
 						
 						close();
 					}
@@ -456,7 +498,7 @@ public class FilterDialog extends Stage {
 	}
 	
 	// UI for adding a file size filter
-	private VBox option_fileSize() {
+	private VBox option_fileSize(FileSizeFilter oldFilter, Integer indexAt) {
 		
 		VBox content = new VBox(8);
 		content.setAlignment(Pos.TOP_CENTER);
@@ -473,10 +515,10 @@ public class FilterDialog extends Stage {
 		
 		TextField tbx_fileSizeMin = new TextField();
 		tbx_fileSizeMin.setMaxWidth(70);
-		tbx_fileSizeMin.setPromptText("Max: 1000");
+		tbx_fileSizeMin.setPromptText("Max: 9999");
 		optionMinSize_controls.getChildren().add(tbx_fileSizeMin);
 		
-		ComboBox<String> cbx_fileSizeMin = new ComboBox<String>(FXCollections.observableArrayList("B", "KB", "MB", "GB", "TB"));
+		ComboBox<String> cbx_fileSizeMin = new ComboBox<String>(FXCollections.observableArrayList(FileSizeFilter.getUnitNames()));
 		cbx_fileSizeMin.getSelectionModel().clearAndSelect(1);
 		cbx_fileSizeMin.setMaxWidth(60);
 		optionMinSize_controls.getChildren().add(cbx_fileSizeMin);
@@ -489,10 +531,10 @@ public class FilterDialog extends Stage {
 		
 		TextField tbx_fileSizeMax = new TextField();
 		tbx_fileSizeMax.setMaxWidth(70);
-		tbx_fileSizeMax.setPromptText("Max: 1000");
+		tbx_fileSizeMax.setPromptText("Max: 9999");
 		optionMaxSize_controls.getChildren().add(tbx_fileSizeMax);
 		
-		ComboBox<String> cbx_fileSizeMax = new ComboBox<String>(FXCollections.observableArrayList("B", "KB", "MB", "GB", "TB"));
+		ComboBox<String> cbx_fileSizeMax = new ComboBox<String>(FXCollections.observableArrayList(FileSizeFilter.getUnitNames()));
 		cbx_fileSizeMax.getSelectionModel().clearAndSelect(1);
 		cbx_fileSizeMax.setMaxWidth(60);
 		optionMaxSize_controls.getChildren().add(cbx_fileSizeMax);
@@ -513,8 +555,19 @@ public class FilterDialog extends Stage {
 		});
 		
 		
+		// Fill data if an existing filter was provided
+		if (oldFilter != null) {
+			
+			tbx_fileSizeMin.setText(String.valueOf(oldFilter.getMinSize() / (long) Math.pow(10, oldFilter.getMinSizeUnit().ordinal() * 3)));
+			cbx_fileSizeMin.getSelectionModel().clearAndSelect(oldFilter.getMinSizeUnit().ordinal());
+			
+			
+			tbx_fileSizeMax.setText(String.valueOf(oldFilter.getMaxSize() / (long) Math.pow(10, oldFilter.getMaxSizeUnit().ordinal() * 3)));
+			cbx_fileSizeMax.getSelectionModel().clearAndSelect(oldFilter.getMaxSizeUnit().ordinal());
+		}
+		
 		// Set up button actions
-    	createButton.setOnAction(new EventHandler<ActionEvent>() {
+    	editButton.setOnAction(new EventHandler<ActionEvent>() {
 			
 			@Override
 			public void handle(ActionEvent event) {
@@ -533,38 +586,64 @@ public class FilterDialog extends Stage {
 					baseSizeMax = (Integer.valueOf(tbx_fileSizeMax.getText()));
 				}
 				
-				// If the filter name is given and either of the size textboxes are filled in, we will accept the input
-				if (!filterName.trim().equals("") && (baseSizeMin >= 0 || baseSizeMax >= 0) && baseSizeMax > baseSizeMin) {
+				// If the filter name is given, either of the size textboxes are filled in, we will further process the input
+				if (!filterName.trim().equals("") && (baseSizeMin >= 0 || baseSizeMax >= 0)) {
 					
-					int minSizeType = cbx_fileSizeMin.getSelectionModel().getSelectedIndex() + 1;
-					int maxSizeType = cbx_fileSizeMax.getSelectionModel().getSelectedIndex() + 1;
+					int minSizeUnit = cbx_fileSizeMin.getSelectionModel().getSelectedIndex();
+					int maxSizeUnit = cbx_fileSizeMax.getSelectionModel().getSelectedIndex();
 					
-					long sizeMin = -1;
-					long sizeMax = -1;
-					
-					if (baseSizeMin <= 1000 && baseSizeMax <= 1000) {
+					// Set the base sizes to 0 or the max value if they were not already assigned
+					// This will also set the min/max size type to Byte/Terabyte
+					if (baseSizeMin == -1) {
 						
-						if (baseSizeMin >= 0) {
+						baseSizeMin = 0;
+						minSizeUnit = 0;
+					}
+					
+					if (baseSizeMax == -1) {
+						
+						baseSizeMax = 9999;
+						maxSizeUnit = 4;
+					}
+					
+					long minSize = -1;
+					long maxSize = -1;
+					
+					if (baseSizeMin <= 9999 && baseSizeMax <= 9999) {
+						
+						// Calculate the total number of bytes for the min and max size
+						minSize = (baseSizeMin * (long) Math.pow(10, minSizeUnit * 3));
+						maxSize = (baseSizeMax * (long) Math.pow(10, maxSizeUnit * 3));
+						
+						if (maxSize >= minSize) {
 							
-							sizeMin = (long) (baseSizeMin * Math.pow(10, minSizeType * 3));
+							FileSizeFilter filter = new FileSizeFilter(filterName, FilterType.FILESIZE, 
+									SizeUnit.values()[maxSizeUnit], maxSize, 
+									SizeUnit.values()[minSizeUnit], minSize);
+							
+							
+							if (oldFilter == null)
+								parent.onFilterAdd(filter);
+							else
+								parent.onFilterEdit(indexAt, filter);
+							
+							close();
+						}
+						else {
+							
+							Alert alert = new Alert(AlertType.INFORMATION);
+							alert.setHeaderText("Invalid size value(s) provided.");
+							alert.setContentText("Please ensure the maximum size is larger than the minimum size");
+							
+							alert.showAndWait();
 						}
 						
-						if (baseSizeMax >= 0) {
-							
-							sizeMax = (long) (baseSizeMax * Math.pow(10, maxSizeType * 3));
-						}
-						
-						
-						
-						FilterStep filter = new FilterStep(filterName, FilterType.FILESIZE);
-						parent.onFilterAdd(filter);
-						close();
 					}
 					else {
 						
 						Alert alert = new Alert(AlertType.INFORMATION);
 						alert.setHeaderText("Invalid size value(s) provided.");
-						alert.setContentText("Please enter numbers between 0 to 1000, or leave one field empty to remove the limit in that direction");
+						alert.setContentText("Please enter numbers between 0 to 9999, or leave one field empty to remove the limit in that direction");
 						
 						alert.showAndWait();
 					}

@@ -1,4 +1,4 @@
-package org.friendlyfiles;
+package org.friendlyfiles.models;
 
 public class SortStep {
 	

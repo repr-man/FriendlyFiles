@@ -1,6 +1,6 @@
-package org.friendlyfiles;
+package org.friendlyfiles.models;
 
-public class FilterStep {
+public abstract class FilterStep {
 	
 	private String displayName;
 	

@@ -3,9 +3,9 @@ package org.friendlyfiles.ui;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import org.friendlyfiles.SortStep;
-import org.friendlyfiles.SortStep.OrderType;
-import org.friendlyfiles.SortStep.SortType;
+import org.friendlyfiles.models.SortStep;
+import org.friendlyfiles.models.SortStep.OrderType;
+import org.friendlyfiles.models.SortStep.SortType;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -42,9 +42,6 @@ public class SortDialog extends Stage {
 		setTitle("Sort Builder");
     	initModality(Modality.APPLICATION_MODAL);
     	initOwner(parent.getRoot().getScene().getWindow());
-    	
-    	this.setWidth(width);
-    	this.setHeight(height);
     	
     	// Create VBox for the root element of the scene
     	VBox sortScreen = new VBox(8);
@@ -115,7 +112,7 @@ public class SortDialog extends Stage {
     	
     	
     	// Create a scene using the VBox and set it as the root element
-    	Scene sortDialogScene = new Scene(sortScreen, 300, 260);
+    	Scene sortDialogScene = new Scene(sortScreen, width, height);
     	setScene(sortDialogScene);
     	show();
 	}
@@ -152,16 +149,16 @@ public class SortDialog extends Stage {
     	sortScreen.getChildren().add(cbx_order);
     	
     	// Add buttons
-    	Button createButton = new Button("Apply Changes");
+    	Button editButton = new Button("Apply Changes");
     	Button exitButton = new Button("Cancel");
     	HBox buttons = new HBox(20);
     	VBox.setMargin(buttons, new Insets(50, 0, 0, 0));
     	buttons.setAlignment(Pos.TOP_CENTER);
-    	buttons.getChildren().addAll(createButton, exitButton);
+    	buttons.getChildren().addAll(editButton, exitButton);
     	sortScreen.getChildren().add(buttons);
     	
     	// Set up button actions
-    	createButton.setOnAction(new EventHandler<ActionEvent>() {
+    	editButton.setOnAction(new EventHandler<ActionEvent>() {
 			
 			@Override
 			public void handle(ActionEvent event) {
@@ -199,7 +196,7 @@ public class SortDialog extends Stage {
     	
     	
     	// Create a scene using the VBox and set it as the root element
-    	Scene sortDialogScene = new Scene(sortScreen, 300, 260);
+    	Scene sortDialogScene = new Scene(sortScreen, width, height);
     	setScene(sortDialogScene);
     	show();
 	}

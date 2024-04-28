@@ -12,6 +12,8 @@ import javafx.scene.layout.BorderPane;
 import javafx.stage.DirectoryChooser;
 import javafx.util.Callback;
 import org.friendlyfiles.*;
+import org.friendlyfiles.models.FilterStep;
+import org.friendlyfiles.models.SortStep;
 
 import java.io.*;
 import java.nio.file.*;
