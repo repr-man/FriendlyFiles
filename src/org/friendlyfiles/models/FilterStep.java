@@ -7,7 +7,7 @@ public abstract class FilterStep {
 	private String displayName;
 
 	public enum FilterType {TEXT, EXTENSION, DATE_EDITED, FILESIZE}
-	private static String[] filterNames = {"Text", "File Extension", "Date Edited", "File Size"};
+	private static final String[] filterNames = {"Text", "File Extension", "Date Edited", "File Size"};
 	private FilterType type;
 	
 	public FilterStep(String displayName, FilterType type) {

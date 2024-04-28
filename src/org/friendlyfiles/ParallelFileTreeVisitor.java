@@ -1,8 +1,6 @@
 package org.friendlyfiles;
 
-import javafx.util.Pair;
-
-import java.io.*;
+import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.concurrent.*;

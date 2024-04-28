@@ -5,11 +5,11 @@ public class SortStep {
 	private String displayName;
 	
 	public enum SortType {NAME, EXTENSION, DATE_EDITED, FILESIZE}
-	private static String[] sortNames = {"Name", "File Extension", "Date Edited", "File Size"};
+	private static final String[] sortNames = {"Name", "File Extension", "Date Edited", "File Size"};
 	private SortType type;
 	
 	public enum OrderType {ASCENDING, DESCENDING};
-	private static String[] orderNames = {"Ascending", "Descending"};
+	private static final String[] orderNames = {"Ascending", "Descending"};
 	private OrderType order;
 	
 	

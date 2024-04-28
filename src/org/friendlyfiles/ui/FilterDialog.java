@@ -32,7 +32,7 @@ public class FilterDialog extends Stage {
 	private final int width = 500;
 	private final int height = 350;
 	
-	private UIController parent;
+	private final UIController parent;
 	
 	private TextField tbx_filterName;
 	private Button editButton;
@@ -239,7 +239,7 @@ public class FilterDialog extends Stage {
 				String searchText = tbx_input.getText();
 				
 				// If the filter name is given and the file name is valid, accept the input
-				if (!filterName.trim().equals("") && !searchText.trim().equals("")) {
+				if (!filterName.trim().isEmpty() && !searchText.trim().isEmpty()) {
 					
 					FileTextFilter filter = new FileTextFilter(filterName, FilterType.TEXT, searchText);
 					
@@ -294,7 +294,7 @@ public class FilterDialog extends Stage {
 				String extension = tbx_input.getText();
 				
 				// If the filter name and extension are given, accept the input
-				if (!filterName.trim().equals("") && !extension.replace(".", "").trim().equals("")) {
+				if (!filterName.trim().isEmpty() && !extension.replace(".", "").trim().isEmpty()) {
 					
 					// If the extension doesn't start with a ".", add it in before the entered text
 					if (!extension.startsWith(".")) {
@@ -435,7 +435,7 @@ public class FilterDialog extends Stage {
 				LocalDateTime endDateTime = LocalDateTime.MAX;
 				
 				// If the filter name is provided, we can validate the dates
-				if (!filterName.trim().equals("")) {
+				if (!filterName.trim().isEmpty()) {
 					
 					boolean datesValid = false;
 					
@@ -575,19 +575,19 @@ public class FilterDialog extends Stage {
 				String filterName = tbx_filterName.getText();
 				
 				int baseSizeMin = -1;
-				if (!tbx_fileSizeMin.getText().trim().equals("")) {
+				if (!tbx_fileSizeMin.getText().trim().isEmpty()) {
 					
-					baseSizeMin = (Integer.valueOf(tbx_fileSizeMin.getText()));
+					baseSizeMin = (Integer.parseInt(tbx_fileSizeMin.getText()));
 				}
 				
 				int baseSizeMax = -1;
-				if (!tbx_fileSizeMax.getText().trim().equals("")) {
+				if (!tbx_fileSizeMax.getText().trim().isEmpty()) {
 					
-					baseSizeMax = (Integer.valueOf(tbx_fileSizeMax.getText()));
+					baseSizeMax = (Integer.parseInt(tbx_fileSizeMax.getText()));
 				}
 				
 				// If the filter name is given, either of the size textboxes are filled in, we will further process the input
-				if (!filterName.trim().equals("") && (baseSizeMin >= 0 || baseSizeMax >= 0)) {
+				if (!filterName.trim().isEmpty() && (baseSizeMin >= 0 || baseSizeMax >= 0)) {
 					
 					int minSizeUnit = cbx_fileSizeMin.getSelectionModel().getSelectedIndex();
 					int maxSizeUnit = cbx_fileSizeMax.getSelectionModel().getSelectedIndex();

@@ -22,31 +22,31 @@
          <children>
             <TabPane prefHeight="80.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE">
               <tabs>
-                  <Tab fx:id="tab_home" text="Home">
+                  <Tab text="Home">
                      <content>
                         <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="8.0">
                            <padding>
                               <Insets left="8.0" right="8.0" />
                            </padding>
                            <children>
-                              <Button fx:id="btn_addFolder" mnemonicParsing="false" onAction="#btn_addFolder_clicked" text="Add Folder" />
-                              <Button fx:id="btn_delete" mnemonicParsing="false" onAction="#btn_delete_clicked" text="Delete" />
-                              <Button fx:id="btn_rename" mnemonicParsing="false" onAction="#btn_rename_clicked" text="Rename" />
-                              <Button fx:id="btn_move" mnemonicParsing="false" onAction="#btn_move_clicked" text="Move" />
+                              <Button mnemonicParsing="false" onAction="#btn_addFolder_clicked" text="Add Folder" />
+                              <Button mnemonicParsing="false" onAction="#btn_delete_clicked" text="Delete" />
+                              <Button mnemonicParsing="false" onAction="#btn_rename_clicked" text="Rename" />
+                              <Button mnemonicParsing="false" onAction="#btn_move_clicked" text="Move" />
                            </children>
                         </HBox>
                      </content>
                   </Tab>
-                <Tab fx:id="tab_query" text="Query">
+                <Tab text="Query">
                      <content>
                         <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="8.0">
                            <children>
-                              <TextField fx:id="tbx_search" maxHeight="-Infinity" onAction="#btn_search_clicked" prefHeight="24.0" promptText="Search for Files">
+                              <TextField fx:id="tbx_search" maxHeight="-Infinity" onAction="#updateFiles" prefHeight="24.0" promptText="Search for Files">
                                  <HBox.margin>
                                     <Insets />
                                  </HBox.margin>
                               </TextField>
-                              <Button fx:id="btn_search" mnemonicParsing="false" onAction="#btn_search_clicked" text="Search" />
+                              <Button mnemonicParsing="false" onAction="#updateFiles" text="Search" />
                            </children>
                            <padding>
                               <Insets left="8.0" right="8.0" />
@@ -54,29 +54,29 @@
                         </HBox>
                      </content>
                 </Tab>
-                <Tab fx:id="tab_filter" text="Filter">
+                <Tab text="Filter">
                      <content>
                         <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="8.0">
                            <children>
-                              <Button fx:id="btn_addFilter" mnemonicParsing="false" onAction="#btn_addFilter_clicked" text="Add Filter" />
+                              <Button mnemonicParsing="false" onAction="#displayFilterCreateDialog" text="Add Filter" />
                            </children>
                            <padding>
                               <Insets left="8.0" right="8.0" />
                            </padding>
                         </HBox>
                      </content></Tab>
-                  <Tab fx:id="tab_sort" text="Sort">
+                  <Tab text="Sort">
                      <content>
                         <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="8.0">
                            <padding>
                               <Insets left="8.0" right="8.0" />
                            </padding>
                            <children>
-                              <Button fx:id="btn_addSort" mnemonicParsing="false" onAction="#btn_addSort_clicked" text="Add Sort Criteria" />
+                              <Button mnemonicParsing="false" onAction="#displaySortCreateDialog" text="Add Sort Criteria" />
                            </children>
                         </HBox>
                      </content></Tab>
-                  <Tab fx:id="tab_db" text="Database" />
+                  <Tab text="Database" />
               </tabs>
             </TabPane>
          </children>
@@ -140,12 +140,12 @@
                                           </ScrollPane>
                                           <VBox minHeight="56.0" minWidth="28.0" prefHeight="56.0" prefWidth="28.0" spacing="2.0">
                                              <children>
-                                                <Button fx:id="btn_filterStackAdd" minHeight="28.0" minWidth="28.0" mnemonicParsing="false" onAction="#btn_filterStackAdd_clicked" prefHeight="28.0" prefWidth="28.0" text="+" textAlignment="CENTER">
+                                                <Button minHeight="28.0" minWidth="28.0" mnemonicParsing="false" onAction="#displayFilterCreateDialog" prefHeight="28.0" prefWidth="28.0" text="+" textAlignment="CENTER">
                                                    <font>
                                                       <Font name="System Bold" size="12.0" />
                                                    </font>
                                                 </Button>
-                                                <Button fx:id="btn_filterStackRemove" minHeight="28.0" minWidth="28.0" mnemonicParsing="false" onAction="#btn_filterStackRemove_clicked" prefHeight="28.0" prefWidth="28.0" text="-" textAlignment="CENTER" />
+                                                <Button minHeight="28.0" minWidth="28.0" mnemonicParsing="false" onAction="#btn_filterStackRemove_clicked" prefHeight="28.0" prefWidth="28.0" text="-" textAlignment="CENTER" />
                                              </children>
                                              <HBox.margin>
                                                 <Insets top="16.0" />
@@ -167,12 +167,12 @@
                                              <children>
                                                 <VBox prefHeight="200.0" prefWidth="100.0">
                                                    <children>
-                                                      <Button fx:id="btn_sortStackAdd" minHeight="28.0" minWidth="28.0" mnemonicParsing="false" onAction="#btn_sortStackAdd_clicked" prefHeight="28.0" prefWidth="28.0" text="+" textAlignment="CENTER">
+                                                      <Button minHeight="28.0" minWidth="28.0" mnemonicParsing="false" onAction="#displaySortCreateDialog" prefHeight="28.0" prefWidth="28.0" text="+" textAlignment="CENTER">
                                                          <font>
                                                             <Font name="System Bold" size="12.0" />
                                                          </font>
                                                       </Button>
-                                                      <Button fx:id="btn_sortStackRemove" minHeight="28.0" minWidth="28.0" mnemonicParsing="false" onAction="#btn_sortStackRemove_clicked" prefHeight="28.0" prefWidth="28.0" text="-" textAlignment="CENTER">
+                                                      <Button minHeight="28.0" minWidth="28.0" mnemonicParsing="false" onAction="#btn_sortStackRemove_clicked" prefHeight="28.0" prefWidth="28.0" text="-" textAlignment="CENTER">
                                                          <font>
                                                             <Font name="System Bold" size="12.0" />
                                                          </font>
@@ -181,12 +181,12 @@
                                                 </VBox>
                                                 <VBox prefHeight="200.0" prefWidth="100.0">
                                                    <children>
-                                                      <Button fx:id="btn_sortStackUp" minHeight="28.0" minWidth="28.0" mnemonicParsing="false" onAction="#btn_sortStackUp_clicked" prefHeight="28.0" prefWidth="28.0" text="^" textAlignment="CENTER">
+                                                      <Button minHeight="28.0" minWidth="28.0" mnemonicParsing="false" onAction="#btn_sortStackUp_clicked" prefHeight="28.0" prefWidth="28.0" text="^" textAlignment="CENTER">
                                                          <font>
                                                             <Font name="System Bold" size="12.0" />
                                                          </font>
                                                       </Button>
-                                                      <Button fx:id="btn_sortStackDown" minHeight="28.0" minWidth="28.0" mnemonicParsing="false" onAction="#btn_sortStackDown_clicked" prefHeight="28.0" prefWidth="28.0" text="v" textAlignment="CENTER" />
+                                                      <Button minHeight="28.0" minWidth="28.0" mnemonicParsing="false" onAction="#btn_sortStackDown_clicked" prefHeight="28.0" prefWidth="28.0" text="v" textAlignment="CENTER" />
                                                    </children>
                                                 </VBox>
                                              </children>

@@ -12,7 +12,7 @@ import java.util.ArrayList;
  */
 public final class QueryFilter {
     // This contains more than the visible items because they are not postprocessed.
-    private RoaringBitmap visibleItems = RoaringBitmap.bitmapOfRange(0, 0x100000000L);
+    private final RoaringBitmap visibleItems = RoaringBitmap.bitmapOfRange(0, 0x100000000L);
     private final ArrayList<String> roots = new ArrayList<>();
     private String query = UIController.fileSeparator;
     private long fileSizeLower, fileSizeUpper = Long.MAX_VALUE;

@@ -29,39 +29,6 @@ public class UIController {
 
     @FXML
     private BorderPane bp_root;
-    
-    @FXML
-    private Button btn_addFolder;
-
-    @FXML
-    private Button btn_addFilter;
-
-    @FXML
-    private Button btn_sortStackAdd;
-
-    @FXML
-    private Button btn_sortStackRemove;
-    
-    @FXML
-    private Button btn_sortStackUp;
-    
-    @FXML
-    private Button btn_filterStackAdd;
-    
-    @FXML
-    private Button btn_filterStackRemove;
-
-    @FXML
-    private Button btn_search;
-
-    @FXML
-    private Button btn_delete;
-
-    @FXML
-    private Button btn_rename;
-
-    @FXML
-    private Button btn_move;
 
     @FXML
     private ListView<FilterStep> lsv_filterStack;
@@ -71,21 +38,6 @@ public class UIController {
 
     @FXML
     private ListView<String> lsv_fileDisplay;
-
-    @FXML
-    private Tab tab_db;
-
-    @FXML
-    private Tab tab_filter;
-
-    @FXML
-    private Tab tab_query;
-
-    @FXML
-    private Tab tab_sort;
-    
-    @FXML
-    private Tab tab_home;
 
     @FXML
     private TextField tbx_search;
@@ -99,21 +51,21 @@ public class UIController {
     }
     
     @FXML
-    void btn_addFolder_clicked(ActionEvent event) {
+    void btn_addFolder_clicked(ActionEvent ignoredEvent) {
         loadDirectory();
     }
 
     @FXML
-    public void btn_search_clicked(ActionEvent ignoredEvent) {
+    public void updateFiles(ActionEvent ignoredEvent) {
         filter.setQuery(tbx_search.getText());
         fileNames = switchboard.search(filter);
-        updateFiles();
+        displayFiles();
     }
 
     @FXML
     public void btn_delete_clicked(ActionEvent ignoredEvent) {
         switchboard.delete(lsv_fileDisplay.getSelectionModel().getSelectedItems());
-        btn_search_clicked(ignoredEvent);
+        updateFiles(ignoredEvent);
     }
 
     @FXML
@@ -124,7 +76,7 @@ public class UIController {
         inputDialog.showAndWait().ifPresent(newName -> {
             switchboard.rename(lsv_fileDisplay.getSelectionModel().getSelectedItems(), newName);
         });
-        btn_search_clicked(ignoredEvent);
+        updateFiles(ignoredEvent);
     }
 
     @FXML
@@ -133,21 +85,9 @@ public class UIController {
         chooser.setTitle("Choose directory to move files to:");
         String dest = chooser.showDialog(null).getAbsolutePath();
         switchboard.move(lsv_fileDisplay.getSelectionModel().getSelectedItems(), dest);
-        btn_search_clicked(ignoredEvent);
+        updateFiles(ignoredEvent);
     }
 
-    @FXML
-    void btn_addFilter_clicked(ActionEvent event) {
-    	
-    	displayFilterCreateDialog();
-    }
-    
-    @FXML
-    void btn_addSort_clicked(ActionEvent event) {
-    	
-    	displaySortCreateDialog();
-    }
-    
     @FXML
     void lsv_fileDisplay_clicked(MouseEvent event) {
     	
@@ -157,15 +97,9 @@ public class UIController {
             switchboard.openFile(filePath);
         }
     }
-    
-    @FXML
-    void btn_filterStackAdd_clicked(ActionEvent event) {
-    	
-    	displayFilterCreateDialog();
-    }
 
     @FXML
-    void btn_filterStackRemove_clicked(ActionEvent event) {
+    void btn_filterStackRemove_clicked(ActionEvent ignoredEvent) {
     	
     	if (selectedFilterIndex != -1) {
     		
@@ -183,17 +117,11 @@ public class UIController {
     	}
 
         filter.resetFilterSteps(filterList);
-        btn_search_clicked(null);
+        updateFiles(null);
     }
-    
+
     @FXML
-    void btn_sortStackAdd_clicked(ActionEvent event) {
-    	
-    	displaySortCreateDialog();
-    }
-    
-    @FXML
-    void btn_sortStackRemove_clicked(ActionEvent event) {
+    void btn_sortStackRemove_clicked(ActionEvent ignoredEvent) {
     	
     	if (selectedSortIndex != -1) {
     		
@@ -210,7 +138,8 @@ public class UIController {
     		selectedSortIndex = -1;
     	}
     }
-    
+
+    @FXML
     private void displaySortCreateDialog() {
     	
     	SortDialog sortDialog = new SortDialog(this);
@@ -237,7 +166,8 @@ public class UIController {
     	lsv_sortStack.getSelectionModel().clearAndSelect(index);
     }
     
-    private void displayFilterCreateDialog() {
+    @FXML
+    void displayFilterCreateDialog() {
     	
     	FilterDialog filterDialog = new FilterDialog(this);
     	filterDialog.displayCreateDialog();
@@ -252,7 +182,7 @@ public class UIController {
     public void onFilterAdd(FilterStep filterStep) {
     	filterList.add(filterStep);
         filter.resetFilterSteps(filterList);
-        btn_search_clicked(null);
+        updateFiles(null);
     }
     
     public void onFilterEdit(int index, FilterStep edited) {
@@ -263,11 +193,11 @@ public class UIController {
     	lsv_filterStack.getSelectionModel().clearAndSelect(index);
 
         filter.resetFilterSteps(filterList);
-        btn_search_clicked(null);
+        updateFiles(null);
     }
     
     @FXML
-    void btn_sortStackUp_clicked(ActionEvent event) {
+    void btn_sortStackUp_clicked(ActionEvent ignoredEvent) {
     	
     	if (selectedSortIndex > 0) {
     		
@@ -280,7 +210,7 @@ public class UIController {
     }
     
     @FXML
-    void btn_sortStackDown_clicked(ActionEvent event) {
+    void btn_sortStackDown_clicked(ActionEvent ignoredEvent) {
     	
     	// TODO: Implement actual code here (this code is completely untested and doesn't update the listview)
     	
@@ -452,7 +382,7 @@ public class UIController {
             if (directoryAlreadyAccessible) return;
 
             fileNames = switchboard.search(filter);
-            updateFiles();
+            displayFiles();
             updateDirTree();
         } catch (NullPointerException ignored) {}
     }
@@ -463,16 +393,6 @@ public class UIController {
     public void shutDown() {
         switchboard.shutDown();
     }
-
-    /**
-     * Update the list of files.
-     */
-    // TODO: Do we need to delete this?
-    public void updateFiles() {
-        displayFiles();
-    }
-
-
 
     /**
      * Updates the Directory treeview using the provided list of top-level directories.<br>
@@ -522,7 +442,7 @@ public class UIController {
     public void notifyBackendSwapCompleted() {
         if (!waitingForSwap) {
             fileNames = switchboard.search(filter);
-            updateFiles();
+            displayFiles();
         }
         if (waitingForSwapDialog != null) {
             waitingForSwapDialog.close();
@@ -553,12 +473,12 @@ public class UIController {
 
     public void disallowAllFilesInDirectory(String dirPath) {
         fileNames = switchboard.disallowFilesInDirectory(filter, dirPath);
-        updateFiles();
+        displayFiles();
     }
 
     public void toggleFilesInDirectory(String dirPath) {
         fileNames = switchboard.toggleVisibleFiles(filter, dirPath);
-        updateFiles();
+        displayFiles();
     }
 
     /**

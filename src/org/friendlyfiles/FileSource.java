@@ -31,19 +31,6 @@ public class FileSource {
     }
 
     /**
-     * Changes the name of a directory.
-     *
-     * @param oldPath the path to the directory to be renamed
-     * @param newName the name to change the old name to
-     * @throws FileAlreadyExistsException if the new file name already exists
-     * @throws IOException                if an I/O error occurs
-     */
-    //@Override
-    public void renameDir(Path oldPath, String newName) throws FileAlreadyExistsException, IOException {
-        Files.move(oldPath, oldPath.resolveSibling(newName));
-    }
-
-    /**
      * Changes the name of a file.
      *
      * @param oldPath the path to the file to be renamed
@@ -70,32 +57,6 @@ public class FileSource {
     //@Override
     public void remove(Path path) throws NoSuchFileException, IOException {
         Files.delete(path);
-    }
-
-    /**
-     * Removes the entire tree of the file system beneath the given path.
-     * <p>
-     * This method deletes the directory passed in and all the files and
-     * directories inside of it.
-     *
-     * @param top the directory to remove
-     * @throws IOException if an I/O error occurs
-     */
-    // @Override
-    public void rmrf(Path top) throws IOException {
-        Files.walkFileTree(top, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                Files.delete(file);
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-                Files.delete(dir);
-                return FileVisitResult.CONTINUE;
-            }
-        });
     }
 
     /**
