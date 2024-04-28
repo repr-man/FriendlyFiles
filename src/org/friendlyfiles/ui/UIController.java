@@ -426,11 +426,13 @@ public class UIController {
             } catch (Exception e) {
                 // If we can't open the database file, we just start making a new one.
                 switchboard = new Switchboard(this, new PostingList(dbPath), new FileSource());
-                showWaitingForSwapDialog();
+                waitingForSwap = true;
+                //showWaitingForSwapDialog();
             }
         } else {
             switchboard = new Switchboard(this, new PostingList(dbPath), new FileSource());
-            showWaitingForSwapDialog();
+            waitingForSwap = true;
+            //showWaitingForSwapDialog();
         }
     }
     
@@ -438,6 +440,7 @@ public class UIController {
      * Prompts the user for a root directory and loads its files into the UI.
      */
     public void loadDirectory() {
+        if (waitingForSwap) showWaitingForSwapDialog();
     	DirectoryChooser chooser = new DirectoryChooser();
         chooser.setTitle("Add search root:");
         try {
@@ -532,7 +535,7 @@ public class UIController {
         waitingForSwapDialog = new Dialog<>();
         waitingForSwapDialog.setHeaderText("One moment, please...");
         waitingForSwapDialog.setContentText("We are indexing your file system.");
-        waitingForSwapDialog.show();
+        waitingForSwapDialog.showAndWait();
     }
 
     /**
