@@ -4,10 +4,7 @@ import org.friendlyfiles.ui.UIController;
 import org.roaringbitmap.RoaringBitmap;
 
 import java.util.ArrayList;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
-import java.util.stream.Collectors;
 
 /**
  * Handles and passes all filters except the search query between the UI and the backend.
@@ -20,19 +17,15 @@ public final class QueryFilter {
     private long fileSizeLower, fileSizeUpper = Long.MAX_VALUE;
     private long dateTimeStart, dateTimeEnd = Long.MAX_VALUE;
     
-    private ArrayList<String> textSearchTerms = new ArrayList<String>();
+    private ArrayList<String> textSearchTerms = new ArrayList<>();
     private Pattern textBuildPattern;
     
-    private ArrayList<String> extSearchTerms = new ArrayList<String>();
+    private ArrayList<String> extSearchTerms = new ArrayList<>();
     private Pattern extBuildPattern;
     
 
     public RoaringBitmap getVisibleItems() {
         return visibleItems;
-    }
-
-    public void setVisibleItems(RoaringBitmap visibleItems) {
-        this.visibleItems = visibleItems;
     }
 
     public String getQuery() {
@@ -65,15 +58,6 @@ public final class QueryFilter {
         return false;
     }
 
-    /**
-     * Removes one of the root directories from the filter.
-     *
-     * @param rootPath the name of the directory to remove
-     */
-    public void removeRoot(String rootPath) {
-        roots.remove(rootPath);
-    }
-    
     public void addTextFilter(String text) {
     	
     	assert(text.trim() != "");
@@ -89,7 +73,11 @@ public final class QueryFilter {
     	textSearchTerms.remove(text);
     	textBuildPattern = Pattern.compile(String.join("|", textSearchTerms));
     }
-    
+
+    public ArrayList<String> getTextSearchTerms() {
+        return textSearchTerms;
+    }
+
     public void addExtFilter(String ext) {
     	
     	assert(ext.length() > 1 && ext.startsWith("."));
@@ -104,6 +92,10 @@ public final class QueryFilter {
     	
     	extSearchTerms.remove(ext);
     	extBuildPattern = Pattern.compile(String.join("|", extSearchTerms));
+    }
+
+    public ArrayList<String> getExtSearchTerms() {
+        return extSearchTerms;
     }
 
     /**

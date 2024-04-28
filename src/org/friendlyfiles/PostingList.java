@@ -132,6 +132,7 @@ import java.util.stream.*;
  * </ul>
  */
 public final class PostingList implements Backend {
+    private RoaringBitmap stage1Cache;
     private final String plFileLocation;
     private final List<RoaringBitmap> lists;
     private ArrayList<String> paths;
@@ -409,36 +410,62 @@ public final class PostingList implements Backend {
      */
     @Override
     public Stream<String> get(QueryFilter filter) {
-        RoaringBitmap bitset;
-        String[] splitQuery = filter.getQuery().split("\\s");
-        ForkJoinTask<RoaringBitmap> filteredBitset = ForkJoinPool.commonPool().submit(() -> getFiltered(filter));
-        bitset = Arrays.stream(splitQuery).parallel()
-                         .map(this::getStrings)
-                         .reduce(RoaringBitmap.bitmapOfRange(0, paths.size()), (acc, item) -> RoaringBitmap.and(acc, item));
-        RoaringBitmap filtered = filteredBitset.join();
-        bitset.and(filtered);
+        // Start searching numeric arrays.
+        ForkJoinTask<RoaringBitmap> fileSizeQueryTask = ForkJoinPool.commonPool().submit(() -> getFiltered(filter));
+        // TODO: Add date task.
 
-        //return bitset.stream()
-        //             .parallel()
-        //             .filter(i -> Arrays.stream(splitQuery).allMatch(paths.get(i)::contains))
-        //             .mapToObj(i -> paths.get(i));
-        bitset = RoaringBitmap.and(getPostprocessed(bitset, splitQuery), filter.getVisibleItems());
-        return bitset.stream().parallel().mapToObj(paths::get);
+        // Search text-related things.
+        String[] splitQuery = filter.getQuery().split("\\s");
+        ForkJoinTask<RoaringBitmap> searchQueryTask = ForkJoinPool.commonPool().submit(() ->
+                    Arrays.stream(splitQuery).parallel()
+                       .map(this::getStrings)
+                       .reduce(RoaringBitmap.bitmapOfRange(0, paths.size()), (acc, item) -> RoaringBitmap.and(acc, item)));
+        ForkJoinTask<RoaringBitmap> additiveSearchQueryTask = ForkJoinPool.commonPool().submit(() -> {
+            if (filter.getTextSearchTerms().isEmpty()) return RoaringBitmap.bitmapOfRange(0, 0x100000000L);
+            return filter.getTextSearchTerms().parallelStream()
+                    .map(this::getStrings)
+                    .reduce(RoaringBitmap.bitmapOfRange(0, paths.size()), (acc, item) -> RoaringBitmap.and(acc, item));
+        });
+        ForkJoinTask<RoaringBitmap> extensionQueryTask = ForkJoinPool.commonPool().submit(() -> {
+            if (filter.getExtSearchTerms().isEmpty()) return RoaringBitmap.bitmapOfRange(0, 0x100000000L);
+            return filter.getTextSearchTerms().parallelStream()
+                    .map(this::getStrings)
+                    .reduce(RoaringBitmap.bitmapOfRange(0, paths.size()), (acc, item) -> RoaringBitmap.and(acc, item));
+        });
+
+        // Combine all the bitmaps.
+        // TODO: Finish these.
+        stage1Cache = new RoaringBitmap(filter.getVisibleItems().toMutableRoaringBitmap());
+        stage1Cache.and(searchQueryTask.join());
+        stage1Cache.and(additiveSearchQueryTask.join());
+        stage1Cache.and(extensionQueryTask.join());
+        stage1Cache.and(fileSizeQueryTask.join());
+        //stage1Cache.and(fileDateQueryTask.join());
+
+        return getPostprocessed(filter, splitQuery);
     }
 
-    /**
-     * Filters strings in a bit set using normal string searching.
-     *
-     * @param bitset     the set of items to postprocess
-     * @param splitQuery the strings to ensure exist in the output
-     * @return a stream of file names corresponding to the results of the postprocessing
-     */
-    @Override
-    public RoaringBitmap getPostprocessed(RoaringBitmap bitset, String[] splitQuery) {
-        // This CANNOT be made parallel!
-        return bitset.stream()
-                .filter(i -> Arrays.stream(splitQuery).allMatch(paths.get(i)::contains))
-                .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or);
+    private Stream<String> getPostprocessed(QueryFilter filter, String[] splitQuery) {
+        Stream<String> outStream = stage1Cache.stream().parallel()
+                .filter(i -> {
+                    if (filter.getTextSearchTerms().isEmpty()) return true;
+                    for (String extension : filter.getExtSearchTerms()) {
+                        if (paths.get(i).endsWith(extension)) return true;
+                    }
+                    return false;
+                })
+                .filter(i -> Arrays.stream(splitQuery).parallel().allMatch(paths.get(i)::contains))
+                .filter(i -> {
+                    if (filter.getTextSearchTerms().isEmpty()) return true;
+                    return filter.getTextSearchTerms().parallelStream().anyMatch(paths.get(i)::contains);
+                })
+                .mapToObj(i -> paths.get(i));
+        return getSorted(filter, outStream);
+    }
+
+    private Stream<String> getSorted(QueryFilter filter, Stream<String> outStream) {
+        // TODO: Nathaniel, add your sorting logic right here!
+        return outStream;
     }
 
     /**
@@ -552,6 +579,12 @@ public final class PostingList implements Backend {
         return get(filter);
     }
 
+    /**
+     * Finds all the files associated with a root and adds them to the filter's visible items.
+     *
+     * @param topDirectory the root to add
+     * @param filter the filter to ad the root to
+     */
     public void addRootToFilter(String topDirectory, QueryFilter filter) {
         RoaringBitmap newFiles = getStrings(topDirectory + UIController.fileSeparator).stream().parallel()
                                          .filter(i -> paths.get(i).startsWith(topDirectory + UIController.fileSeparator))

@@ -78,5 +78,5 @@ public interface Backend extends AutoCloseable {
      * @param splitQuery the strings to ensure exist in the output
      * @return a stream of file names corresponding to the results of the postprocessing
      */
-    RoaringBitmap getPostprocessed(RoaringBitmap bitset, String[] splitQuery);
+    //RoaringBitmap getPostprocessed(RoaringBitmap bitset, String[] splitQuery);
 }
