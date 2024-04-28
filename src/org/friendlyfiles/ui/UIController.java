@@ -339,7 +339,7 @@ public class UIController {
     private int selectedSortIndex = -1;
 
     private Dialog<Object> waitingForSwapDialog = null;
-    private boolean waitingForSwap = true;
+    private boolean waitingForSwap = false;
 
     private Switchboard switchboard;
 
@@ -347,8 +347,6 @@ public class UIController {
     private Stream<String> fileNames;
 
     private final QueryFilter filter = new QueryFilter();
-
-    private final ObservableSet<DirectoryTreeItem> checkedDirItems = FXCollections.observableSet();
 
     public void initialize() {
         // Enable caching of the file display panel
@@ -358,8 +356,8 @@ public class UIController {
         // Set up file listview selection
         lsv_fileDisplay.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         
-        filterList = FXCollections.observableList(new ArrayList<FilterStep>());
-        sortList = FXCollections.observableArrayList(new ArrayList<SortStep>());
+        filterList = FXCollections.observableList(new ArrayList<>());
+        sortList = FXCollections.observableArrayList(new ArrayList<>());
         
         lsv_filterStack.setItems(filterList);
         lsv_sortStack.setItems(sortList);
@@ -427,12 +425,10 @@ public class UIController {
                 // If we can't open the database file, we just start making a new one.
                 switchboard = new Switchboard(this, new PostingList(dbPath), new FileSource());
                 waitingForSwap = true;
-                //showWaitingForSwapDialog();
             }
         } else {
             switchboard = new Switchboard(this, new PostingList(dbPath), new FileSource());
             waitingForSwap = true;
-            //showWaitingForSwapDialog();
         }
     }
     
