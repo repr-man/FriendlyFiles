@@ -138,7 +138,7 @@ public class FilterDialog extends Stage {
 	
 	public void displayEditDialog(ObservableList<FilterStep> stepList, int selectedIndex) {
 		
-		FilterStep step = stepList.get(selectedIndex);
+		FilterStep step = stepList == null ? null : stepList.get(selectedIndex);
 		
 		setTitle("Filter Editor");
     	initModality(Modality.APPLICATION_MODAL);
@@ -179,19 +179,19 @@ public class FilterDialog extends Stage {
     	switch (step.getType()) {
 		
 			case TEXT:
-				dynamicContentPane.getChildren().add(option_fileName((FileTextFilter)step, selectedIndex));
+				dynamicContentPane.getChildren().add(option_fileName(stepList, selectedIndex));
 				break;
 				
 			case EXTENSION:
-				dynamicContentPane.getChildren().add(option_fileExtension((FileExtensionFilter)step, selectedIndex));
+				dynamicContentPane.getChildren().add(option_fileExtension(stepList, selectedIndex));
 				break;
 				
 			case DATE_EDITED:
-				dynamicContentPane.getChildren().add(option_lastAccess((FileDateFilter)step, selectedIndex));
+				dynamicContentPane.getChildren().add(option_lastAccess(stepList, selectedIndex));
 				break;
 				
 			case FILESIZE:
-				dynamicContentPane.getChildren().add(option_fileSize((FileSizeFilter)step, selectedIndex));
+				dynamicContentPane.getChildren().add(option_fileSize(stepList, selectedIndex));
 				break;
 		}
     	
@@ -211,7 +211,9 @@ public class FilterDialog extends Stage {
 	}
 	
 	// UI for adding a filename filter
-	private VBox option_fileName(FileTextFilter oldFilter, Integer indexAt) {
+	private VBox option_fileName(ObservableList<FilterStep> stepList, Integer indexAt) {
+		
+		FileTextFilter oldFilter = stepList == null ? null : (FileTextFilter)stepList.get(indexAt);
 		
 		VBox content = new VBox(8);
 		content.setAlignment(Pos.TOP_CENTER);
@@ -266,7 +268,9 @@ public class FilterDialog extends Stage {
 	
 	
 	// UI for adding a file extension filter
-	private VBox option_fileExtension(FileExtensionFilter oldFilter, Integer indexAt) {
+	private VBox option_fileExtension(ObservableList<FilterStep> stepList, Integer indexAt) {
+		
+		FileExtensionFilter oldFilter = (FileExtensionFilter)stepList.get(indexAt);
 		
 		VBox content = new VBox(8);
 		content.setAlignment(Pos.TOP_CENTER);
@@ -326,7 +330,11 @@ public class FilterDialog extends Stage {
 	}
 	
 	// UI for adding a last accessed filter
-	private VBox option_lastAccess(FileDateFilter oldFilter, Integer indexAt) {
+	private VBox option_lastAccess(ObservableList<FilterStep> stepList, Integer indexAt) {
+		
+		
+		
+		FileDateFilter oldFilter = stepList == null ? null : (FileDateFilter)stepList.get(indexAt);
 		
 		VBox content = new VBox(8);
 		content.setAlignment(Pos.TOP_CENTER);
@@ -498,7 +506,9 @@ public class FilterDialog extends Stage {
 	}
 	
 	// UI for adding a file size filter
-	private VBox option_fileSize(FileSizeFilter oldFilter, Integer indexAt) {
+	private VBox option_fileSize(ObservableList<FilterStep> stepList, Integer indexAt) {
+		
+		FileSizeFilter oldFilter = stepList == null ? null : (FileSizeFilter)stepList.get(indexAt);
 		
 		VBox content = new VBox(8);
 		content.setAlignment(Pos.TOP_CENTER);
