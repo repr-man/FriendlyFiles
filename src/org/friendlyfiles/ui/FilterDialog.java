@@ -575,7 +575,7 @@ public class FilterDialog extends Stage {
 		ComboBox<String> cbx_fileSizeMin = new ComboBox<String>(
 				FXCollections.observableArrayList(FileSizeFilter.getUnitNames()));
 		cbx_fileSizeMin.getSelectionModel().clearAndSelect(1);
-		cbx_fileSizeMin.setMaxWidth(60);
+		cbx_fileSizeMin.setMaxWidth(70);
 		optionMinSize_controls.getChildren().add(cbx_fileSizeMin);
 
 		VBox optionMaxSize = new VBox(8);
@@ -592,7 +592,7 @@ public class FilterDialog extends Stage {
 		ComboBox<String> cbx_fileSizeMax = new ComboBox<String>(
 				FXCollections.observableArrayList(FileSizeFilter.getUnitNames()));
 		cbx_fileSizeMax.getSelectionModel().clearAndSelect(1);
-		cbx_fileSizeMax.setMaxWidth(60);
+		cbx_fileSizeMax.setMaxWidth(70);
 		optionMaxSize_controls.getChildren().add(cbx_fileSizeMax);
 
 		tbx_fileSizeMin.textProperty().addListener((obs, oldVal, newVal) -> {
