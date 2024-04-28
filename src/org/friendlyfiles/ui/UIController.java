@@ -170,7 +170,7 @@ public class UIController {
     void displayFilterCreateDialog() {
     	
     	FilterDialog filterDialog = new FilterDialog(this);
-    	filterDialog.displayCreateDialog();
+    	filterDialog.displayCreateDialog(filterList);
     }
     
     private void displayFilterEditDialog(int stepIndex) {
