@@ -147,6 +147,8 @@ public class UIController {
         		
         		selectedSortIndex--;
         	}
+            filter.getSortSteps().remove(selectedSortIndex);
+            updateFiles(null);
     	}
     	
     	if (sortList.isEmpty()) {
@@ -172,6 +174,8 @@ public class UIController {
     public void onSortAdd(SortStep sort) {
     	
     	sortList.add(sort);
+        filter.getSortSteps().add(sort);
+        updateFiles(null);
     }
     
     public void onSortEdit(int index, SortStep edited) {
@@ -180,6 +184,10 @@ public class UIController {
     	sortList.add(index, edited);
     	
     	lsv_sortStack.getSelectionModel().clearAndSelect(index);
+
+        filter.getSortSteps().remove(index);
+        filter.getSortSteps().add(index, edited);
+        updateFiles(null);
     }
     
     @FXML

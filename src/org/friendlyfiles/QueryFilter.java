@@ -1,7 +1,7 @@
 package org.friendlyfiles;
 
 import javafx.collections.ObservableList;
-import org.friendlyfiles.models.FilterStep;
+import org.friendlyfiles.models.*;
 import org.friendlyfiles.ui.UIController;
 import org.roaringbitmap.RoaringBitmap;
 
@@ -19,7 +19,7 @@ public final class QueryFilter {
     private long dateTimeStart, dateTimeEnd = Long.MAX_VALUE;
     private final ArrayList<String> textSearchTerms = new ArrayList<>();
     private final ArrayList<String> extSearchTerms = new ArrayList<>();
-
+    private final ArrayList<SortStep> sortSteps = new ArrayList<>();
 
     public RoaringBitmap getVisibleItems() {
         return visibleItems;
@@ -38,6 +38,10 @@ public final class QueryFilter {
      */
     public ArrayList<String> getRoots() {
         return roots;
+    }
+
+    public ArrayList<SortStep> getSortSteps() {
+        return sortSteps;
     }
 
     /**

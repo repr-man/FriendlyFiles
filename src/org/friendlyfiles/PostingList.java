@@ -1,5 +1,6 @@
 package org.friendlyfiles;
 
+import org.friendlyfiles.models.SortStep;
 import org.friendlyfiles.ui.UIController;
 import org.roaringbitmap.*;
 
@@ -338,14 +339,14 @@ public final class PostingList {
         // Compact the haystack.
         if (numHoles > 127) {
             paths = (ArrayList<String>) paths.parallelStream()
-                    .filter(String::isEmpty)
-                    .collect(Collectors.toList());
+                                                .filter(String::isEmpty)
+                                                .collect(Collectors.toList());
             sizes = (ArrayList<Long>) sizes.parallelStream()
-                    .filter(size -> size > Long.MIN_VALUE)
-                    .collect(Collectors.toList());
+                                              .filter(size -> size > Long.MIN_VALUE)
+                                              .collect(Collectors.toList());
             timestamps = (ArrayList<Long>) timestamps.parallelStream()
-                    .filter(time -> time > Long.MIN_VALUE)
-                    .collect(Collectors.toList());
+                                                   .filter(time -> time > Long.MIN_VALUE)
+                                                   .collect(Collectors.toList());
             lists.parallelStream().forEach(RoaringBitmap::clear);
             IntStream.range(0, paths.size()).parallel().forEach(i -> {
                 if (paths.get(i).length() >= 3) {
@@ -420,33 +421,33 @@ public final class PostingList {
     public Stream<String> get(QueryFilter filter) {
         // Start searching numeric arrays.
         ForkJoinTask<RoaringBitmap> fileSizeQueryTask = ForkJoinPool.commonPool().submit(() -> IntStream.range(0, sizes.size())
-                    .filter(i -> filter.isInFileSizeRange(sizes.get(i)))
-                    .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or));
+                                                                                                       .filter(i -> filter.isInFileSizeRange(sizes.get(i)))
+                                                                                                       .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or));
         ForkJoinTask<RoaringBitmap> dateQueryTask = ForkJoinPool.commonPool().submit(() -> IntStream.range(0, timestamps.size())
-                    .filter(i -> filter.isInFileDateRange(timestamps.get(i)))
-                    .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or));
+                                                                                                   .filter(i -> filter.isInFileDateRange(timestamps.get(i)))
+                                                                                                   .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or));
 
         // Search text-related things.
         String[] splitQuery = filter.getQuery().split("\\s");
         ForkJoinTask<RoaringBitmap> searchQueryTask = ForkJoinPool.commonPool().submit(() ->
-                    Arrays.stream(splitQuery).parallel()
-                       .map(this::getStrings)
-                       .reduce(RoaringBitmap.bitmapOfRange(0, paths.size()), (acc, item) -> RoaringBitmap.and(acc, item)));
+                                                                                               Arrays.stream(splitQuery).parallel()
+                                                                                                       .map(this::getStrings)
+                                                                                                       .reduce(RoaringBitmap.bitmapOfRange(0, paths.size()), (acc, item) -> RoaringBitmap.and(acc, item)));
         ForkJoinTask<RoaringBitmap> rootsQueryTask = ForkJoinPool.commonPool().submit(() ->
-                    filter.getRoots().parallelStream()
-                            .map(this::getStrings)
-                            .reduce(new RoaringBitmap(), ParallelAggregation::or));
+                                                                                              filter.getRoots().parallelStream()
+                                                                                                      .map(this::getStrings)
+                                                                                                      .reduce(new RoaringBitmap(), ParallelAggregation::or));
         ForkJoinTask<RoaringBitmap> additiveSearchQueryTask = ForkJoinPool.commonPool().submit(() -> {
             if (filter.getTextSearchTerms().isEmpty()) return RoaringBitmap.bitmapOfRange(0, 0x100000000L);
             return filter.getTextSearchTerms().parallelStream()
-                    .map(this::getStrings)
-                    .reduce(RoaringBitmap.bitmapOfRange(0, paths.size()), ParallelAggregation::or);
+                           .map(this::getStrings)
+                           .reduce(RoaringBitmap.bitmapOfRange(0, paths.size()), ParallelAggregation::or);
         });
         ForkJoinTask<RoaringBitmap> extensionQueryTask = ForkJoinPool.commonPool().submit(() -> {
             if (filter.getExtSearchTerms().isEmpty()) return RoaringBitmap.bitmapOfRange(0, 0x100000000L);
             return filter.getTextSearchTerms().parallelStream()
-                    .map(this::getStrings)
-                    .reduce(RoaringBitmap.bitmapOfRange(0, paths.size()), (acc, item) -> RoaringBitmap.and(acc, item));
+                           .map(this::getStrings)
+                           .reduce(RoaringBitmap.bitmapOfRange(0, paths.size()), (acc, item) -> RoaringBitmap.and(acc, item));
         });
 
         // Combine all the bitmaps.
@@ -462,27 +463,70 @@ public final class PostingList {
     }
 
     private Stream<String> getPostprocessed(QueryFilter filter, String[] splitQuery) {
-        Stream<String> outStream = stage1Cache.stream().parallel()
-                .filter(i -> {
-                    if (filter.getExtSearchTerms().isEmpty()) return true;
-                    for (String extension : filter.getExtSearchTerms()) {
-                        if (paths.get(i).endsWith(extension)) return true;
-                    }
-                    return false;
-                })
-                .filter(i -> filter.getRoots().parallelStream().anyMatch(paths.get(i)::startsWith))
-                .filter(i -> Arrays.stream(splitQuery).parallel().allMatch(paths.get(i)::contains))
-                .filter(i -> {
-                    if (filter.getTextSearchTerms().isEmpty()) return true;
-                    return filter.getTextSearchTerms().parallelStream().anyMatch(paths.get(i)::contains);
-                })
-                .mapToObj(i -> paths.get(i));
-        return getSorted(filter, outStream);
+        IntStream outStream = stage1Cache.stream().parallel()
+                                      //return stage1Cache.stream().parallel()
+                                      .filter(i -> {
+                                          if (filter.getExtSearchTerms().isEmpty()) return true;
+                                          for (String extension : filter.getExtSearchTerms()) {
+                                              if (paths.get(i).endsWith(extension)) return true;
+                                          }
+                                          return false;
+                                      })
+                                      .filter(i -> filter.getRoots().parallelStream().anyMatch(paths.get(i)::startsWith))
+                                      .filter(i -> Arrays.stream(splitQuery).parallel().allMatch(paths.get(i)::contains))
+                                      .filter(i -> {
+                                          if (filter.getTextSearchTerms().isEmpty()) return true;
+                                          return filter.getTextSearchTerms().parallelStream().anyMatch(paths.get(i)::contains);
+                                          //}).mapToObj(paths::get);
+                                      });
+
+        if (filter.getSortSteps().isEmpty()) {
+            return outStream.mapToObj(paths::get);
+        }
+        Comparator<Integer> comparator = filter.getSortSteps().stream()
+                                                 .map(this::getComparatorForSortStep)
+                                                 .reduce(Comparator::thenComparing).get();
+
+        return outStream.boxed().sorted(comparator).map(paths::get);
     }
 
-    private Stream<String> getSorted(QueryFilter filter, Stream<String> outStream) {
-        // TODO: Nathaniel, add your sorting logic right here!
-        return outStream;
+    private final Comparator<Integer> nameComparator = (path1, path2) -> getFileName(paths.get(path1)).compareTo(getFileName(paths.get(path2)));
+    private final Comparator<Integer> extensionComparator = (path1, path2) -> getFileExtension(paths.get(path1)).compareTo(getFileExtension(paths.get(path2)));
+    private final Comparator<Integer> sizeComparator = (size1, size2) -> Long.compare(sizes.get(size1), sizes.get(size2));
+    private final Comparator<Integer> timestampComparator = (time1, time2) -> Long.compare(sizes.get(time1), sizes.get(time2));
+
+    private Comparator<Integer> getComparatorForSortStep(SortStep step) {
+        switch (step.getType()) {
+            case NAME:
+                return step.getOrder() == SortStep.OrderType.DESCENDING ? nameComparator.reversed() : nameComparator;
+            case EXTENSION:
+                return step.getOrder() == SortStep.OrderType.DESCENDING ? extensionComparator.reversed() : extensionComparator;
+            case DATE_EDITED:
+                return step.getOrder() == SortStep.OrderType.DESCENDING ? timestampComparator.reversed() : timestampComparator;
+            case FILESIZE:
+                return step.getOrder() == SortStep.OrderType.DESCENDING ? sizeComparator.reversed() : sizeComparator;
+        }
+        throw new Error("Unreachable");
+    }
+
+    private static String getFileName(String path) {
+        int lastDotIdx = path.lastIndexOf('.');
+        int lastSeparatorIdx = path.lastIndexOf(File.separatorChar);
+        if (lastDotIdx > lastSeparatorIdx) {
+            return path.substring(lastSeparatorIdx + 1, lastDotIdx);
+        } else {
+            return path.substring(lastSeparatorIdx);
+        }
+    }
+
+    private static String getFileExtension(String path) {
+        int lastDotIdx = path.lastIndexOf('.');
+        int lastSeparatorIdx = path.lastIndexOf(File.separatorChar);
+        if (lastDotIdx > lastSeparatorIdx) {
+            return path.substring(lastDotIdx);
+        } else {
+            return "";
+        }
     }
 
     /**
@@ -494,8 +538,8 @@ public final class PostingList {
     private RoaringBitmap getStrings(String query) {
         if (query.length() < 3) {
             return IntStream.range(0, paths.size())
-                            .filter(i -> paths.get(i).contains(query))
-                            .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or);
+                           .filter(i -> paths.get(i).contains(query))
+                           .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or);
         } else {
             int a = mapChar(query.charAt(0)), b = mapChar(query.charAt(1)), c = mapChar(query.charAt(2));
             RoaringBitmap bitset = lists.get(mapTrigramToIndex(a, b, c));
@@ -983,3 +1027,7 @@ public final class PostingList {
     }
 
 }
+
+
+
+
