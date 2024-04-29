@@ -427,14 +427,14 @@ public class UIController {
         DirectoryTreeItem treeRoot = new DirectoryTreeItem(null);
         tvw_dirTree.setRoot(treeRoot);
 
-        filter.getRoots().parallelStream().forEach(root -> {
+        filter.getRoots().forEach(root -> {
             // Add the current root to the base of the treeview
             DirectoryTreeItem dirRootItem = new DirectoryTreeItem(root);
             dirRootItem.setIndependent(true);
             dirRootItem.addCheckListener(this);
             treeRoot.getChildren().add(dirRootItem);
 
-            directories.stream()//.parallel()
+            directories.stream()
                     .filter(dirPath -> dirPath.startsWith(root))
                     .filter(dirPath -> dirPath.length() != root.length())
                     .map(dirPath -> dirPath.substring(root.length()))
