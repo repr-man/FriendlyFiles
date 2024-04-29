@@ -16,7 +16,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane fx:id="bp_root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.friendlyfiles.ui.UIController">
+<BorderPane fx:id="bp_root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.friendlyfiles.ui.UIController">
    <top>
       <VBox BorderPane.alignment="CENTER">
          <children>
@@ -76,7 +76,23 @@
                            </children>
                         </HBox>
                      </content></Tab>
-                  <Tab text="Database" />
+                  <Tab text="Select">
+                     <content>
+                        <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="8.0">
+                           <children>
+                              <Button mnemonicParsing="false" onAction="#selectAllRows" text="Select All" />
+                              <HBox alignment="CENTER_LEFT">
+                                 <children>
+                                    <Button mnemonicParsing="false" onAction="#selectTopRows" text="Select Top" />
+                                    <TextField fx:id="tbx_numRowsSelected" maxHeight="-Infinity" onAction="#selectTopRows" prefWidth="60.0" promptText="#" text="20" />
+                                 </children>
+                              </HBox>
+                           </children>
+                           <padding>
+                              <Insets left="8.0" right="8.0" />
+                           </padding>
+                        </HBox>
+                     </content></Tab>
               </tabs>
             </TabPane>
          </children>

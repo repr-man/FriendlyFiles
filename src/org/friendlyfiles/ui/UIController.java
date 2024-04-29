@@ -41,6 +41,9 @@ public class UIController {
 
     @FXML
     private TextField tbx_search;
+    
+    @FXML
+    private TextField tbx_numRowsSelected;
 
     @FXML
     private TreeView<String> tvw_dirTree;
@@ -48,6 +51,19 @@ public class UIController {
     public BorderPane getRoot() {
     	
     	return bp_root;
+    }
+    
+    @FXML
+    void selectAllRows(ActionEvent event) {
+    	
+    	lsv_fileDisplay.getSelectionModel().selectAll();
+    }
+
+    @FXML
+    void selectTopRows(ActionEvent event) {
+    	
+    	lsv_fileDisplay.getSelectionModel().clearSelection();
+    	lsv_fileDisplay.getSelectionModel().selectRange(0, Integer.valueOf(tbx_numRowsSelected.getText()));
     }
     
     @FXML
@@ -292,6 +308,14 @@ public class UIController {
         
         // Set up file listview selection
         lsv_fileDisplay.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        
+        // Ensure only numbers are entered into the "select top n" text box
+        tbx_numRowsSelected.textProperty().addListener((obs, oldVal, newVal) -> {
+
+			if (!newVal.matches("\\d*")) {
+				tbx_numRowsSelected.setText(newVal.replaceAll("[^\\d]", ""));
+			}
+		});
         
         filterList = FXCollections.observableList(new ArrayList<>());
         sortList = FXCollections.observableArrayList(new ArrayList<>());
