@@ -20,7 +20,6 @@ public interface ParallelFileTreeVisitor {
 
     /**
      * The operation to be performed on every file that is visited.
-     *
      * @param path the path of the file being visited
      * @param size the size of the file being visited
      */
@@ -28,7 +27,6 @@ public interface ParallelFileTreeVisitor {
 
     /**
      * Starts the walker after it has been defined.
-     *
      * @implNote collates the results and calls {@link #op} on each of them
      * @param topPath the path of the top of the file tree to walk
      */
@@ -48,7 +46,6 @@ public interface ParallelFileTreeVisitor {
 
     /**
      * Divides the directories to walk among threads and starts walking the file tree.
-     *
      * @param result the queue into which to put each file's information
      * @param topPath the path of the top of the file tree to walk
      */
@@ -81,7 +78,6 @@ public interface ParallelFileTreeVisitor {
 
     /**
      * The walker task for each thread.
-     * 
      * @param result the queue into which to put each file's information
      * @param topPath the path of the top of the file tree to walk
      */

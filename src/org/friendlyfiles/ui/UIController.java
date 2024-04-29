@@ -54,16 +54,16 @@ public class UIController {
     }
     
     @FXML
-    void selectAllRows(ActionEvent event) {
+    void selectAllRows(ActionEvent ignoredEvent) {
     	
     	lsv_fileDisplay.getSelectionModel().selectAll();
     }
 
     @FXML
-    void selectTopRows(ActionEvent event) {
+    void selectTopRows(ActionEvent ignoredEvent) {
     	
     	lsv_fileDisplay.getSelectionModel().clearSelection();
-    	lsv_fileDisplay.getSelectionModel().selectRange(0, Integer.valueOf(tbx_numRowsSelected.getText()));
+    	lsv_fileDisplay.getSelectionModel().selectRange(0, Integer.parseInt(tbx_numRowsSelected.getText()));
     }
     
     @FXML
@@ -165,7 +165,7 @@ public class UIController {
     	
     }
     
-    private void displaySortEditDialog(int stepIndex) {
+    private void displaySortEditDialog() {
     	
     	SortDialog sortDialog = new SortDialog(this);
     	sortDialog.displayEditDialog(sortList, selectedSortIndex);
@@ -197,7 +197,7 @@ public class UIController {
     	filterDialog.displayCreateDialog(filterList);
     }
     
-    private void displayFilterEditDialog(int stepIndex) {
+    private void displayFilterEditDialog() {
     	
     	FilterDialog filterDialog = new FilterDialog(this);
     	filterDialog.displayEditDialog(filterList, selectedFilterIndex);
@@ -236,9 +236,6 @@ public class UIController {
     @FXML
     void btn_sortStackDown_clicked(ActionEvent ignoredEvent) {
     	
-    	// TODO: Implement actual code here (this code is completely untested and doesn't update the listview)
-    	
-    	// Demo
     	if (selectedSortIndex != -1 && selectedSortIndex < sortList.size() - 1) {
     		
     		sortList.remove(selectedSortIndex);
@@ -261,11 +258,10 @@ public class UIController {
     	// Get the index of the filter that was clicked
 		// We can then use the index to select the filter from the list of filters below this method
         selectedFilterIndex = lsv_filterStack.getSelectionModel().getSelectedIndex();
-        selectedFilterStep = filterList.get(selectedFilterIndex);
-    	
-    	if (event.getClickCount() == 2) {
 
-    		displayFilterEditDialog(selectedFilterIndex);
+        if (event.getClickCount() == 2) {
+
+    		displayFilterEditDialog();
         }
     }
     
@@ -285,15 +281,11 @@ public class UIController {
 
     	if (event.getClickCount() == 2) {
     		
-    		displaySortEditDialog(selectedSortIndex);
+    		displaySortEditDialog();
         }
     }
     
-    /** TODO: Custom sorting/filtering objects to specify the layout/order in which to process filters and sorting steps.
-     * (individual sorts/filters could either be applied individually or read in by the master QueryFilter/Sorting algorithm to compile and execute one large query?)
-     */
     private ObservableList<FilterStep> filterList;
-    private FilterStep selectedFilterStep = null;
     private int selectedFilterIndex = -1;
     private ObservableList<SortStep> sortList;
     private SortStep selectedSortStep = null;
@@ -345,7 +337,6 @@ public class UIController {
         });
         
         // Set cell factory for the filter stack list view in order to show only the names of our custom filters
-        // TODO: Implement the filter item that will be added to this list
         // Ensure the filter item has a getName() property or some other way to access text that identifies the filter to the user
         lsv_filterStack.setCellFactory(cell -> new ListCell<FilterStep>() {
         	
@@ -366,7 +357,6 @@ public class UIController {
         
         
         // Set cell factory for the sort stack list view in order to show only the names of our custom sorting criteria
-        // TODO: Implement the sort item that will be added to this list
         // Ensure the sort item has a getName() property or some other way to access text that identifies the sorting criteria to the user
         lsv_sortStack.setCellFactory(cell -> new ListCell<SortStep>() {
         	
@@ -475,11 +465,12 @@ public class UIController {
         if (!waitingForSwap) {
             fileNames = switchboard.search(filter);
             displayFiles();
+        } else {
+            waitingForSwap = false;
         }
         if (waitingForSwapDialog != null) {
             waitingForSwapDialog.close();
             waitingForSwapDialog.getDialogPane().getScene().getWindow().hide();
-            waitingForSwap = false;
         }
     }
 
@@ -495,7 +486,6 @@ public class UIController {
 
     /**
      * Shows the user an error dialog.
-     *
      * @param contentText the message to show the user
      */
     public void showErrorDialog(String contentText) {
@@ -503,11 +493,19 @@ public class UIController {
         errorDialog.showAndWait();
     }
 
+    /**
+     * Makes a subtree of files invisible in the main listing.
+     * @param dirPath the top of the subtree to disallow
+     */
     public void disallowAllFilesInDirectory(String dirPath) {
         fileNames = switchboard.disallowFilesInDirectory(filter, dirPath);
         displayFiles();
     }
 
+    /**
+     * Toggles the visiility of a subtree of files in the main listing.
+     * @param dirPath the top of the subtree to toggle
+     */
     public void toggleFilesInDirectory(String dirPath) {
         fileNames = switchboard.toggleVisibleFiles(filter, dirPath);
         displayFiles();

@@ -44,7 +44,6 @@ public class Main extends Application {
 
     /**
      * Shuts down the application.
-     *
      * @throws Exception not that it really matters at this point
      */
     @Override

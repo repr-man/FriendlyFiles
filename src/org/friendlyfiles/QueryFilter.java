@@ -21,16 +21,27 @@ public final class QueryFilter {
     private final ArrayList<String> extSearchTerms = new ArrayList<>();
     private final ArrayList<SortStep> sortSteps = new ArrayList<>();
 
+    /**
+     * @return the bit set of visible files
+     */
     public RoaringBitmap getVisibleItems() {
         return visibleItems;
     }
 
+    /**
+     * Gets the string query that was in the search box.
+     * @return the query
+     */
     public String getQuery() {
         return query;
     }
 
+    /**
+     * Sets the query to a given value, or to the file separator character if the query is blank
+     * @param query the search query
+     */
     public void setQuery(String query) {
-        this.query = query.isEmpty() ? UIController.fileSeparator : query;
+        this.query = query.trim().isEmpty() ? UIController.fileSeparator : query;
     }
 
     /**
@@ -40,6 +51,9 @@ public final class QueryFilter {
         return roots;
     }
 
+    /**
+     * @return the list of sort steps
+     */
     public ArrayList<SortStep> getSortSteps() {
         return sortSteps;
     }
@@ -52,7 +66,7 @@ public final class QueryFilter {
      */
     public boolean addRoot(String rootPath) {
         // We don't want to add roots that we can already access.
-        if (roots.stream().anyMatch(rootPath::startsWith)) {
+        if (roots.stream().anyMatch(rootPath::startsWith) || roots.stream().anyMatch(root -> root.startsWith(rootPath))) {
             return true;
         }
         roots.add(rootPath);

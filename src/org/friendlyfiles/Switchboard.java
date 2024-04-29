@@ -55,48 +55,64 @@ public class Switchboard {
 
     /**
      * Swaps out the old backend for the new one and notifies the controller.
-     *
      * @implNote It uses {@link Platform#runLater} because the controller needs to update the UI thread.  Calling it
      * without this causes an exception.
      * @param backend the new backend to swap in
      */
-    public void swapInBackend(PostingList backend) {
+    public synchronized void swapInBackend(PostingList backend) {
         this.backend = backend;
         Platform.runLater(controller::notifyBackendSwapCompleted);
     }
 
     /**
      * Queries the backend with only a filter.
-     *
      * @param filter the query filter
      * @return the results of the query
      */
-    public Stream<String> search(QueryFilter filter) {
+    public synchronized Stream<String> search(QueryFilter filter) {
         return backend.get(filter);
     }
 
     /**
      * Gets a list of all the directories beneath all the roots specified in the filter.
-     *
      * @param filter the filter containing root directories
      * @return the stream of directories
      */
-    public Stream<String> getDirectories(QueryFilter filter) {
+    public synchronized Stream<String> getDirectories(QueryFilter filter) {
         return backend.getDirectories(filter);
     }
 
-    public Stream<String> disallowFilesInDirectory(QueryFilter filter, String dirPath) {
+    /**
+     * Gets the paths associated with the query, except for the ones starting with `dirPath`.
+     * @param filter the filter with the visible item bit set
+     * @param dirPath the path to disallow
+     * @return a stream of file names corresponding to the results of the operation
+     */
+    public synchronized Stream<String> disallowFilesInDirectory(QueryFilter filter, String dirPath) {
         return backend.disallowFilesInDirectory(filter, dirPath);
     }
 
-    public Stream<String> toggleVisibleFiles(QueryFilter filter, String dirPath) {
+    /**
+     * Gets the paths associated with the query, toggling the visibility of the ones starting with `dirPath`.
+     * @param filter the filter with the visible item bit set
+     * @param dirPath the path to toggle
+     * @return a stream of file names corresponding to the results of the operation
+     */
+    public synchronized Stream<String> toggleVisibleFiles(QueryFilter filter, String dirPath) {
         return backend.toggleVisibleFiles(filter, dirPath);
     }
 
-    public boolean addRootToFilter(String topDirectory, QueryFilter filter) {
+    /**
+     * Finds all the files associated with a root and adds them to the filter's visible items.
+     * @param topDirectory the root to add
+     * @param filter the filter to ad the root to
+     * @return whether the directory is already accessible
+     */
+    public synchronized boolean addRootToFilter(String topDirectory, QueryFilter filter) {
         boolean directoryAlreadyAccessible = filter.addRoot(topDirectory);
         if (directoryAlreadyAccessible) {
             showErrorDialog(String.format("`%s` already accessible from another directory.", topDirectory));
+            return true;
         }
         backend.addRootToFilter(topDirectory, filter);
         return false;
@@ -104,7 +120,6 @@ public class Switchboard {
 
     /**
      * Opens the file using the system's default program for the file's type.
-     *
      * @param filePath the path of the file to open
      */
     public void openFile(String filePath) {
@@ -113,10 +128,9 @@ public class Switchboard {
 
     /**
      * Deletes each of the selected items from the file source and the backend.
-     *
      * @param selectedItems the items to delete
      */
-    public void delete(ObservableList<String> selectedItems) {
+    public synchronized void delete(ObservableList<String> selectedItems) {
         selectedItems.forEach(item -> {
             try {
                 fileSource.remove(Paths.get(item));
@@ -134,11 +148,10 @@ public class Switchboard {
     /**
      * Renames each of the selected items in the file source and the backend.  It also allows one to use sed-like
      * substitutions for bulk renaming files.
-     *
      * @param selectedItems the items to rename
      * @param newName the new name to give the items
      */
-    public void rename(ObservableList<String> selectedItems, String newName) {
+    public synchronized void rename(ObservableList<String> selectedItems, String newName) {
         selectedItems.forEach(item -> {
             try {
                 String finalName;
@@ -171,11 +184,10 @@ public class Switchboard {
 
     /**
      * Moves each of the selected items to a new directory in the file source and the backend.
-     *
      * @param selectedItems the items to move
      * @param destinationPath the directory to move the items to
      */
-    public void move(ObservableList<String> selectedItems, String destinationPath) {
+    public synchronized void move(ObservableList<String> selectedItems, String destinationPath) {
         selectedItems.forEach(item -> {
             try {
                 Path itemPath = Paths.get(item);
@@ -195,7 +207,6 @@ public class Switchboard {
 
     /**
      * Shows an error dialog box via the UI controller.
-     *
      * @param message the error message to show to the user
      */
     public void showErrorDialog(String message) {
@@ -210,7 +221,6 @@ public class Switchboard {
      * backreferences.  They leave all other characters unchanged.  The only exception is for slashes and backslashes.
      * These characters cause the function to fail, as it is invalid for a name to have a path separator character
      * in it.  Flags (like the 'g' global flag) are not allowed.
-     *
      * @param input the string to modify
      * @param pattern a sed-like substitution command with the "s/" and suffix flags removed
      * @return the updated string, or null if the pattern was invalid

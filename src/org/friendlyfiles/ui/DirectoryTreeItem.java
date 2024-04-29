@@ -4,7 +4,6 @@ import javafx.collections.ObservableList;
 import javafx.scene.control.*;
 import java.io.File;
 
-// An extension of the CheckboxTreeItem, primarily to override the .equals() method
 public class DirectoryTreeItem extends CheckBoxTreeItem<String> {
     // Boolean to determine whether or not the checkbox was clicked by a user
     private static boolean isClicked = true;
@@ -16,7 +15,6 @@ public class DirectoryTreeItem extends CheckBoxTreeItem<String> {
 
     /**
      * Overridden equals method allows for the ArrayList's indexOf method to compare the path values rather than the object references
-     *
      * @param o the object to be compared with this one
      * @return true if, and only if, the given object is a CheckBoxTreeItem holding an equal Path value
      */
@@ -34,6 +32,10 @@ public class DirectoryTreeItem extends CheckBoxTreeItem<String> {
                 && this.getValue().equals(((DirectoryTreeItem) o).getValue());
     }
 
+    /**
+     * Recursively walks up the tree to reconstruct the full directory path of an item.
+     * @return the absolute path
+     */
     private String getFullDirectoryPath() {
         String ret;
         if (getParent().getValue() == null) {
@@ -45,12 +47,18 @@ public class DirectoryTreeItem extends CheckBoxTreeItem<String> {
         return ret;
     }
 
-    // This conversion is safe because all children are DirectoryTreeItems
+    /**
+     * Gets the list of children with the correct type.
+     * @return the list of children
+     */
     private ObservableList<DirectoryTreeItem> retrieveChildren() {
+        // This conversion is safe because all children are DirectoryTreeItems
         return (ObservableList<DirectoryTreeItem>) (Object) getChildren();
     }
 
-    // Check each child object, either selecting or unselecting based on the value of the clicked checkbox
+    /**
+     * Check each child object, either selecting or unselecting based on the value of the clicked checkbox
+     */
     public void checkChildren(DirectoryTreeItem node) {
         if (isIndeterminate()) {
             node.setSelected(false);
@@ -65,7 +73,9 @@ public class DirectoryTreeItem extends CheckBoxTreeItem<String> {
         }
     }
 
-    // Determine whether parent checkboxes of the given node need to be selected or marked as indeterminate
+    /**
+     * Determine whether parent checkboxes of the given node need to be selected or marked as indeterminate.
+     */
     public void determineParents(DirectoryTreeItem node) {
         // Get the parent of the current node
         DirectoryTreeItem parent = (DirectoryTreeItem)node.getParent();
@@ -138,6 +148,11 @@ public class DirectoryTreeItem extends CheckBoxTreeItem<String> {
         });
     }
 
+    /**
+     * Recursively adds children to the file tree from the segments of a path.
+     * @param controller the controller of the directory tree
+     * @param childName the path from which to find children
+     */
     public void addAllChildren(UIController controller, String childName) {
         setIndependent(true);
         int splitIdx = childName.indexOf(File.separatorChar, 1);

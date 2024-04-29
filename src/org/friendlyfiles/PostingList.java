@@ -119,18 +119,6 @@ import java.util.stream.*;
  * Second, and more importantly, we only want to serialize posting lists via memory mapped files.  Posting lists can
  * often be large (hundreds of megabytes).  Reading them with normal file io would be prohibitively expensive.  Memory
  * mapped files use operating system magic to avoid this overhead.
- * <p>
- * The format of the serialized file is as follows:
- * <ul>
- *     <li>The compressed bit sets</li>
- *     <li>The number of strings in the haystack</li>
- *     <li>The strings in the haystack
- *         <ul>
- *             <li>The length of the string</li>
- *             <li>The bytes of the string</li>
- *         </ul>
- *     </li>
- * </ul>
  */
 public final class PostingList {
     private RoaringBitmap stage1Cache;
@@ -168,7 +156,6 @@ public final class PostingList {
 
     /**
      * Compresses and writes the posting list to a file.
-     *
      * @param filename the name of the file to write the posting list to
      * @throws IOException if there is an error writing to the file
      */
@@ -184,7 +171,8 @@ public final class PostingList {
                     // listsSerializedSize: Size of all the serialized lists
                     // totalStringsSize: Number of bytes needed to represent all the strings
                     // strings.size() * 4: Integers representing the size of the strings
-                    // sizes.size() * 4: Size of the array of longs representing file sizes
+                    // sizes.size() * 8: Size of the array of longs representing file sizes
+                    // timestamps.size() * 8: Size of the array of longs representing file dates
                     // 4: Integer representing the number of strings
                     // 1: Byte representing the number of holes
                     //
@@ -212,7 +200,6 @@ public final class PostingList {
 
     /**
      * Creates a new posting list by reading it from a file.
-     *
      * @param filename the name of the file to read from
      * @return a new posting list
      * @throws IOException if the file can't be read
@@ -266,7 +253,7 @@ public final class PostingList {
             ParallelFileTreeVisitor walker = pl::add;
             walker.walk(Paths.get(System.getProperty("user.dir")).getRoot());
             
-            System.out.println("Finished Walking");
+            System.err.println("Finished Walking");
             
             switchboard.swapInBackend(pl);
         });
@@ -274,7 +261,6 @@ public final class PostingList {
 
     /**
      * Registers a new file or directory at the given path.
-     *
      * @param path the path at which to add the new item
      * @param size the size of the item
      */
@@ -287,7 +273,6 @@ public final class PostingList {
     /**
      * Breaks a string into trigrams, adds the string to the list of potential strings, and adds the trigrams
      * to the posting list.
-     *
      * @param str the string to add to the posting list
      */
     private void addString(String str) {
@@ -299,7 +284,7 @@ public final class PostingList {
 
         // If str.length() < 3, we are not able to search for them with trigrams, so we don't add them to the
         // posting list.
-        if (str.length() >= 2) {
+        if (str.length() >= 3) {
             int a = 60, b = mapChar(str.charAt(0)), c = mapChar(str.charAt(1));
             lists.get(mapTrigramToIndex(a, b, c)).add(index);
             for (int i = 2; i < str.length(); ++i) {
@@ -308,7 +293,6 @@ public final class PostingList {
                 c = mapChar(str.charAt(i));
                 lists.get(mapTrigramToIndex(a, b, c)).add(index);
             }
-            //lists.get(mapTrigramToIndex(b, c, 60)).add(index);
         }
     }
 
@@ -317,7 +301,6 @@ public final class PostingList {
      * <p>
      * This method assumes that the files exists.  These assumptions should be checked in
      * the ui or controller code so that they can display an error message to the user.
-     *
      * @param path the path of the file to remove
      * @return true if str is not in the list; false if str was in the list and was removed
      */
@@ -328,7 +311,6 @@ public final class PostingList {
     /**
      * Ditto.
      * This function is used internally in both `remove` and `rename`.
-     *
      * @param path the path of the file to remove
      * @return -1 if str is not in the list; otherwise, the size of the removed item
      */
@@ -360,7 +342,6 @@ public final class PostingList {
                         c = mapChar(paths.get(i).charAt(i));
                         lists.get(mapTrigramToIndex(a, b, c)).add(i);
                     }
-                    //lists.get(mapTrigramToIndex(b, c, 60)).add(i);
                 }
             });
             numHoles = 0;
@@ -371,7 +352,6 @@ public final class PostingList {
 
     /**
      * Removes a string from the posting list and haystack if they contain the string.
-     *
      * @param str the string to remove
      * @return -1 if str is not in the list; otherwise, the index of the removed item
      */
@@ -400,7 +380,6 @@ public final class PostingList {
 
     /**
      * Moves a file to a different directory.
-     *
      * @param source the path of the file to move
      * @param destination the path of the directory to move `source` to
      */
@@ -417,29 +396,28 @@ public final class PostingList {
 
     /**
      * Queries the backend for files.
-     *
      * @param filter filters the query results
-     * @return a stream of file names corresponding to the results of the query
+     * @return a stream of file paths corresponding to the results of the query
      */
     public Stream<String> get(QueryFilter filter) {
         // Start searching numeric arrays.
         ForkJoinTask<RoaringBitmap> fileSizeQueryTask = ForkJoinPool.commonPool().submit(() -> IntStream.range(0, sizes.size())
-                                                                                                       .filter(i -> filter.isInFileSizeRange(sizes.get(i)))
-                                                                                                       .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or));
+            .filter(i -> filter.isInFileSizeRange(sizes.get(i)))
+                .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or));
         ForkJoinTask<RoaringBitmap> dateQueryTask = ForkJoinPool.commonPool().submit(() -> IntStream.range(0, timestamps.size())
-                                                                                                   .filter(i -> filter.isInFileDateRange(timestamps.get(i)))
-                                                                                                   .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or));
+            .filter(i -> filter.isInFileDateRange(timestamps.get(i)))
+                .collect(RoaringBitmap::new, RoaringBitmap::add, ParallelAggregation::or));
 
         // Search text-related things.
         String[] splitQuery = filter.getQuery().split("\\s");
         ForkJoinTask<RoaringBitmap> searchQueryTask = ForkJoinPool.commonPool().submit(() ->
-                                                                                               Arrays.stream(splitQuery).parallel()
-                                                                                                       .map(this::getStrings)
-                                                                                                       .reduce(RoaringBitmap.bitmapOfRange(0, paths.size()), (acc, item) -> RoaringBitmap.and(acc, item)));
+            Arrays.stream(splitQuery).parallel()
+                    .map(this::getStrings)
+                    .reduce(RoaringBitmap.bitmapOfRange(0, paths.size()), (acc, item) -> RoaringBitmap.and(acc, item)));
         ForkJoinTask<RoaringBitmap> rootsQueryTask = ForkJoinPool.commonPool().submit(() ->
-                                                                                              filter.getRoots().parallelStream()
-                                                                                                      .map(this::getStrings)
-                                                                                                      .reduce(new RoaringBitmap(), ParallelAggregation::or));
+             filter.getRoots().parallelStream()
+                     .map(this::getStrings)
+                     .reduce(new RoaringBitmap(), ParallelAggregation::or));
         ForkJoinTask<RoaringBitmap> additiveSearchQueryTask = ForkJoinPool.commonPool().submit(() -> {
             if (filter.getTextSearchTerms().isEmpty()) return RoaringBitmap.bitmapOfRange(0, 0x100000000L);
             return filter.getTextSearchTerms().parallelStream()
@@ -465,9 +443,14 @@ public final class PostingList {
         return getPostprocessed(filter, splitQuery);
     }
 
+    /**
+     * Postprocesses and potentially sorts the paths associated to a bit set.
+     * @param filter the parameters for filtering and sorting
+     * @param splitQuery the query segments to ensure are included
+     * @return a stream of file paths ready to be given to the UI
+     */
     private Stream<String> getPostprocessed(QueryFilter filter, String[] splitQuery) {
         IntStream outStream = stage1Cache.stream().parallel()
-                                      //return stage1Cache.stream().parallel()
                                       .filter(i -> {
                                           if (filter.getExtSearchTerms().isEmpty()) return true;
                                           for (String extension : filter.getExtSearchTerms()) {
@@ -480,12 +463,12 @@ public final class PostingList {
                                       .filter(i -> {
                                           if (filter.getTextSearchTerms().isEmpty()) return true;
                                           return filter.getTextSearchTerms().parallelStream().anyMatch(paths.get(i)::contains);
-                                          //}).mapToObj(paths::get);
                                       });
 
         if (filter.getSortSteps().isEmpty()) {
             return outStream.mapToObj(paths::get);
         }
+        // Sorting
         Comparator<Integer> comparator = filter.getSortSteps().stream()
                                                  .map(this::getComparatorForSortStep)
                                                  .reduce(Comparator::thenComparing).get();
@@ -496,8 +479,14 @@ public final class PostingList {
     private final Comparator<Integer> nameComparator = (path1, path2) -> getFileName(paths.get(path1)).compareTo(getFileName(paths.get(path2)));
     private final Comparator<Integer> extensionComparator = (path1, path2) -> getFileExtension(paths.get(path1)).compareTo(getFileExtension(paths.get(path2)));
     private final Comparator<Integer> sizeComparator = (size1, size2) -> Long.compare(sizes.get(size1), sizes.get(size2));
-    private final Comparator<Integer> timestampComparator = (time1, time2) -> Long.compare(sizes.get(time1), sizes.get(time2));
+    private final Comparator<Integer> timestampComparator = (time1, time2) -> Long.compare(timestamps.get(time1), timestamps.get(time2));
 
+    /**
+     * Maps a SortStep into a Comparator.  This has to be done in the PostingList class because the comparators rely on
+     * private fields of the posting list.
+     * @param step the step to map
+     * @return the associated comparator
+     */
     private Comparator<Integer> getComparatorForSortStep(SortStep step) {
         switch (step.getType()) {
             case NAME:
@@ -512,6 +501,11 @@ public final class PostingList {
         throw new Error("Unreachable");
     }
 
+    /**
+     * Gets the file name (the portion between the last separator and the last dot).
+     * @param path the file to retrive the name from
+     * @return the name
+     */
     private static String getFileName(String path) {
         int lastDotIdx = path.lastIndexOf('.');
         int lastSeparatorIdx = path.lastIndexOf(File.separatorChar);
@@ -522,6 +516,10 @@ public final class PostingList {
         }
     }
 
+    /**
+     * @param path the file to retrive the extension from
+     * @return the extension, or "" if there is none
+     */
     private static String getFileExtension(String path) {
         int lastDotIdx = path.lastIndexOf('.');
         int lastSeparatorIdx = path.lastIndexOf(File.separatorChar);
@@ -534,7 +532,6 @@ public final class PostingList {
 
     /**
      * Retrieves all the strings corresponding to a query string.
-     *
      * @param query the string to search for
      * @return a bitset of indexes of strings containing the result of the query
      */
@@ -552,14 +549,12 @@ public final class PostingList {
                 c = mapChar(query.charAt(i));
                 bitset = RoaringBitmap.and(bitset, lists.get(mapTrigramToIndex(a, b, c)));
             }
-            //bitset.and(lists.get(mapTrigramToIndex(b, c, 60)));
             return bitset;
         }
     }
 
     /**
      * Changes the name of a file.
-     *
      * @param oldPath the path to the file to be renamed
      * @param newName the name to change the old name to
      */
@@ -572,7 +567,6 @@ public final class PostingList {
 
     /**
      * Gets a list of all the directories beneath all the roots specified in the filter.
-     *
      * @param filter the filter containing root directories
      * @return the stream of directories
      */
@@ -592,7 +586,6 @@ public final class PostingList {
 
     /**
      * Gets the paths associated with the query, except for the ones starting with `dirPath`.
-     *
      * @param filter the filter with the visible item bit set
      * @param dirPath the path to disallow
      * @return a stream of file names corresponding to the results of the operation
@@ -608,7 +601,6 @@ public final class PostingList {
 
     /**
      * Gets the paths associated with the query, toggling the visibility of the ones starting with `dirPath`.
-     *
      * @param filter the filter with the visible item bit set
      * @param dirPath the path to toggle
      * @return a stream of file names corresponding to the results of the operation
@@ -623,7 +615,6 @@ public final class PostingList {
 
     /**
      * Finds all the files associated with a root and adds them to the filter's visible items.
-     *
      * @param topDirectory the root to add
      * @param filter the filter to ad the root to
      */
@@ -638,7 +629,6 @@ public final class PostingList {
 
     /**
      * Maps the three mapped characters of a trigram to a posting list index.
-     *
      * @param a the first mapped character to map
      * @param b the second mapped character to map
      * @param c the third mapped character to map
@@ -671,7 +661,6 @@ public final class PostingList {
      * It contains the results of the following formula for x in [0, 64):
      * <p>
      * f(x) = (\sum_{n = 65 - x}^{64} \frac{n(n-1)}{2}) - (\sum_{n = 65 - x}^{64} n)
-     *
      * @param n an integer in the range [0, 64)
      * @return the result of the function above
      */
@@ -751,7 +740,6 @@ public final class PostingList {
      * It contains the results of the following formula for x in [0, 64):
      * <p>
      * f(x) = (\sum_{n = 65 - x}^{64} n) - x
-     *
      * @param n an integer in the range [0, 64)
      * @return the result of the function above
      */
@@ -832,7 +820,7 @@ public final class PostingList {
      * <p>
      * The mappings are as follows:
      * <ul>
-     * <li>ASCII control characters [0, 9), (9, 32) -> 61</li>
+     * <li>ASCII control characters [0, 32) -> 61</li>
      * <li>Punctuation characters and numbers [32, 38], [40, 64] -> Subtract 32</li>
      * <li>', ` -> " -> 2</li>
      * <li>Uppercase and lowercase letters -> [32, 58], respectively</li>
@@ -843,16 +831,13 @@ public final class PostingList {
      * <li>~ -> 59</li>
      * <li>^ -> 62</li>
      * <li>_ -> 63</li>
-     * <li>\t -> Start of string character -> 60</li>
      * <li>All other characters -> 61</li>
      * </ul>
-     *
      * @param c the character to map
      * @return the mapped character
      */
     private static byte mapChar(char c) {
         switch (c) {
-            case 9:   return 60;
             case 32:  return 0;
             case 33:  return 1;
             case 34:  return 2;
@@ -955,7 +940,6 @@ public final class PostingList {
 
     /**
      * Turns a mapped character into a normal character.
-     *
      * @param b an integer in the range [0, 64) to decode
      * @return the unmapped character
      */
@@ -1021,7 +1005,6 @@ public final class PostingList {
             case 57: return 'y';
             case 58: return 'z';
             case 59: return '~';
-            case 60: return '\t';  // Placeholder character
             case 61: return '{';   // Placeholder character
             case 62: return '^';
             case 63: return '_';
