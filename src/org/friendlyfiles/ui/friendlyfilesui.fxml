@@ -16,7 +16,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane fx:id="bp_root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.friendlyfiles.ui.UIController">
+<BorderPane fx:id="bp_root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="500.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.friendlyfiles.ui.UIController">
    <top>
       <VBox BorderPane.alignment="CENTER">
          <children>
@@ -47,6 +47,8 @@
                                  </HBox.margin>
                               </TextField>
                               <Button mnemonicParsing="false" onAction="#updateFiles" text="Search" />
+                              <Button mnemonicParsing="false" onAction="#displayFilterCreateDialog" text="Add Filter" />
+                              <Button mnemonicParsing="false" onAction="#displaySortCreateDialog" text="Add Sort" />
                            </children>
                            <padding>
                               <Insets left="8.0" right="8.0" />
@@ -54,28 +56,6 @@
                         </HBox>
                      </content>
                 </Tab>
-                <Tab text="Filter">
-                     <content>
-                        <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="8.0">
-                           <children>
-                              <Button mnemonicParsing="false" onAction="#displayFilterCreateDialog" text="Add Filter" />
-                           </children>
-                           <padding>
-                              <Insets left="8.0" right="8.0" />
-                           </padding>
-                        </HBox>
-                     </content></Tab>
-                  <Tab text="Sort">
-                     <content>
-                        <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="8.0">
-                           <padding>
-                              <Insets left="8.0" right="8.0" />
-                           </padding>
-                           <children>
-                              <Button mnemonicParsing="false" onAction="#displaySortCreateDialog" text="Add Sort Criteria" />
-                           </children>
-                        </HBox>
-                     </content></Tab>
                   <Tab text="Select">
                      <content>
                         <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="8.0">
@@ -112,18 +92,18 @@
       </ScrollPane>
    </center>
    <left>
-      <VBox BorderPane.alignment="CENTER">
+      <VBox maxHeight="1.7976931348623157E308" maxWidth="-Infinity" prefWidth="160.0" BorderPane.alignment="CENTER">
          <children>
             <Label alignment="CENTER" maxHeight="-Infinity" maxWidth="1.7976931348623157E308" minHeight="-Infinity" prefHeight="18.0" text="Tree View" textAlignment="CENTER">
                <font>
                   <Font name="System Bold" size="12.0" />
                </font>
             </Label>
-            <ScrollPane fitToWidth="true" prefWidth="130.0">
+            <ScrollPane fitToHeight="true" fitToWidth="true" maxWidth="1.7976931348623157E308" prefWidth="130.0">
                <content>
-                  <VBox>
+                  <VBox maxHeight="1.7976931348623157E308">
                      <children>
-                        <TreeView fx:id="tvw_dirTree" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="200.0" showRoot="false" />
+                        <TreeView fx:id="tvw_dirTree" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" showRoot="false" />
                      </children>
                   </VBox>
                </content>
@@ -132,7 +112,7 @@
       </VBox>
    </left>
    <right>
-      <VBox prefWidth="160.0" BorderPane.alignment="CENTER">
+      <VBox maxWidth="-Infinity" prefWidth="160.0" BorderPane.alignment="CENTER">
          <children>
             <Label alignment="CENTER" maxHeight="-Infinity" maxWidth="1.7976931348623157E308" minHeight="-Infinity" prefHeight="18.0" text="Advanced Filtering" textAlignment="CENTER">
                <font>
