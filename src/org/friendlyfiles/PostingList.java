@@ -265,6 +265,9 @@ public final class PostingList {
             PostingList pl = new PostingList(Paths.get(plFileLocation));
             ParallelFileTreeVisitor walker = pl::add;
             walker.walk(Paths.get(System.getProperty("user.dir")).getRoot());
+            
+            System.out.println("Finished Walking");
+            
             switchboard.swapInBackend(pl);
         });
     }

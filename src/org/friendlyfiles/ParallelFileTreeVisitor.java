@@ -37,7 +37,7 @@ public interface ParallelFileTreeVisitor {
         walkUpperTree(result, topPath);
         try {
             while (true) {
-                FileModel res = result.poll(10, TimeUnit.MILLISECONDS);
+                FileModel res = result.poll(500, TimeUnit.MILLISECONDS);
                 if (res == null) break;
                 op(res.path, res.size, res.timestamp);
             }
